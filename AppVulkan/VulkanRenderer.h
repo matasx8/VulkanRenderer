@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <vector>
 #include <set>
+#include <algorithm>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -45,9 +46,18 @@ private:
 	VkQueue graphicsQueue;
 	VkQueue presentationQueue;
 	VkSurfaceKHR surface;
+	VkSwapchainKHR swapchain;
+	std::vector<SwapChainImage> swapChainImages;
+
+	VkFormat swapChainImageFormat;
+	VkExtent2D swapChainExtent;
+
+
 	void createInstance();
 	void createLogicalDevice();
 	void createSurface();
+	void createSwapChain();
+	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 
 	//getters
 	void getPhysicalDevice();
@@ -67,5 +77,10 @@ private:
 		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 		void* pUserData);
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+
+	VkSurfaceFormatKHR chooseBestSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats);
+	VkPresentModeKHR chooseBestPresentationMode(const std::vector<VkPresentModeKHR> presentationModes);
+	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfaceCapabilities);
+
 };
 
