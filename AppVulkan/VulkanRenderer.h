@@ -58,6 +58,8 @@ private:
 	void createSurface();
 	void createSwapChain();
 	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+	void createGraphicsPipeline();
+	VkShaderModule createShaderModule(const std::vector<char>& code);
 
 	//getters
 	void getPhysicalDevice();
