@@ -19,6 +19,7 @@ public:
 
 	int init(GLFWwindow* newWindow);
 	void setupDebugMessenger();
+	void draw();
 	void cleanup();
 	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
 	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
@@ -27,6 +28,8 @@ public:
 
 private:
 	GLFWwindow* window;
+
+	int currentFrame = 0;
 
 	const std::vector<const char*> validationLayers = {
 "VK_LAYER_KHRONOS_validation"
@@ -49,11 +52,21 @@ private:
 	VkSurfaceKHR surface;
 	VkSwapchainKHR swapchain;
 	std::vector<SwapChainImage> swapChainImages;
+	std::vector<VkFramebuffer> swapchainFramebuffers;
+	std::vector<VkCommandBuffer> commandBuffer;
 
 	//pipeline
 	VkPipeline graphicsPipeline;
 	VkPipelineLayout pipelineLayout;
 	VkRenderPass renderPass;
+
+	//pools
+	VkCommandPool graphicsCommandPool;
+
+	//synch
+	std::vector<VkSemaphore> imageAvailable;
+	std::vector<VkSemaphore> renderFinished;
+	std::vector<VkFence> drawFences;
 
 	VkFormat swapChainImageFormat;
 	VkExtent2D swapChainExtent;
@@ -67,6 +80,13 @@ private:
 	void createRenderPass();
 	void createGraphicsPipeline();
 	VkShaderModule createShaderModule(const std::vector<char>& code);
+	void createFramebuffers();
+	void createCommandPool();
+	void createCommandBuffers();
+	void createSynchronization();
+
+	// record funcs
+	void recordCommands();
 
 	//getters
 	void getPhysicalDevice();
