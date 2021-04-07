@@ -2,11 +2,21 @@
 
 #include <fstream>
 
+#include <glm/glm.hpp>
+
 const int MAX_FRAME_DRAWS = 2;
 
 const std::vector<const char*> deviceExtensions = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
+
+//vertex data
+struct Vertex
+{
+	glm::vec3 pos;
+	glm::vec3 col; //vertex colour
+};
+
 //indices (locations) of queue families if they exist
 struct QueueFamilyIndices
 {
