@@ -21,7 +21,7 @@ public:
 
 	int init(GLFWwindow* newWindow);
 
-	void updateModel(glm::mat4 newModel);
+	void updateModel(int modelId, glm::mat4 newModel);
 
 	void setupDebugMessenger();
 	void draw();
@@ -40,11 +40,10 @@ private:
 	std::vector<Mesh> meshList;
 
 	//scene settings
-	struct MVP {
+	struct UboViewProjection {
 		glm::mat4 projection;
 		glm::mat4 view;
-		glm::mat4 model;
-	} mvp;
+	} uboViewProjection;
 
 	const std::vector<const char*> validationLayers = {
 "VK_LAYER_KHRONOS_validation"
@@ -75,8 +74,15 @@ private:
 	VkDescriptorPool descriptorPool;
 	std::vector<VkDescriptorSet> descriptorSets;
 
-	std::vector<VkBuffer> uniformBuffer;
-	std::vector<VkDeviceMemory> uniformBufferMemory;
+	std::vector<VkBuffer> vpUniformBuffer;
+	std::vector<VkDeviceMemory> vpUniformBufferMemory;
+
+	std::vector<VkBuffer> modelDUniformBuffer;
+	std::vector<VkDeviceMemory> modelDUniformBufferMemory;
+
+	VkDeviceSize minUiformBufferOffset;
+	size_t modelUniformAlignment;
+	UboModel* modelTransferSpace;
 
 	//pipeline
 	VkPipeline graphicsPipeline;
@@ -93,7 +99,6 @@ private:
 
 	VkFormat swapChainImageFormat;
 	VkExtent2D swapChainExtent;
-
 
 	void createInstance();
 	void createLogicalDevice();
@@ -112,7 +117,9 @@ private:
 	void createDescriptorPool();
 	void createDescriptorSets();
 
-	void updateUniformBuffer(uint32_t index);
+	void updateUniformBuffers(uint32_t index);
+
+	void allocateDynamicBufferTransferSpace();
 
 	// record funcs
 	void recordCommands();

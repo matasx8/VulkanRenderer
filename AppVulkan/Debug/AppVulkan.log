@@ -1,3 +1,3 @@
-﻿  VulkanRenderer.cpp
-C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Utilities.h(82): warning C4715: 'findMemoryTypeIndex': not all control paths return a value
+﻿  main.cpp
+C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\main.cpp(38,13): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
   AppVulkan.vcxproj -> C:\Users\mtunk\source\repos\AppVulkan\Debug\AppVulkan.exe
