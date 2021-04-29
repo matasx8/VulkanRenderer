@@ -1,5 +1,5 @@
+#define STB_IMAGE_IMPLEMENTATION
 #include<iostream>
-//fuck.. try to set up validation
 #include "VulkanRenderer.h"
 
 GLFWwindow* window;

@@ -1,4 +1,9 @@
-﻿  VulkanRenderer.cpp
-C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\VulkanRenderer.cpp(79,17): warning C4018: '>=': signed/unsigned mismatch
+﻿  Mesh.cpp
+  VulkanRenderer.cpp
+C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\VulkanRenderer.cpp(82,17): warning C4018: '>=': signed/unsigned mismatch
+  main.cpp
+C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\main.cpp(38,13): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+  Generating Code...
+C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Utilities.h(83): warning C4715: 'findMemoryTypeIndex': not all control paths return a value
 C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Utilities.h(83): warning C4715: 'findMemoryTypeIndex': not all control paths return a value
   AppVulkan.vcxproj -> C:\Users\mtunk\source\repos\AppVulkan\Debug\AppVulkan.exe
