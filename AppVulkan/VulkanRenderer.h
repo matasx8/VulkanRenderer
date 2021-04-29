@@ -74,16 +74,21 @@ private:
 	VkImage depthBufferImage;
 	VkDeviceMemory depthBufferImageMemory;
 	VkImageView depthBufferImageView;
+	VkSampler textureSampler;
 
 	//assets
 	std::vector<VkImage> textureImages;
 	std::vector<VkDeviceMemory> textureImageMemory;//would be better to have a single buffer, and images reference offsets
+	std::vector<VkImageView> textureImageViews;
 
 	//descriptors
 	VkDescriptorSetLayout descriptorSetLayout;
+	VkDescriptorSetLayout samplerSetLayout;
 	VkPushConstantRange pushConstantRange;
 	VkDescriptorPool descriptorPool;
+	VkDescriptorPool samplerDescriptorPool;
 	std::vector<VkDescriptorSet> descriptorSets;
+	std::vector<VkDescriptorSet> samplerDescriptorSets;
 
 
 	std::vector<VkBuffer> vpUniformBuffer;
@@ -132,7 +137,10 @@ private:
 	void createUniformBuffers();
 	void createDescriptorPool();
 	void createDescriptorSets();
+	int createTextureImage(std::string fileName);
 	int createTexture(std::string fileName);
+	void createTextureSampler();
+	int createTextureDescriptor(VkImageView textureImage);
 
 	void updateUniformBuffers(uint32_t index);
 
