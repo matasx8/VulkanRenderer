@@ -7,7 +7,7 @@
 
 #include "Utilities.h"
 
-struct Model {
+struct ModelMatrix {
 	glm::mat4 model;
 };
 
@@ -19,7 +19,7 @@ public:
 		std::vector<Vertex>* vertices, std::vector<uint32_t>* indices, int newTexId);
 
 	void setModel(glm::mat4 newModel);
-	Model getModel();
+	ModelMatrix getModel();
 	int getTexId() { return texId; }
 
 	int getVertexCount();
@@ -33,7 +33,7 @@ public:
 	~Mesh();
 
 private:
-	Model model;
+	ModelMatrix model;
 
 	int texId;
 

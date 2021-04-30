@@ -10,10 +10,14 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 #include <glm/gtc/matrix_transform.hpp>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 #include "Vendor/STB/stb_image.h"
 #include "Utilities.h"
 #include "Mesh.h"
+#include "Model.h"
 
 class VulkanRenderer
 {
@@ -24,13 +28,14 @@ public:
 	int init(GLFWwindow* newWindow);
 
 	void updateModel(int modelId, glm::mat4 newModel);
+	int createMeshModel(std::string modelFile);
 
 	void setupDebugMessenger();
 	void draw();
 	void cleanup();
 	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
 	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
-	
+
 	~VulkanRenderer();
 
 private:
@@ -39,7 +44,7 @@ private:
 	int currentFrame = 0;
 
 	//scene objects
-	std::vector<Mesh> meshList;
+	std::vector<Model> modelList;
 
 	//scene settings
 	struct UboViewProjection {
