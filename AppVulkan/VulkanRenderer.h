@@ -19,6 +19,7 @@
 #include "Mesh.h"
 #include "Model.h"
 #include "Camera.h"
+#include "Window.h"
 
 class VulkanRenderer
 {
@@ -26,7 +27,7 @@ public:
 
 	VulkanRenderer();
 
-	int init(GLFWwindow* newWindow);
+	int init(std::string wName = "Default Window", const int width = 800, const int height = 600);
 
 	void updateModel(int modelId, glm::mat4 newModel);
 	int createMeshModel(std::string modelFile);
@@ -38,9 +39,10 @@ public:
 	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 
 	~VulkanRenderer();
+	//GLFWwindow* window;//temp
+	Window window;
 
 private:
-	GLFWwindow* window;
 
 	Camera camera;
 

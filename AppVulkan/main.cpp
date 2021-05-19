@@ -2,27 +2,13 @@
 #include<iostream>
 #include "VulkanRenderer.h"
 
-GLFWwindow* window;
 VulkanRenderer vulkanRenderer;
 
-void initWindow(std::string wName = "Test window", const int width = 800, const int height = 600)
-{
-	//initialize glfw
-	//should check for error here later
-	glfwInit();
-
-	//set glfw to not work iwth opengl
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
-	window = glfwCreateWindow(width, height, wName.c_str(), nullptr, nullptr);
-}
 
 int main()
 {
-	initWindow();
 
-	if (vulkanRenderer.init(window) == EXIT_FAILURE)
+	if (vulkanRenderer.init() == EXIT_FAILURE)
 	{
 		return EXIT_FAILURE;
 	}
@@ -33,7 +19,7 @@ int main()
 
 	int ind = vulkanRenderer.createMeshModel("Models/12140_Skull_v3_L2.obj");
 
-	while (!glfwWindowShouldClose(window))
+	while (!glfwWindowShouldClose(vulkanRenderer.window.window))
 	{
 		glfwPollEvents();
 
@@ -52,9 +38,6 @@ int main()
 	}
 
 	vulkanRenderer.cleanup();
-
-	glfwDestroyWindow(window);
-	glfwTerminate();
 
 	return 0;
 }

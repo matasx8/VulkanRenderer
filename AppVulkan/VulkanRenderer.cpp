@@ -1,4 +1,3 @@
-//TODO: find out if there's a better way to query vulkan for info than to do it twice
 #include "VulkanRenderer.h"
 #include <iostream>
 
@@ -6,9 +5,10 @@ VulkanRenderer::VulkanRenderer()
 {
 }
 
-int VulkanRenderer::init(GLFWwindow* newWindow)
+int VulkanRenderer::init(std::string wName, const int width, const int height)
 {
-    window = newWindow;
+    if (window.Initialise(wName, width, height) == -1)
+        throw std::runtime_error("Failed to initialize window!\n");
 
     try
     {
@@ -347,7 +347,9 @@ VkExtent2D VulkanRenderer::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& surf
     else
     {//if value can vary, need to set manually
         int width, height;//get window size
-        glfwGetFramebufferSize(window, &width, &height);
+        height = (int)window.getBufferHeigt();
+        width = (int)window.getBufferWidth();
+        //glfwGetFramebufferSize(window, &width, &height);
 
         //create new extent using window size
         VkExtent2D newExtent = {};
@@ -1367,7 +1369,7 @@ void VulkanRenderer::createLogicalDevice()
 void VulkanRenderer::createSurface()
 {
     //creating a surface create info struct specific to OS
-    VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
+    VkResult result = glfwCreateWindowSurface(instance, window.window, nullptr, &surface);
 
     if (result != VK_SUCCESS)
     {
