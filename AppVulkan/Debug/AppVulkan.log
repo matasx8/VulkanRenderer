@@ -1,5 +1,0 @@
-﻿  main.cpp
-C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Window.h(14,34): warning C4244: 'return': conversion from 'int' to 'float', possible loss of data
-C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Window.h(15,34): warning C4244: 'return': conversion from 'int' to 'float', possible loss of data
-C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\main.cpp(26,13): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  AppVulkan.vcxproj -> C:\Users\mtunk\source\repos\AppVulkan\Debug\AppVulkan.exe
