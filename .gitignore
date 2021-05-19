@@ -35,4 +35,5 @@
 # custom
 Debug
 Release
-./External Libs/GLM/glm/doc
+External Libs/GLM/glm/doc
+External Libs/GLFW/docs
