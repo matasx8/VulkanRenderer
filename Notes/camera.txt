@@ -1,3 +1,4 @@
+[2021-05-19]
 Make sure if the uniforms we're using for the VP are able to change?
 Seems like it's alright? investigate more
 
@@ -6,4 +7,14 @@ Push constants are being used for the model matrices.. How should we handle the 
 Alright so seems like descriptor sets are used to map information in memory 
 and we can change that information which is great
 
-Now make the camera movement work, test it out and then implement it
+Now make the camera movement work, test it out and then implement it.
+1. Seems like we should update camera in draw() maybe?
+2. Also seems like we need to create a class for window stuff
+	2.1 Just in case I want to implement GL in the future some solutions:
+	    2.1.1 The Renderer should take in a window as a param in constr.
+	    2.1.2 The renderer should construct a window in iself, because
+		  the window contains the context and I'll need to recreate it for
+		  other APIs. And if I'm making an API for my renderer then it will
+		  have everything in one class.
+	    Yeah I think I will pick nr 2.
+   Seems like Window class works great so far. Need to implement camera now
