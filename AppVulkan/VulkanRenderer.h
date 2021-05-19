@@ -18,6 +18,7 @@
 #include "Utilities.h"
 #include "Mesh.h"
 #include "Model.h"
+#include "Camera.h"
 
 class VulkanRenderer
 {
@@ -40,6 +41,8 @@ public:
 
 private:
 	GLFWwindow* window;
+
+	Camera camera;
 
 	int currentFrame = 0;
 
@@ -146,6 +149,7 @@ private:
 	int createTexture(std::string fileName);
 	void createTextureSampler();
 	int createTextureDescriptor(VkImageView textureImage);
+	void createCamera();
 
 	void updateUniformBuffers(uint32_t index);
 

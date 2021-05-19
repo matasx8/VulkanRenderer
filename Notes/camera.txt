@@ -1,0 +1,9 @@
+Make sure if the uniforms we're using for the VP are able to change?
+Seems like it's alright? investigate more
+
+Push constants are being used for the model matrices.. How should we handle the view matrix?
+
+Alright so seems like descriptor sets are used to map information in memory 
+and we can change that information which is great
+
+Now make the camera movement work, test it out and then implement it

@@ -27,6 +27,7 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
         createCommandPool();
         createCommandBuffers();
         createTextureSampler();
+        createCamera();
         //allocateDynamicBufferTransferSpace();
         createUniformBuffers();
         createDescriptorPool();
@@ -71,6 +72,8 @@ void VulkanRenderer::setupDebugMessenger()
 
 void VulkanRenderer::draw()
 {
+    //update camera?
+    //camera.keyControl()
     //wait for given fence to signal open from last draw before xontinuing
     vkWaitForFences(mainDevice.logicalDevice, 1, &drawFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
     //manually reset close fences
@@ -81,6 +84,8 @@ void VulkanRenderer::draw()
     vkAcquireNextImageKHR(mainDevice.logicalDevice, swapchain, std::numeric_limits<uint64_t>::max(), imageAvailable[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
     recordCommands(imageIndex);
+    //change the VP ubo here
+
     updateUniformBuffers(imageIndex);
 
     // submit command bufferto queue for execution, making sure it waits for the image to be signalled as available before drawing
@@ -1162,6 +1167,11 @@ int VulkanRenderer::createTextureDescriptor(VkImageView textureImage)
     
 }
 
+void VulkanRenderer::createCamera()
+{
+    camera = Camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), -60.0f, 0.0f, 5.0f, 0.5f);
+}
+
 int VulkanRenderer::createMeshModel(std::string modelFile)
 {
     // import model "scene"
@@ -1203,6 +1213,7 @@ int VulkanRenderer::createMeshModel(std::string modelFile)
 
 void VulkanRenderer::updateUniformBuffers(uint32_t index)
 {
+    //do the transformations here or before calling this func
     // copy vp data
     void* data;
     vkMapMemory(mainDevice.logicalDevice, vpUniformBufferMemory[index], 0, sizeof(UboViewProjection), 0, &data);
