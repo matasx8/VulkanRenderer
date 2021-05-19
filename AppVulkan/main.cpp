@@ -26,6 +26,7 @@ int main()
 		float now = glfwGetTime();
 		deltaTime = now - lastTime;
 		lastTime = now;
+		//printf("%fms\n", deltaTime * 1000);
 
 		angle += 10.f * deltaTime;
 		if (angle > 360.0f) { angle -= 360.0f; }
@@ -34,7 +35,7 @@ int main()
 		testMat = glm::rotate(testMat, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		vulkanRenderer.updateModel(ind, testMat);
 
-		vulkanRenderer.draw();
+		vulkanRenderer.draw(deltaTime);
 	}
 
 	vulkanRenderer.cleanup();

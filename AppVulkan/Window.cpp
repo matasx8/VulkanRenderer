@@ -8,7 +8,7 @@ Window::Window()
 	xChange = 0.0f;
 	yChange = 0.0f;
 
-	mHandleMouse = true;
+	mHandleMouse = false;
 }
 
 int Window::Initialise(std::string wName, const int width, const int height)
@@ -26,6 +26,9 @@ int Window::Initialise(std::string wName, const int width, const int height)
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     window = glfwCreateWindow(width, height, wName.c_str(), nullptr, nullptr);
+
+	glfwSetWindowUserPointer(window, this);//this class
+	createCallbacks();
 	return 1;
 }
 
@@ -54,8 +57,13 @@ float Window::getYchange()
 }
 void Window::handleKeys(GLFWwindow* window, int key, int code, int action, int mode)
 {
-
+	//we set the user pointer, now we can get it so we can get the instance in a static func
 	Window* theWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
+	if (theWindow == nullptr)
+	{
+		printf("Error! glfw window was null!");
+		exit(123);
+	}
 
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 	{

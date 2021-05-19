@@ -70,10 +70,11 @@ void VulkanRenderer::setupDebugMessenger()
     }
 }
 
-void VulkanRenderer::draw()
+void VulkanRenderer::draw(float dt)
 {
     //update camera?
-    //camera.keyControl()
+    camera.keyControl(window.getKeys(), dt);
+    camera.mouseControl(window.getXChange(), window.getYchange());
     //wait for given fence to signal open from last draw before xontinuing
     vkWaitForFences(mainDevice.logicalDevice, 1, &drawFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
     //manually reset close fences
@@ -1171,7 +1172,7 @@ int VulkanRenderer::createTextureDescriptor(VkImageView textureImage)
 
 void VulkanRenderer::createCamera()
 {
-    camera = Camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), -60.0f, 0.0f, 5.0f, 0.5f);
+    camera = Camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), -60.0f, 0.0f, 20.0f, 0.5f);
 }
 
 int VulkanRenderer::createMeshModel(std::string modelFile)
@@ -1216,6 +1217,7 @@ int VulkanRenderer::createMeshModel(std::string modelFile)
 void VulkanRenderer::updateUniformBuffers(uint32_t index)
 {
     //do the transformations here or before calling this func
+    uboViewProjection.view = camera.calculateViewMatrix();
     // copy vp data
     void* data;
     vkMapMemory(mainDevice.logicalDevice, vpUniformBufferMemory[index], 0, sizeof(UboViewProjection), 0, &data);

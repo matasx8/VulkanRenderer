@@ -2,20 +2,4 @@
 C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Window.h(14,34): warning C4244: 'return': conversion from 'int' to 'float', possible loss of data
 C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Window.h(15,34): warning C4244: 'return': conversion from 'int' to 'float', possible loss of data
 C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\main.cpp(26,13): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  VulkanRenderer.cpp
-C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Window.h(14,34): warning C4244: 'return': conversion from 'int' to 'float', possible loss of data
-C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Window.h(15,34): warning C4244: 'return': conversion from 'int' to 'float', possible loss of data
-C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\VulkanRenderer.cpp(56,17): warning C4018: '>=': signed/unsigned mismatch
-  Window.cpp
-C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Window.h(14,34): warning C4244: 'return': conversion from 'int' to 'float', possible loss of data
-C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Window.h(15,34): warning C4244: 'return': conversion from 'int' to 'float', possible loss of data
-C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Window.cpp(92,22): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Window.cpp(93,22): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Window.cpp(97,28): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Window.cpp(98,40): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Window.cpp(100,21): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Window.cpp(101,21): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-  Generating Code...
-C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Utilities.h(84): warning C4715: 'findMemoryTypeIndex': not all control paths return a value
-LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
   AppVulkan.vcxproj -> C:\Users\mtunk\source\repos\AppVulkan\Debug\AppVulkan.exe
