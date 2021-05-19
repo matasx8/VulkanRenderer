@@ -31,3 +31,8 @@
 *.exe
 *.out
 *.app
+
+# custom
+Debug
+Release
+./Libs/GLM/glm/doc
