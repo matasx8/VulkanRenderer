@@ -18,6 +18,8 @@
 #include "Utilities.h"
 #include "Mesh.h"
 #include "Model.h"
+#include "Camera.h"
+#include "Window.h"
 
 class VulkanRenderer
 {
@@ -25,21 +27,24 @@ public:
 
 	VulkanRenderer();
 
-	int init(GLFWwindow* newWindow);
+	int init(std::string wName = "Default Window", const int width = 800, const int height = 600);
 
 	void updateModel(int modelId, glm::mat4 newModel);
 	int createMeshModel(std::string modelFile);
 
 	void setupDebugMessenger();
-	void draw();
+	void draw(float dt);
 	void cleanup();
 	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
 	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 
 	~VulkanRenderer();
+	//GLFWwindow* window;//temp
+	Window window;
 
 private:
-	GLFWwindow* window;
+
+	Camera camera;
 
 	int currentFrame = 0;
 
@@ -146,6 +151,7 @@ private:
 	int createTexture(std::string fileName);
 	void createTextureSampler();
 	int createTextureDescriptor(VkImageView textureImage);
+	void createCamera();
 
 	void updateUniformBuffers(uint32_t index);
 

@@ -1,4 +1,3 @@
-//TODO: find out if there's a better way to query vulkan for info than to do it twice
 #include "VulkanRenderer.h"
 #include <iostream>
 
@@ -6,9 +5,10 @@ VulkanRenderer::VulkanRenderer()
 {
 }
 
-int VulkanRenderer::init(GLFWwindow* newWindow)
+int VulkanRenderer::init(std::string wName, const int width, const int height)
 {
-    window = newWindow;
+    if (window.Initialise(wName, width, height) == -1)
+        throw std::runtime_error("Failed to initialize window!\n");
 
     try
     {
@@ -27,6 +27,7 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
         createCommandPool();
         createCommandBuffers();
         createTextureSampler();
+        createCamera();
         //allocateDynamicBufferTransferSpace();
         createUniformBuffers();
         createDescriptorPool();
@@ -69,8 +70,11 @@ void VulkanRenderer::setupDebugMessenger()
     }
 }
 
-void VulkanRenderer::draw()
+void VulkanRenderer::draw(float dt)
 {
+    //update camera?
+    camera.keyControl(window.getKeys(), dt);
+    camera.mouseControl(window.getXChange(), window.getYchange());
     //wait for given fence to signal open from last draw before xontinuing
     vkWaitForFences(mainDevice.logicalDevice, 1, &drawFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
     //manually reset close fences
@@ -81,6 +85,8 @@ void VulkanRenderer::draw()
     vkAcquireNextImageKHR(mainDevice.logicalDevice, swapchain, std::numeric_limits<uint64_t>::max(), imageAvailable[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
     recordCommands(imageIndex);
+    //change the VP ubo here
+
     updateUniformBuffers(imageIndex);
 
     // submit command bufferto queue for execution, making sure it waits for the image to be signalled as available before drawing
@@ -342,7 +348,9 @@ VkExtent2D VulkanRenderer::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& surf
     else
     {//if value can vary, need to set manually
         int width, height;//get window size
-        glfwGetFramebufferSize(window, &width, &height);
+        height = (int)window.getBufferHeigt();
+        width = (int)window.getBufferWidth();
+        //glfwGetFramebufferSize(window, &width, &height);
 
         //create new extent using window size
         VkExtent2D newExtent = {};
@@ -1162,6 +1170,11 @@ int VulkanRenderer::createTextureDescriptor(VkImageView textureImage)
     
 }
 
+void VulkanRenderer::createCamera()
+{
+    camera = Camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), -60.0f, 0.0f, 20.0f, 0.5f);
+}
+
 int VulkanRenderer::createMeshModel(std::string modelFile)
 {
     // import model "scene"
@@ -1203,6 +1216,8 @@ int VulkanRenderer::createMeshModel(std::string modelFile)
 
 void VulkanRenderer::updateUniformBuffers(uint32_t index)
 {
+    //do the transformations here or before calling this func
+    uboViewProjection.view = camera.calculateViewMatrix();
     // copy vp data
     void* data;
     vkMapMemory(mainDevice.logicalDevice, vpUniformBufferMemory[index], 0, sizeof(UboViewProjection), 0, &data);
@@ -1356,7 +1371,7 @@ void VulkanRenderer::createLogicalDevice()
 void VulkanRenderer::createSurface()
 {
     //creating a surface create info struct specific to OS
-    VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
+    VkResult result = glfwCreateWindowSurface(instance, window.window, nullptr, &surface);
 
     if (result != VK_SUCCESS)
     {
