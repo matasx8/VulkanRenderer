@@ -1,0 +1,6 @@
+[2021-05-20]
+Alright goal - make some wacky effect with a shader.
+Seems like I will need to change quite a few things in the C++ side.
+Will probably just play around and should implement some shader system better later
+
+Managed to make wacky effect wtih frgment shader, not so much with vertex shader

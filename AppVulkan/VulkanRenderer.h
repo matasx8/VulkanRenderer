@@ -43,20 +43,18 @@ public:
 	Window window;
 
 private:
+	//--Variables----------------------------------------------------------------------------------------------
 
 	Camera camera;
-
 	int currentFrame = 0;
-
+	float time;
 	//scene objects
 	std::vector<Model> modelList;
-
 	//scene settings
 	struct UboViewProjection {
 		glm::mat4 projection;
 		glm::mat4 view;
 	} uboViewProjection;
-
 	const std::vector<const char*> validationLayers = {
 "VK_LAYER_KHRONOS_validation"
 	};
@@ -66,7 +64,6 @@ private:
 #else
 	const bool enableValidationLayers = true;
 #endif
-
 	VkInstance instance;
 	VkDebugUtilsMessengerEXT debugMessenger;
 	struct {
@@ -80,17 +77,14 @@ private:
 	std::vector<SwapChainImage> swapChainImages;
 	std::vector<VkFramebuffer> swapchainFramebuffers;
 	std::vector<VkCommandBuffer> commandBuffer;
-
 	VkImage depthBufferImage;
 	VkDeviceMemory depthBufferImageMemory;
 	VkImageView depthBufferImageView;
 	VkSampler textureSampler;
-
 	//assets
 	std::vector<VkImage> textureImages;
 	std::vector<VkDeviceMemory> textureImageMemory;//would be better to have a single buffer, and images reference offsets
 	std::vector<VkImageView> textureImageViews;
-
 	//descriptors
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorSetLayout samplerSetLayout;
@@ -99,7 +93,6 @@ private:
 	VkDescriptorPool samplerDescriptorPool;
 	std::vector<VkDescriptorSet> descriptorSets;
 	std::vector<VkDescriptorSet> samplerDescriptorSets;
-
 
 	std::vector<VkBuffer> vpUniformBuffer;
 	std::vector<VkDeviceMemory> vpUniformBufferMemory;

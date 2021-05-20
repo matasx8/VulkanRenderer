@@ -9,6 +9,7 @@
 
 struct ModelMatrix {
 	glm::mat4 model;
+		float time;
 };
 
 class Mesh

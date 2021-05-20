@@ -72,6 +72,7 @@ void VulkanRenderer::setupDebugMessenger()
 
 void VulkanRenderer::draw(float dt)
 {
+    time += dt;
     //update camera?
     camera.keyControl(window.getKeys(), dt);
     camera.mouseControl(window.getXChange(), window.getYchange());
@@ -1284,7 +1285,8 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
     {
         Model thisModel = modelList[j];
         //push constants to given shader stage directly
-        vkCmdPushConstants(commandBuffer[currentImage], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ModelMatrix), &thisModel.getModel());
+        ModelMatrix mnt = { thisModel.getModel(), time};
+        vkCmdPushConstants(commandBuffer[currentImage], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ModelMatrix), &mnt);
 
         for (size_t k = 0; k < thisModel.getMeshCount(); k++)
         {
@@ -1629,12 +1631,12 @@ bool VulkanRenderer::checkDeviceExtensionSupport(VkPhysicalDevice device)
 
 bool VulkanRenderer::checkDeviceSuitable(VkPhysicalDevice device)
 {
-    /*
+    
     //info about device itself
     VkPhysicalDeviceProperties deviceProperties;
     vkGetPhysicalDeviceProperties(device, &deviceProperties);
-    /*
-    //info about what the device can do*/
+    
+    //info about what the device can do
     VkPhysicalDeviceFeatures deviceFeatures;
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
     
