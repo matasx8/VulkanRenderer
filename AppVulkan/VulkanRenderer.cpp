@@ -28,6 +28,7 @@ int VulkanRenderer::init(std::string wName, const int width, const int height)
         createCommandBuffers();
         createTextureSampler();
         createCamera();
+        createLight();
         //allocateDynamicBufferTransferSpace();
         createUniformBuffers();
         createDescriptorPool();
@@ -162,6 +163,10 @@ void VulkanRenderer::cleanup()
     {
         vkDestroyBuffer(mainDevice.logicalDevice, vpUniformBuffer[i], nullptr);
         vkFreeMemory(mainDevice.logicalDevice, vpUniformBufferMemory[i], nullptr);
+        vkDestroyBuffer(mainDevice.logicalDevice, lightsUniformBuffer[i], nullptr);
+        vkFreeMemory(mainDevice.logicalDevice, lightsUniformBufferMemory[i], nullptr);
+        vkDestroyBuffer(mainDevice.logicalDevice, cameraUniformBuffer[i], nullptr);
+        vkFreeMemory(mainDevice.logicalDevice, cameraUniformBufferMemory[i], nullptr);
        // vkDestroyBuffer(mainDevice.logicalDevice, modelDUniformBuffer[i], nullptr);
        // vkFreeMemory(mainDevice.logicalDevice, modelDUniformBufferMemory[i], nullptr);
     }
@@ -532,15 +537,22 @@ void VulkanRenderer::createDescriptorSetLayout()
     vpLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT; // shader stage to bind to
     vpLayoutBinding.pImmutableSamplers = nullptr; // for texture- can make the sampler immutable, the imageview it samples from can still be changed
 
-    // model binding info
-    /*VkDescriptorSetLayoutBinding modelLayoutBinding = {};
-    modelLayoutBinding.binding = 1;
-    modelLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    modelLayoutBinding.descriptorCount = 1;
-    modelLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    modelLayoutBinding.pImmutableSamplers = nullptr;*/
+    VkDescriptorSetLayoutBinding lightsLayoutBinding = {};
+    lightsLayoutBinding.binding = 1;
+    lightsLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    lightsLayoutBinding.descriptorCount = 1;
+    lightsLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    lightsLayoutBinding.pImmutableSamplers = nullptr;
 
-    std::vector<VkDescriptorSetLayoutBinding> layoutBindings = { vpLayoutBinding };
+    VkDescriptorSetLayoutBinding cameraLayoutBinding = {};
+    cameraLayoutBinding.binding = 2;
+    cameraLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    cameraLayoutBinding.descriptorCount = 1;
+    cameraLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    cameraLayoutBinding.pImmutableSamplers = nullptr;
+    
+
+    std::vector<VkDescriptorSetLayoutBinding> layoutBindings = { vpLayoutBinding, lightsLayoutBinding, cameraLayoutBinding };
 
     // create descriptor set layout with given bidnings
     VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
@@ -624,11 +636,12 @@ void VulkanRenderer::createGraphicsPipeline()
     attributeDescriptions[0].location = 0; //location in shader where data will be read from
     attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT; //format the data will take (also helps define the size)
     attributeDescriptions[0].offset = offsetof(Vertex, pos); // where this attribute is defines in the data for a single vertex
-    //color attribute
+    //normal attribute
+    //we don't need colour now so just put in the normals
     attributeDescriptions[1].binding = 0;
     attributeDescriptions[1].location = 1;
     attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attributeDescriptions[1].offset = offsetof(Vertex, col);
+    attributeDescriptions[1].offset = offsetof(Vertex, norm);
     //texture attribute
     attributeDescriptions[2].binding = 0;
     attributeDescriptions[2].location = 2;
@@ -905,6 +918,8 @@ void VulkanRenderer::createUniformBuffers()
 {
     // ViewProjection buffer size
     VkDeviceSize vpBufferSize = sizeof(UboViewProjection);
+    VkDeviceSize lightsBufferSize = sizeof(Light) * lights.size();
+    VkDeviceSize cameraBufferSize = sizeof(glm::vec3);
 
     // model buffer size
     //VkDeviceSize modelBufferSize = modelUniformAlignment * MAX_OBJECTS;
@@ -912,8 +927,10 @@ void VulkanRenderer::createUniformBuffers()
     // one uniform buffer for each image (and by extension, comman buffer)
     vpUniformBuffer.resize(swapChainImages.size());
     vpUniformBufferMemory.resize(swapChainImages.size());
-    //modelDUniformBuffer.resize(swapChainImages.size());
-    //modelDUniformBufferMemory.resize(swapChainImages.size());
+    lightsUniformBuffer.resize(swapChainImages.size());
+    lightsUniformBufferMemory.resize(swapChainImages.size());
+    cameraUniformBuffer.resize(swapChainImages.size());
+    cameraUniformBufferMemory.resize(swapChainImages.size());
 
     //create uniform buffers
     for (size_t i = 0; i < swapChainImages.size(); i++)
@@ -921,9 +938,12 @@ void VulkanRenderer::createUniformBuffers()
         createBuffer(mainDevice.physicalDevice, mainDevice.logicalDevice, vpBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &vpUniformBuffer[i], &vpUniformBufferMemory[i]);
 
-       /* createBuffer(mainDevice.physicalDevice, mainDevice.logicalDevice, modelBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &modelDUniformBuffer[i], &modelDUniformBufferMemory[i]);
-   */ }
+        createBuffer(mainDevice.physicalDevice, mainDevice.logicalDevice, lightsBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &lightsUniformBuffer[i], &lightsUniformBufferMemory[i]);
+       
+        createBuffer(mainDevice.physicalDevice, mainDevice.logicalDevice, cameraBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &cameraUniformBuffer[i], &cameraUniformBufferMemory[i]);
+    }
 }
 
 void VulkanRenderer::createDescriptorPool()
@@ -934,11 +954,19 @@ void VulkanRenderer::createDescriptorPool()
     vpPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     vpPoolSize.descriptorCount = static_cast<uint32_t>(vpUniformBuffer.size());
 
+    VkDescriptorPoolSize lightsPoolSize = {};
+    lightsPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    lightsPoolSize.descriptorCount = static_cast<uint32_t>(lightsUniformBuffer.size());
+
+    VkDescriptorPoolSize cameraPoolSize = {};
+    cameraPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    cameraPoolSize.descriptorCount = static_cast<uint32_t>(cameraUniformBuffer.size());
+
    /* VkDescriptorPoolSize modelPoolSize = {};
     modelPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     modelPoolSize.descriptorCount = static_cast<uint32_t>(modelDUniformBuffer.size());*/
 
-    std::vector<VkDescriptorPoolSize> descriptorPoolSizes = { vpPoolSize };
+    std::vector<VkDescriptorPoolSize> descriptorPoolSizes = { vpPoolSize, lightsPoolSize, cameraPoolSize };
 
     VkDescriptorPoolCreateInfo poolCreateInfo = {};
     poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -1010,6 +1038,36 @@ void VulkanRenderer::createDescriptorSets()
         vpSetWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; // type of descriptor
         vpSetWrite.descriptorCount = 1; // amount to update
         vpSetWrite.pBufferInfo = &vpBufferInfo; // info about buffer data to bind
+//-----
+        VkDescriptorBufferInfo lightsBufferInfo = {};
+        lightsBufferInfo.buffer = lightsUniformBuffer[i]; // buffer to get data from
+        lightsBufferInfo.offset = 0; // position of start of data
+        lightsBufferInfo.range = sizeof(Light) * lights.size(); // sizeof data
+
+        //data about connection between binding and buffer
+        VkWriteDescriptorSet lightsSetWrite = {};
+        lightsSetWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        lightsSetWrite.dstSet = descriptorSets[i]; // descriptor set to update
+        lightsSetWrite.dstBinding = 1; // binding to update
+        lightsSetWrite.dstArrayElement = 0; // index in array to update
+        lightsSetWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; // type of descriptor
+        lightsSetWrite.descriptorCount = 1; // amount to update
+        lightsSetWrite.pBufferInfo = &lightsBufferInfo; // info about buffer data to bind
+        //-------------
+        VkDescriptorBufferInfo cameraBufferInfo = {};
+        cameraBufferInfo.buffer = cameraUniformBuffer[i]; // buffer to get data from
+        cameraBufferInfo.offset = 0; // position of start of data
+        cameraBufferInfo.range = sizeof(glm::vec3); // sizeof data
+
+        //data about connection between binding and buffer
+        VkWriteDescriptorSet cameraSetWrite = {};
+        cameraSetWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        cameraSetWrite.dstSet = descriptorSets[i]; // descriptor set to update
+        cameraSetWrite.dstBinding = 2; // binding to update
+        cameraSetWrite.dstArrayElement = 0; // index in array to update
+        cameraSetWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; // type of descriptor
+        cameraSetWrite.descriptorCount = 1; // amount to update
+        cameraSetWrite.pBufferInfo = &cameraBufferInfo; // info about buffer data to bind
 
         ////model descriptor
         //// model buffer binding info
@@ -1028,7 +1086,7 @@ void VulkanRenderer::createDescriptorSets()
         modelSetWrite.pBufferInfo = &modelBufferInfo;*/
 
         // list of descriptor set writes
-        std::vector<VkWriteDescriptorSet> setWrites = { vpSetWrite};
+        std::vector<VkWriteDescriptorSet> setWrites = { vpSetWrite, lightsSetWrite, cameraSetWrite};
 
         //update the descriptor sets with new buffer/binding info
         vkUpdateDescriptorSets(mainDevice.logicalDevice, static_cast<uint32_t>(setWrites.size()), setWrites.data(), 0, nullptr);
@@ -1175,11 +1233,17 @@ void VulkanRenderer::createCamera()
     camera = Camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), -60.0f, 0.0f, 20.0f, 0.5f);
 }
 
+void VulkanRenderer::createLight()
+{
+    //create a light. Currently we will only use this one but I should add support for multiple lights later
+    lights.push_back(Light(glm::vec3(50.0f, 10.0f, 10.0f)));
+}
+
 int VulkanRenderer::createMeshModel(std::string modelFile)
 {
     // import model "scene"
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(modelFile, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
+    const aiScene* scene = importer.ReadFile(modelFile, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals | aiProcess_JoinIdenticalVertices);
     if (!scene)
     {
         throw std::runtime_error("Failed to load model! (" + modelFile + ")");
@@ -1223,6 +1287,14 @@ void VulkanRenderer::updateUniformBuffers(uint32_t index)
     vkMapMemory(mainDevice.logicalDevice, vpUniformBufferMemory[index], 0, sizeof(UboViewProjection), 0, &data);
     memcpy(data, &uboViewProjection, sizeof(UboViewProjection));
     vkUnmapMemory(mainDevice.logicalDevice, vpUniformBufferMemory[index]);
+
+    vkMapMemory(mainDevice.logicalDevice, lightsUniformBufferMemory[index], 0, sizeof(Light) * lights.size(), 0, &data);
+    memcpy(data, lights.data(), sizeof(Light) * lights.size());
+    vkUnmapMemory(mainDevice.logicalDevice, lightsUniformBufferMemory[index]);
+
+    vkMapMemory(mainDevice.logicalDevice, cameraUniformBufferMemory[index], 0, sizeof(glm::vec3), 0, &data);
+    memcpy(data, &camera.getCameraPosition(), sizeof(glm::vec3));//hmm
+    vkUnmapMemory(mainDevice.logicalDevice, cameraUniformBufferMemory[index]);
 
     /*
     //copy model data
@@ -1629,12 +1701,12 @@ bool VulkanRenderer::checkDeviceExtensionSupport(VkPhysicalDevice device)
 
 bool VulkanRenderer::checkDeviceSuitable(VkPhysicalDevice device)
 {
-    /*
+    
     //info about device itself
     VkPhysicalDeviceProperties deviceProperties;
     vkGetPhysicalDeviceProperties(device, &deviceProperties);
-    /*
-    //info about what the device can do*/
+    
+    //info about what the device can do
     VkPhysicalDeviceFeatures deviceFeatures;
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
     

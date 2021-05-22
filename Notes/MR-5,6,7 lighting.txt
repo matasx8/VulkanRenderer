@@ -1,0 +1,20 @@
+[2021-05-21]
+Seems like for specular lighting we need a uniform for camera position to calculate
+viewing angle so might aswell add the light parameter uniforms. 
+
+Also currently wht I have is a non degrading point light
+, should make it a directional light
+
+Need to add light position and camera pos
+Added light uniforms but forgot to add camera..
+
+For some reason the values are not going through. Fixed
+
+Now add the goshdarn camera uniforms..
+
+
+[2021-05-20]
+Alright so we need to make sure we have the normals
+
+I guess we don't need vertex colour with our current shader so it 
+would be good enough to just replace the colour with normals

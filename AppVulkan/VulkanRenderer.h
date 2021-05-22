@@ -20,6 +20,7 @@
 #include "Model.h"
 #include "Camera.h"
 #include "Window.h"
+#include "Light.h"
 
 class VulkanRenderer
 {
@@ -45,6 +46,7 @@ public:
 private:
 
 	Camera camera;
+	std::vector<Light> lights;
 
 	int currentFrame = 0;
 
@@ -103,6 +105,10 @@ private:
 
 	std::vector<VkBuffer> vpUniformBuffer;
 	std::vector<VkDeviceMemory> vpUniformBufferMemory;
+	std::vector<VkBuffer> lightsUniformBuffer;
+	std::vector<VkDeviceMemory> lightsUniformBufferMemory;
+	std::vector<VkBuffer> cameraUniformBuffer;
+	std::vector<VkDeviceMemory> cameraUniformBufferMemory;
 
 	std::vector<VkBuffer> modelDUniformBuffer;
 	std::vector<VkDeviceMemory> modelDUniformBufferMemory;
@@ -152,6 +158,7 @@ private:
 	void createTextureSampler();
 	int createTextureDescriptor(VkImageView textureImage);
 	void createCamera();
+	void createLight();
 
 	void updateUniformBuffers(uint32_t index);
 
