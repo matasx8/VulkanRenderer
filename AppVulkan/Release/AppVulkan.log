@@ -1,4 +1,5 @@
 ﻿  Camera.cpp
+  Light.cpp
   main.cpp
 C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Window.h(14,34): warning C4244: 'return': conversion from 'int' to 'float', possible loss of data
 C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Window.h(15,34): warning C4244: 'return': conversion from 'int' to 'float', possible loss of data
@@ -8,7 +9,7 @@ C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\main.cpp(26,13): warning C4244: 
   VulkanRenderer.cpp
 C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Window.h(14,34): warning C4244: 'return': conversion from 'int' to 'float', possible loss of data
 C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Window.h(15,34): warning C4244: 'return': conversion from 'int' to 'float', possible loss of data
-C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\VulkanRenderer.cpp(56,17): warning C4018: '>=': signed/unsigned mismatch
+C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\VulkanRenderer.cpp(57,17): warning C4018: '>=': signed/unsigned mismatch
   Window.cpp
 C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Window.h(14,34): warning C4244: 'return': conversion from 'int' to 'float', possible loss of data
 C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Window.h(15,34): warning C4244: 'return': conversion from 'int' to 'float', possible loss of data
@@ -19,10 +20,9 @@ C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Window.cpp(106,40): warning C424
 C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Window.cpp(108,21): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
 C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Window.cpp(109,21): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
   Generating code
-C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Utilities.h(84): warning C4715: 'findMemoryTypeIndex': not all control paths return a value
-C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Utilities.h(84): warning C4715: 'findMemoryTypeIndex': not all control paths return a value
-  1456 of 1571 functions (92.7%) were compiled, the rest were copied from previous compilation.
-    1278 functions were new in current compilation
-    22 functions had inline decision re-evaluated but remain unchanged
+  Previous IPDB not found, fall back to full compilation.
+C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Utilities.h(85): warning C4715: 'findMemoryTypeIndex': not all control paths return a value
+C:\Users\mtunk\source\repos\AppVulkan\AppVulkan\Utilities.h(85): warning C4715: 'findMemoryTypeIndex': not all control paths return a value
+  All 1616 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   Finished generating code
   AppVulkan.vcxproj -> C:\Users\mtunk\source\repos\AppVulkan\Release\AppVulkan.exe

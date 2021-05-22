@@ -118,8 +118,9 @@ Mesh Model::LoadMesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQ
 			vertices[i].tex = {0.0f, 0.0f};
 		}
 
+		vertices[i].norm = { mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z };//do i need to invert?
 		//set color (just use white for now)
-		vertices[i].col = { 1.0f, 1.0f, 1.0f };
+		//vertices[i].col = { 1.0f, 1.0f, 1.0f };
 	}
 
 	// iterate over indices through faces and copy across
