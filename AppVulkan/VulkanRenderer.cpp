@@ -76,6 +76,7 @@ void VulkanRenderer::draw(float dt)
     //update camera?
     camera.keyControl(window.getKeys(), dt);
     camera.mouseControl(window.getXChange(), window.getYchange());
+    lights[0].debugInput(window.getKeys(), dt);
     //wait for given fence to signal open from last draw before xontinuing
     vkWaitForFences(mainDevice.logicalDevice, 1, &drawFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
     //manually reset close fences
@@ -918,7 +919,7 @@ void VulkanRenderer::createUniformBuffers()
 {
     // ViewProjection buffer size
     VkDeviceSize vpBufferSize = sizeof(UboViewProjection);
-    VkDeviceSize lightsBufferSize = sizeof(Light) * lights.size();
+    VkDeviceSize lightsBufferSize = Light::getDataSize() * lights.size();
     VkDeviceSize cameraBufferSize = sizeof(glm::vec3);
 
     // model buffer size
@@ -1236,7 +1237,7 @@ void VulkanRenderer::createCamera()
 void VulkanRenderer::createLight()
 {
     //create a light. Currently we will only use this one but I should add support for multiple lights later
-    lights.push_back(Light(glm::vec3(50.0f, 10.0f, 10.0f)));
+    lights.push_back(Light(glm::vec3(50.0f, 0.0f, 1.0f)));
 }
 
 int VulkanRenderer::createMeshModel(std::string modelFile)
@@ -1288,8 +1289,9 @@ void VulkanRenderer::updateUniformBuffers(uint32_t index)
     memcpy(data, &uboViewProjection, sizeof(UboViewProjection));
     vkUnmapMemory(mainDevice.logicalDevice, vpUniformBufferMemory[index]);
 
-    vkMapMemory(mainDevice.logicalDevice, lightsUniformBufferMemory[index], 0, sizeof(Light) * lights.size(), 0, &data);
-    memcpy(data, lights.data(), sizeof(Light) * lights.size());
+    data = alloca(Light::getDataSize());
+    vkMapMemory(mainDevice.logicalDevice, lightsUniformBufferMemory[index], 0, Light::getDataSize() * lights.size(), 0, &data);
+    lights[0].getData(data);
     vkUnmapMemory(mainDevice.logicalDevice, lightsUniformBufferMemory[index]);
 
     vkMapMemory(mainDevice.logicalDevice, cameraUniformBufferMemory[index], 0, sizeof(glm::vec3), 0, &data);
