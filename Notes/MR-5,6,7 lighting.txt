@@ -1,3 +1,6 @@
+[2021-05-22]
+Added the uniforms for camera position
+
 [2021-05-21]
 Seems like for specular lighting we need a uniform for camera position to calculate
 viewing angle so might aswell add the light parameter uniforms. 
