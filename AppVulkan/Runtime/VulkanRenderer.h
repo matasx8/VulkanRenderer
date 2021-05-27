@@ -14,13 +14,14 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include "Vendor/STB/stb_image.h"
+#include "STB/stb_image.h"
 #include "Utilities.h"
 #include "Mesh.h"
 #include "Model.h"
 #include "Camera.h"
 #include "Window.h"
 #include "Light.h"
+#include "ShaderMan.h"
 
 class VulkanRenderer
 {
@@ -159,6 +160,8 @@ private:
 	int createTextureDescriptor(VkImageView textureImage);
 	void createCamera();
 	void createLight();
+	
+	void compileShaders();
 
 	void updateUniformBuffers(uint32_t index);
 

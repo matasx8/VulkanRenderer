@@ -12,6 +12,7 @@ int VulkanRenderer::init(std::string wName, const int width, const int height)
 
     try
     {
+        compileShaders();
         createInstance();
         createSurface();
         setupDebugMessenger();
@@ -600,8 +601,8 @@ void VulkanRenderer::createPushConstantRange()
 
 void VulkanRenderer::createGraphicsPipeline()
 {
-    auto vertexShaderCode = readFile("Shaders/vert.spv");
-    auto fragmentShaderCode = readFile("Shaders/frag.spv");
+    auto vertexShaderCode = readFile("Shaders/shader_vert.spv");
+    auto fragmentShaderCode = readFile("Shaders/shader_frag.spv");
 
     VkShaderModule vertexShaderModule = createShaderModule(vertexShaderCode);
     VkShaderModule fragmentShaderModule = createShaderModule(fragmentShaderCode);
@@ -1238,6 +1239,11 @@ void VulkanRenderer::createLight()
 {
     //create a light. Currently we will only use this one but I should add support for multiple lights later
     lights.push_back(Light(glm::vec3(50.0f, 0.0f, 1.0f)));
+}
+
+void VulkanRenderer::compileShaders()
+{
+    ShaderMan::CompileShaders();
 }
 
 int VulkanRenderer::createMeshModel(std::string modelFile)
