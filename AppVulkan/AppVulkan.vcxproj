@@ -72,15 +72,23 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)/bin/$(Platform)/$(Configuration)/</OutDir>
+    <IntDir>$(SolutionDir)/bin/intermediates/$(Platform)/$(Configuration)/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)/bin/$(Platform)/$(Configuration)/</OutDir>
+    <IntDir>$(SolutionDir)/bin/intermediates/$(Platform)/$(Configuration)/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)/bin/$(Platform)/$(Configuration)/</OutDir>
+    <IntDir>$(SolutionDir)/bin/intermediates/$(Platform)/$(Configuration)/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)/bin/$(Platform)/$(Configuration)/</OutDir>
+    <IntDir>$(SolutionDir)/bin/intermediates/$(Platform)/$(Configuration)/</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -88,7 +96,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)/External Libs/GLFW/include;$(SolutionDir)/External Libs/GLM;C:/VulkanSDK/1.2.162.1/Include;$(SolutionDir)/External Libs/ASSIMP/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)/External Libs/GLFW/include;$(SolutionDir)/External Libs/GLM;C:/VulkanSDK/1.2.162.1/Include;$(SolutionDir)/External Libs/ASSIMP/include;$(SolutionDir)/AppVulkan/Components;$(SolutionDir)/AppVulkan/Runtime;$(SolutionDir)/AppVulkan/UI;$(SolutionDir)/AppVulkan/Utils;$(SolutionDir)/AppVulkan/Vendor;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -105,7 +114,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)/External Libs/GLFW/include;$(SolutionDir)/External Libs/GLM;C:/VulkanSDK/1.2.162.1/Include;$(SolutionDir)/External Libs/ASSIMP/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)/External Libs/GLFW/include;$(SolutionDir)/External Libs/GLM;C:/VulkanSDK/1.2.162.1/Include;$(SolutionDir)/External Libs/ASSIMP/include;$(SolutionDir)/AppVulkan/Components;$(SolutionDir)/AppVulkan/Runtime;$(SolutionDir)/AppVulkan/UI;$(SolutionDir)/AppVulkan/Utils;$(SolutionDir)/AppVulkan/Vendor;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -122,7 +132,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)/External Libs/GLFW/include;$(SolutionDir)/External Libs/GLM;C:/VulkanSDK/1.2.162.1/Include;$(SolutionDir)/External Libs/ASSIMP/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)/External Libs/GLFW/include;$(SolutionDir)/External Libs/GLM;C:/VulkanSDK/1.2.162.1/Include;$(SolutionDir)/External Libs/ASSIMP/include;$(SolutionDir)/AppVulkan/Components;$(SolutionDir)/AppVulkan/Runtime;$(SolutionDir)/AppVulkan/UI;$(SolutionDir)/AppVulkan/Utils;$(SolutionDir)/AppVulkan/Vendor;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -139,7 +150,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)/External Libs/GLFW/include;$(SolutionDir)/External Libs/GLM;C:/VulkanSDK/1.2.162.1/Include;$(SolutionDir)/External Libs/ASSIMP/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)/External Libs/GLFW/include;$(SolutionDir)/External Libs/GLM;C:/VulkanSDK/1.2.162.1/Include;$(SolutionDir)/External Libs/ASSIMP/include;$(SolutionDir)/AppVulkan/Components;$(SolutionDir)/AppVulkan/Runtime;$(SolutionDir)/AppVulkan/UI;$(SolutionDir)/AppVulkan/Utils;$(SolutionDir)/AppVulkan/Vendor;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -151,22 +163,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="Light.cpp" />
+    <ClCompile Include="Components\Camera.cpp" />
+    <ClCompile Include="Components\Light.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="Model.cpp" />
-    <ClCompile Include="VulkanRenderer.cpp" />
-    <ClCompile Include="Window.cpp" />
+    <ClCompile Include="Components\Mesh.cpp" />
+    <ClCompile Include="Components\Model.cpp" />
+    <ClCompile Include="Runtime\VulkanRenderer.cpp" />
+    <ClCompile Include="Utils\ShaderMan.cpp" />
+    <ClCompile Include="UI\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Camera.h" />
-    <ClInclude Include="Light.h" />
-    <ClInclude Include="Mesh.h" />
-    <ClInclude Include="Model.h" />
-    <ClInclude Include="Utilities.h" />
-    <ClInclude Include="VulkanRenderer.h" />
-    <ClInclude Include="Window.h" />
+    <ClInclude Include="Components\Camera.h" />
+    <ClInclude Include="Components\Light.h" />
+    <ClInclude Include="Components\Mesh.h" />
+    <ClInclude Include="Components\Model.h" />
+    <ClInclude Include="Utils\ShaderMan.h" />
+    <ClInclude Include="Utils\Utilities.h" />
+    <ClInclude Include="Runtime\VulkanRenderer.h" />
+    <ClInclude Include="UI\Window.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
