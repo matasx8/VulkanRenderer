@@ -22,6 +22,7 @@
 #include "Window.h"
 #include "Light.h"
 #include "ShaderMan.h"
+#include "Pipeline.h"
 
 class VulkanRenderer
 {
@@ -72,7 +73,7 @@ private:
 
 	VkInstance instance;
 	VkDebugUtilsMessengerEXT debugMessenger;
-	struct {
+	struct Device {
 		VkPhysicalDevice physicalDevice;
 		VkDevice logicalDevice;
 	} mainDevice;
@@ -119,6 +120,7 @@ private:
 	//Model* modelTransferSpace;
 
 	//pipeline
+	std::vector<Pipeline> Pipelines;
 	VkPipeline graphicsPipeline;
 	VkPipelineLayout pipelineLayout;
 	VkRenderPass renderPass;

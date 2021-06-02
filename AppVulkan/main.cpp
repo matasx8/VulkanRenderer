@@ -18,6 +18,7 @@ int main()
 	float lastTime = 0.0f;
 
 	int ind = vulkanRenderer.createMeshModel("Models/12140_Skull_v3_L2.obj");
+	int secondSkull = vulkanRenderer.createMeshModel("Models/12140_Skull_v3_L2.obj");
 
 	while (!glfwWindowShouldClose(vulkanRenderer.window.window))
 	{
@@ -34,6 +35,11 @@ int main()
 		glm::mat4 testMat = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
 		testMat = glm::rotate(testMat, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		vulkanRenderer.updateModel(ind, testMat);
+
+		glm::mat4 testMat2 = glm::translate(glm::mat4(1.0f), glm::vec3(50.0f, 0.0f, 0.0f));
+		testMat2 = glm::rotate(testMat2, glm::radians(-angle), glm::vec3(0.0f, 1.0f, 0.0f));
+		testMat2 = glm::rotate(testMat2, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		vulkanRenderer.updateModel(secondSkull, testMat2);
 
 		vulkanRenderer.draw(deltaTime);
 	}
