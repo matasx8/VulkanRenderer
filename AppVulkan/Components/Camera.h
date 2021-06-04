@@ -1,4 +1,5 @@
 #pragma once
+#include "Representable.h"
 
 //#include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -6,7 +7,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-class Camera
+class Camera : public Representable
 {
 public:
 	Camera();
@@ -20,6 +21,10 @@ public:
 	glm::vec3 getCameraDirection();
 
 	glm::mat4 calculateViewMatrix();
+
+	//Representable
+	size_t GetRepresentCstrLen() const;
+	void RepresentCstr(char* const string, size_t size) const;
 
 	~Camera();
 

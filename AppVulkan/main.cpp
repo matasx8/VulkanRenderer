@@ -1,4 +1,6 @@
+#pragma once
 #define STB_IMAGE_IMPLEMENTATION
+#define DEBUG_FRAME_INFO
 #include<iostream>
 #include "VulkanRenderer.h"
 
@@ -27,7 +29,9 @@ int main()
 		float now = glfwGetTime();
 		deltaTime = now - lastTime;
 		lastTime = now;
-		//printf("%fms\n", deltaTime * 1000);
+#ifdef  DEBUG_FRAME_INFO
+		Debug::FrameInfo(deltaTime);
+#endif //  DEBUG_FRAME_INFO
 
 		angle += 10.f * deltaTime;
 		if (angle > 360.0f) { angle -= 360.0f; }

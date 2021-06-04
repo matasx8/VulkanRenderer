@@ -77,6 +77,10 @@ void VulkanRenderer::draw(float dt)
     //update camera?
     camera.keyControl(window.getKeys(), dt);
     camera.mouseControl(window.getXChange(), window.getYchange());
+#ifdef DEBUG_LOGS
+    Debug::Log(camera);
+#endif // DEBUG_LOG
+
    // lights[0].debugInput(window.getKeys(), dt);
     lights[0].debugFollowCam(camera.getCameraPosition(), glm::vec3(0.0f, -90.0f, 0.0f));
     //wait for given fence to signal open from last draw before xontinuing
