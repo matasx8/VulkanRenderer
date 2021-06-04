@@ -1,5 +1,6 @@
 #pragma once
 #include "vulkan/vulkan.h"
+//TODO: create default pipeline and make function for user that creates a pipeline using derivatives
 
 class Pipeline
 {
@@ -12,6 +13,7 @@ public:
         VkPipelineMultisampleStateCreateInfo* multisamplingCreateInfo, VkPipelineColorBlendStateCreateInfo* colourBlendingCreateInfo,
         VkPipelineDepthStencilStateCreateInfo* depthStencilCreateInfo, VkPipelineLayout pipelineLayout,
         VkRenderPass renderPass, uint32_t subpass, VkPipeline basePipelineHandle, uint32_t basePipelineIndex,
+        VkPipelineCreateFlags flags,
         VkShaderModule vertexShaderModule, VkShaderModule fragmentShaderModule, VkDevice device);
 
     VkPipeline getPipeline() const { return pipeline; }

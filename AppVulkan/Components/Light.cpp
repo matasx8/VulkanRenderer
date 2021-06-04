@@ -78,3 +78,8 @@ void Light::debugInput(bool* keys, float deltaTime)
 	}
 
 }
+
+void Light::debugFollowCam(glm::vec3 newPos, glm::vec3 offset)
+{
+	position = newPos + offset;
+}

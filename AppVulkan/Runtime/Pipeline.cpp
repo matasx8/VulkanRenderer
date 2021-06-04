@@ -12,6 +12,7 @@ void Pipeline::CreatePipeline(VkPipelineShaderStageCreateInfo* shaderStages, VkP
     VkPipelineMultisampleStateCreateInfo* multisamplingCreateInfo, VkPipelineColorBlendStateCreateInfo* colourBlendingCreateInfo,
     VkPipelineDepthStencilStateCreateInfo* depthStencilCreateInfo, VkPipelineLayout pipelineLayout, 
     VkRenderPass renderPass, uint32_t subpass, VkPipeline basePipelineHandle, uint32_t basePipelineIndex, 
+    VkPipelineCreateFlags flags,
     VkShaderModule vertexShaderModule, VkShaderModule fragmentShaderModule, VkDevice device)
 {
     VkGraphicsPipelineCreateInfo pipelineCreateInfo = {};
@@ -29,6 +30,8 @@ void Pipeline::CreatePipeline(VkPipelineShaderStageCreateInfo* shaderStages, VkP
     pipelineCreateInfo.layout = pipelineLayout;
     pipelineCreateInfo.renderPass = renderPass;
     pipelineCreateInfo.subpass = 0;
+    pipelineCreateInfo.flags = flags;
+   
 
     //pipeline derivatives - can create multiple pipelines that derive from one another for optimistions
     pipelineCreateInfo.basePipelineHandle = basePipelineHandle;

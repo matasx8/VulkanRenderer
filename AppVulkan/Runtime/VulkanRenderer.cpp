@@ -77,7 +77,8 @@ void VulkanRenderer::draw(float dt)
     //update camera?
     camera.keyControl(window.getKeys(), dt);
     camera.mouseControl(window.getXChange(), window.getYchange());
-    lights[0].debugInput(window.getKeys(), dt);
+   // lights[0].debugInput(window.getKeys(), dt);
+    lights[0].debugFollowCam(camera.getCameraPosition(), glm::vec3(0.0f, -90.0f, 0.0f));
     //wait for given fence to signal open from last draw before xontinuing
     vkWaitForFences(mainDevice.logicalDevice, 1, &drawFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
     //manually reset close fences
@@ -767,8 +768,9 @@ void VulkanRenderer::createGraphicsPipeline()
     Pipelines.push_back(Pipeline());
     Pipelines[0].CreatePipeline(shaderStages, &vertexInputCreateInfo, &inputAssembly, &viewportStateCreateInfo, 
         NULL, &rasterizerCreateInfo, &multisamplingCreateInfo, &colourBlendingCreateInfo, &depthStencilCreateInfo, 
-        pipelineLayout, renderPass, 0, VK_NULL_HANDLE, -1, vertexShaderModule, 
-        fragmentShaderModule, mainDevice.logicalDevice);//shaders get destoyed there, not good, change this later
+        pipelineLayout, renderPass, 0, VK_NULL_HANDLE, -1,
+        VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT,
+        vertexShaderModule, fragmentShaderModule, mainDevice.logicalDevice);//shaders get destoyed there, not good, change this later
 
     //------------Create second pipeline here-------------
     // first get second set of shaders
@@ -799,8 +801,9 @@ void VulkanRenderer::createGraphicsPipeline()
     Pipelines.push_back(Pipeline());
     Pipelines[1].CreatePipeline(shaderStages2, &vertexInputCreateInfo, &inputAssembly, &viewportStateCreateInfo,
         NULL, &rasterizerCreateInfo, &multisamplingCreateInfo, &colourBlendingCreateInfo, &depthStencilCreateInfo,
-        pipelineLayout, renderPass, 0, VK_NULL_HANDLE, -1, vertexShaderModule,
-        fragmentShaderModule, mainDevice.logicalDevice);
+        pipelineLayout, renderPass, 0, Pipelines[0].getPipeline(), -1,
+        VK_PIPELINE_CREATE_DERIVATIVE_BIT,
+        vertexShaderModule, fragmentShaderModule, mainDevice.logicalDevice);
 
     // destroy shader modules
     //vkDestroyShaderModule(mainDevice.logicalDevice, fragmentShaderModule, nullptr);
@@ -1250,7 +1253,7 @@ void VulkanRenderer::createCamera()
 void VulkanRenderer::createLight()
 {
     //create a light. Currently we will only use this one but I should add support for multiple lights later
-    lights.push_back(Light(glm::vec3(50.0f, 0.0f, 1.0f)));
+    lights.push_back(Light(glm::vec3(0.0f, 100.0f, 0.0f)));
 }
 
 void VulkanRenderer::compileShaders()

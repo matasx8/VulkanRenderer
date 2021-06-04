@@ -11,6 +11,8 @@ layout(location = 5) in vec3 viewPos;
 
 layout(set = 1, binding = 0) uniform sampler2D textureSampler;
 
+const float levels = 4.0;
+
 void main()
 {
 	float ambientStrength = 0.2;
@@ -32,7 +34,11 @@ void main()
 	vec3 diffuse = diff * lightColor;
 	
 	vec4 objectColor = texture(textureSampler, fragTex);
+	//cel
+	vec3 brightness = ambient + diffuse + specular;
+	float level = floor(brightness.x * levels);
+	float finalbright = level / levels;
 	
-	vec3 result = (ambient + diffuse + specular) * objectColor.xyz;
+	vec3 result = finalbright * objectColor.xyz;
 	outColour = vec4(result, objectColor.w);
 }
