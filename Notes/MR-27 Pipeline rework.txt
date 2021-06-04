@@ -1,0 +1,20 @@
+I want to be able to use different shaders at runtime so I need to be able to 
+bind a different pipeline.
+I'm thinking for now have a malloced vector of pipelines? Or maybe not..
+I guess for now just trying to switch shaders will be good enough
+--
+after some reading seems like I should use a pipeline cache.. maybe for a start
+just try to create a different pipeline and then try to implement the cache
+--
+current plan
+1. when a button is pushed - create pipeline(store it somewhere) with derivatives
+this will switch shaders
+2. press other button switch back pipeline
+3. implement some kind of profiling to compare what happens when i implement pipeline
+cache
+--okay finish tomorrow, try to create 2nd pipe and swit
+i will try to create two pipelines at the start and then switch them
+
+now draw two skulls with diferent shaders
+
+bug - bad lighting. Then make everything nicer and with derivatives and caches

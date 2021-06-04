@@ -168,6 +168,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Components\Mesh.cpp" />
     <ClCompile Include="Components\Model.cpp" />
+    <ClCompile Include="Runtime\Pipeline.cpp" />
     <ClCompile Include="Runtime\VulkanRenderer.cpp" />
     <ClCompile Include="Utils\ShaderMan.cpp" />
     <ClCompile Include="UI\Window.cpp" />
@@ -177,6 +178,7 @@
     <ClInclude Include="Components\Light.h" />
     <ClInclude Include="Components\Mesh.h" />
     <ClInclude Include="Components\Model.h" />
+    <ClInclude Include="Runtime\Pipeline.h" />
     <ClInclude Include="Utils\ShaderMan.h" />
     <ClInclude Include="Utils\Utilities.h" />
     <ClInclude Include="Runtime\VulkanRenderer.h" />

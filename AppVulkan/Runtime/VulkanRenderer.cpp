@@ -77,7 +77,8 @@ void VulkanRenderer::draw(float dt)
     //update camera?
     camera.keyControl(window.getKeys(), dt);
     camera.mouseControl(window.getXChange(), window.getYchange());
-    lights[0].debugInput(window.getKeys(), dt);
+   // lights[0].debugInput(window.getKeys(), dt);
+    lights[0].debugFollowCam(camera.getCameraPosition(), glm::vec3(0.0f, -90.0f, 0.0f));
     //wait for given fence to signal open from last draw before xontinuing
     vkWaitForFences(mainDevice.logicalDevice, 1, &drawFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
     //manually reset close fences
@@ -184,7 +185,8 @@ void VulkanRenderer::cleanup()
     {
         vkDestroyFramebuffer(mainDevice.logicalDevice, framebuffer, nullptr);
     }
-    vkDestroyPipeline(mainDevice.logicalDevice, graphicsPipeline, nullptr);
+    for(auto& pipe : Pipelines)
+        vkDestroyPipeline(mainDevice.logicalDevice, pipe.getPipeline(), nullptr);
     vkDestroyPipelineLayout(mainDevice.logicalDevice, pipelineLayout, nullptr);
     vkDestroyRenderPass(mainDevice.logicalDevice, renderPass, nullptr);
     for (auto& image : swapChainImages)
@@ -763,36 +765,49 @@ void VulkanRenderer::createGraphicsPipeline()
     depthStencilCreateInfo.depthBoundsTestEnable = VK_FALSE; // depth bounds test - does the depth value exist between two bounds
     depthStencilCreateInfo.stencilTestEnable = VK_FALSE; // enable stencil test
 
+    Pipelines.push_back(Pipeline());
+    Pipelines[0].CreatePipeline(shaderStages, &vertexInputCreateInfo, &inputAssembly, &viewportStateCreateInfo, 
+        NULL, &rasterizerCreateInfo, &multisamplingCreateInfo, &colourBlendingCreateInfo, &depthStencilCreateInfo, 
+        pipelineLayout, renderPass, 0, VK_NULL_HANDLE, -1,
+        VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT,
+        vertexShaderModule, fragmentShaderModule, mainDevice.logicalDevice);//shaders get destoyed there, not good, change this later
+
+    //------------Create second pipeline here-------------
+    // first get second set of shaders
+    auto vertexShaderCode2 = readFile("Shaders/shader2_vert.spv");
+    auto fragmentShaderCode2 = readFile("Shaders/shader2_frag.spv");
+
+    vertexShaderModule = createShaderModule(vertexShaderCode2);
+    fragmentShaderModule = createShaderModule(fragmentShaderCode2);
+
+    vertexShaderCreateInfo = {};
+    vertexShaderCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertexShaderCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT; // shader stage name
+    vertexShaderCreateInfo.module = vertexShaderModule; //shader module to be used by stage
+    vertexShaderCreateInfo.pName = "main"; //entry point into shader
 
 
-    VkGraphicsPipelineCreateInfo pipelineCreateInfo = {};
-    pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipelineCreateInfo.stageCount = 2;
-    pipelineCreateInfo.pStages = shaderStages;
-    pipelineCreateInfo.pVertexInputState = &vertexInputCreateInfo;
-    pipelineCreateInfo.pInputAssemblyState = &inputAssembly;
-    pipelineCreateInfo.pViewportState = &viewportStateCreateInfo;
-    pipelineCreateInfo.pDynamicState = nullptr;
-    pipelineCreateInfo.pRasterizationState = &rasterizerCreateInfo;
-    pipelineCreateInfo.pMultisampleState = &multisamplingCreateInfo;
-    pipelineCreateInfo.pColorBlendState = &colourBlendingCreateInfo;
-    pipelineCreateInfo.pDepthStencilState = &depthStencilCreateInfo;
-    pipelineCreateInfo.layout = pipelineLayout;
-    pipelineCreateInfo.renderPass = renderPass;
-    pipelineCreateInfo.subpass = 0;
+    fragmentShaderCreateInfo = {};
+    fragmentShaderCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragmentShaderCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT; // shader stage name
+    fragmentShaderCreateInfo.module = fragmentShaderModule; //shader module to be used by stage
+    fragmentShaderCreateInfo.pName = "main"; //entry point into shader
 
-    //pipeline derivatives - can create multiple pipelines that derive from one another for optimistions
-    pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
-    pipelineCreateInfo.basePipelineIndex = -1;
+    //put shader stage creation info in to array
+    // graphics pipeline creation info requires array of shader stage creates
+    VkPipelineShaderStageCreateInfo shaderStages2[] = { vertexShaderCreateInfo, fragmentShaderCreateInfo };
 
-    result = vkCreateGraphicsPipelines(mainDevice.logicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &graphicsPipeline);
-    if (result != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to create a graphics pipeline");
-    }
-    //destroy shader modules
-    vkDestroyShaderModule(mainDevice.logicalDevice, fragmentShaderModule, nullptr);
-    vkDestroyShaderModule(mainDevice.logicalDevice, vertexShaderModule, nullptr);
+    // create second pipeline
+    Pipelines.push_back(Pipeline());
+    Pipelines[1].CreatePipeline(shaderStages2, &vertexInputCreateInfo, &inputAssembly, &viewportStateCreateInfo,
+        NULL, &rasterizerCreateInfo, &multisamplingCreateInfo, &colourBlendingCreateInfo, &depthStencilCreateInfo,
+        pipelineLayout, renderPass, 0, Pipelines[0].getPipeline(), -1,
+        VK_PIPELINE_CREATE_DERIVATIVE_BIT,
+        vertexShaderModule, fragmentShaderModule, mainDevice.logicalDevice);
+
+    // destroy shader modules
+    //vkDestroyShaderModule(mainDevice.logicalDevice, fragmentShaderModule, nullptr);
+   // vkDestroyShaderModule(mainDevice.logicalDevice, vertexShaderModule, nullptr);
 }
 
 VkShaderModule VulkanRenderer::createShaderModule(const std::vector<char>& code)
@@ -1238,7 +1253,7 @@ void VulkanRenderer::createCamera()
 void VulkanRenderer::createLight()
 {
     //create a light. Currently we will only use this one but I should add support for multiple lights later
-    lights.push_back(Light(glm::vec3(50.0f, 0.0f, 1.0f)));
+    lights.push_back(Light(glm::vec3(0.0f, 100.0f, 0.0f)));
 }
 
 void VulkanRenderer::compileShaders()
@@ -1357,38 +1372,72 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
 
     vkCmdBeginRenderPass(commandBuffer[currentImage], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    //gind pipeline to be used in render pass
-    vkCmdBindPipeline(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-
-    for (size_t j = 0; j < modelList.size(); j++)
+    //bind pipeline to be used in render pass
     {
-        Model thisModel = modelList[j];
-        //push constants to given shader stage directly
-        vkCmdPushConstants(commandBuffer[currentImage], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ModelMatrix), &thisModel.getModel());
+        vkCmdBindPipeline(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, Pipelines[0].getPipeline());
 
-        for (size_t k = 0; k < thisModel.getMeshCount(); k++)
-        {
-            VkBuffer vertexBuffers[] = { thisModel.getMesh(k)->getVertexBuffer() }; //buffers to bind
-            VkDeviceSize offsets[] = { 0 }; //offsets into buffers being bound
-            vkCmdBindVertexBuffers(commandBuffer[currentImage], 0, 1, vertexBuffers, offsets);
+       // for (size_t j = 0; j < modelList.size(); j++)
+       //{
+            Model thisModel = modelList[0];//quick hack because we don't want to just render all the models with the same shader
+            //push constants to given shader stage directly
+            vkCmdPushConstants(commandBuffer[currentImage], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ModelMatrix), &thisModel.getModel());
 
-            vkCmdBindIndexBuffer(commandBuffer[currentImage], thisModel.getMesh(k)->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+            for (size_t k = 0; k < thisModel.getMeshCount(); k++)
+            {
+                VkBuffer vertexBuffers[] = { thisModel.getMesh(k)->getVertexBuffer() }; //buffers to bind
+                VkDeviceSize offsets[] = { 0 }; //offsets into buffers being bound
+                vkCmdBindVertexBuffers(commandBuffer[currentImage], 0, 1, vertexBuffers, offsets);
 
-            // dynamic offset amount
-            //uint32_t dynamicOffset = static_cast<uint32_t>(modelUniformAlignment) * j;
+                vkCmdBindIndexBuffer(commandBuffer[currentImage], thisModel.getMesh(k)->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
+                // dynamic offset amount
+                //uint32_t dynamicOffset = static_cast<uint32_t>(modelUniformAlignment) * j;
 
 
 
-            std::array<VkDescriptorSet, 2> descriptorSetGroup = { descriptorSets[currentImage], samplerDescriptorSets[thisModel.getMesh(k)->getTexId()] };
+                std::array<VkDescriptorSet, 2> descriptorSetGroup = { descriptorSets[currentImage], samplerDescriptorSets[thisModel.getMesh(k)->getTexId()] };
 
-            // bind descriptor sets
-            vkCmdBindDescriptorSets(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-                0, static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr);// will only apply offset to descriptors that are dynamic
+                // bind descriptor sets
+                vkCmdBindDescriptorSets(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
+                    0, static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr);// will only apply offset to descriptors that are dynamic
 
-            vkCmdDrawIndexed(commandBuffer[currentImage], thisModel.getMesh(k)->getIndexCount(), 1, 0, 0, 0);
-        }
+                vkCmdDrawIndexed(commandBuffer[currentImage], thisModel.getMesh(k)->getIndexCount(), 1, 0, 0, 0);
+            }
+       // }
     }
+    //bind second pipeline
+    {
+        vkCmdBindPipeline(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, Pipelines[1].getPipeline());
 
+       // for (size_t j = 0; j < modelList.size(); j++)
+     //   {
+            Model thisModel = modelList[1];
+            //push constants to given shader stage directly
+            vkCmdPushConstants(commandBuffer[currentImage], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ModelMatrix), &thisModel.getModel());
+
+            for (size_t k = 0; k < thisModel.getMeshCount(); k++)
+            {
+                VkBuffer vertexBuffers[] = { thisModel.getMesh(k)->getVertexBuffer() }; //buffers to bind
+                VkDeviceSize offsets[] = { 0 }; //offsets into buffers being bound
+                vkCmdBindVertexBuffers(commandBuffer[currentImage], 0, 1, vertexBuffers, offsets);
+
+                vkCmdBindIndexBuffer(commandBuffer[currentImage], thisModel.getMesh(k)->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
+                // dynamic offset amount
+                //uint32_t dynamicOffset = static_cast<uint32_t>(modelUniformAlignment) * j;
+
+
+
+                std::array<VkDescriptorSet, 2> descriptorSetGroup = { descriptorSets[currentImage], samplerDescriptorSets[thisModel.getMesh(k)->getTexId()] };
+
+                // bind descriptor sets
+                vkCmdBindDescriptorSets(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
+                    0, static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr);// will only apply offset to descriptors that are dynamic
+
+                vkCmdDrawIndexed(commandBuffer[currentImage], thisModel.getMesh(k)->getIndexCount(), 1, 0, 0, 0);
+            }
+       // }
+    }
     vkCmdEndRenderPass(commandBuffer[currentImage]);
 
     //stop recording to command buffer

@@ -17,6 +17,7 @@ public:
 	~Light();
 	//debug functions
 	void debugInput(bool* keys, float deltaTime);
+	void debugFollowCam(glm::vec3 newPos, glm::vec3 offset);
 
 	glm::vec3 position;//the UI will need pointers to this so it's probably a good idea to leave them public
 	glm::vec3 colour;
