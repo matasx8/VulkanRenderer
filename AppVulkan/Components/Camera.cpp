@@ -72,6 +72,22 @@ glm::mat4 Camera::calculateViewMatrix()
 	return glm::lookAt(position, position + front, up);
 }
 
+size_t Camera::GetRepresentCstrLen() const
+{
+	//TODO: find a way to calculate if float is for example 12 or 265465, now im just going to compensate
+	return 100;
+}
+
+void Camera::RepresentCstr(char* const string, size_t size) const
+{
+	if (string)
+	{
+		char buff[100];
+		sprintf_s(buff, "Position(x: %.1f; y: %.1f, z: %.1f)\n\0", position.x, position.y, position.z);
+		strcpy_s(string, size, buff);
+	}
+}
+
 glm::vec3 Camera::getCameraPosition()
 {
 	return position;

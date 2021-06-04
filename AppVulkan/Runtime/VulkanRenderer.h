@@ -23,6 +23,9 @@
 #include "Light.h"
 #include "ShaderMan.h"
 #include "Pipeline.h"
+#include "Debug.h"
+
+//#define DEBUG_LOGS;
 
 class VulkanRenderer
 {
