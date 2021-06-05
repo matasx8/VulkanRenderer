@@ -1,7 +1,7 @@
 #version 450
-
+ 
 layout(location = 0) out vec4 outColour;
-
+ 
 layout(location = 0) in vec3 fragNorm;
 layout(location = 1) in vec2 fragTex;
 layout(location = 2) in vec3 fragPos;

@@ -1,6 +1,6 @@
 #pragma once
 #define STB_IMAGE_IMPLEMENTATION
-#define DEBUG_FRAME_INFO
+//#define DEBUG_FRAME_INFO
 #include<iostream>
 #include "VulkanRenderer.h"
 

@@ -629,6 +629,7 @@ void VulkanRenderer::createPushConstantRange()
 
 void VulkanRenderer::createGraphicsPipeline()
 {
+    shaderMan.WaitForCompile();
     auto vertexShaderCode = readFile("Shaders/shader_vert.spv");
     auto fragmentShaderCode = readFile("Shaders/shader_frag.spv");
 
@@ -1295,7 +1296,9 @@ void VulkanRenderer::createLight()
 
 void VulkanRenderer::compileShaders()
 {
-    ShaderMan::CompileShaders();
+    //ShaderMan::CompileShaders();
+    //shaderMan = ShaderMan();
+    shaderMan.CompileShadersAsync();
 }
 
 int VulkanRenderer::createMeshModel(std::string modelFile)

@@ -12,9 +12,13 @@ public:
 	// but waits for process to finish
 	static void CompileShaders();
 	// Same as CompileShaders but async, must call WaitForCompile to make sure everything is compiled before using shaders
-	void CompileShadersAsync();//TODO
+	void CompileShadersAsync();
 	void WaitForCompile();
 
 	~ShaderMan();
+
+private:
+	void* pi_HProc;
+	void* pi_HThread;
 };
 
