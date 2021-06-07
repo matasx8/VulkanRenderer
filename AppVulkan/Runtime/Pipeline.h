@@ -1,5 +1,5 @@
 #pragma once
-#include "vulkan/vulkan.h"
+#include "vulkan.h"
 //TODO: create default pipeline and make function for user that creates a pipeline using derivatives
 
 class Pipeline
