@@ -88,7 +88,7 @@ void Camera::RepresentCstr(char* const string, size_t size) const
 	}
 }
 
-glm::vec3 Camera::getCameraPosition()
+glm::vec3& Camera::getCameraPosition()
 {
 	return position;
 }

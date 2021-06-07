@@ -24,7 +24,7 @@ Mesh* Model::getMesh(size_t index)
 	return &meshList[index];
 }
 
-glm::mat4 Model::getModel()
+glm::mat4& Model::getModel()
 {
 	return model;
 }
