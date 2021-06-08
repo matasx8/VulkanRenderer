@@ -170,6 +170,7 @@
     <ClCompile Include="Components\Model.cpp" />
     <ClCompile Include="Runtime\Pipeline.cpp" />
     <ClCompile Include="Runtime\VulkanRenderer.cpp" />
+    <ClCompile Include="Runtime\Scene.cpp" />
     <ClCompile Include="Utils\ShaderMan.cpp" />
     <ClCompile Include="UI\Window.cpp" />
   </ItemGroup>
@@ -179,6 +180,7 @@
     <ClInclude Include="Components\Mesh.h" />
     <ClInclude Include="Components\Model.h" />
     <ClInclude Include="Runtime\Pipeline.h" />
+    <ClInclude Include="Runtime\Scene.h" />
     <ClInclude Include="Utils\Debug.h" />
     <ClInclude Include="Utils\Representable.h" />
     <ClInclude Include="Utils\ShaderMan.h" />

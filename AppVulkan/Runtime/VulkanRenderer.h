@@ -10,11 +10,7 @@
 #include <GLFW/glfw3.h>
 #include <vulkan.h>
 #include <glm/gtc/matrix_transform.hpp>
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
 
-#include "STB/stb_image.h"
 #include "Utilities.h"
 #include "Mesh.h"
 #include "Model.h"
@@ -24,6 +20,7 @@
 #include "ShaderMan.h"
 #include "Pipeline.h"
 #include "Debug.h"
+#include "Scene.h"
 
 //#define DEBUG_LOGS;
 
@@ -37,6 +34,7 @@ public:
 
 	void updateModel(int modelId, glm::mat4 newModel);
 	int createMeshModel(std::string modelFile);
+	//TODO: void LoadScene();
 
 	void setupDebugMessenger();
 	void draw(float dt);
@@ -55,16 +53,16 @@ private:
 
 	int currentFrame = 0;
 
-	//scene objects
-	std::vector<Model> modelList;
+	//-- SCENE ---
+	Scene currentScene;
 
-	//scene settings
+	//scene settings -- later get this into scene
 	struct UboViewProjection {
 		glm::mat4 projection;
 		glm::mat4 view;
 	} uboViewProjection;
 
-	const std::vector<const char*> validationLayers = {
+	const std::vector<const char*> validationLayers = {//TODO: add more?
 "VK_LAYER_KHRONOS_validation"
 	};
 
@@ -92,24 +90,17 @@ private:
 	VkImage depthBufferImage;
 	VkDeviceMemory depthBufferImageMemory;
 	VkImageView depthBufferImageView;
-	VkSampler textureSampler;
 	VkImage colorImage;
 	VkDeviceMemory colorImageMemory;
 	VkImageView colorImageView;
 
-	//assets
-	std::vector<VkImage> textureImages;
-	std::vector<VkDeviceMemory> textureImageMemory;//would be better to have a single buffer, and images reference offsets
-	std::vector<VkImageView> textureImageViews;
+
 
 	//descriptors
 	VkDescriptorSetLayout descriptorSetLayout;
-	VkDescriptorSetLayout samplerSetLayout;
 	VkPushConstantRange pushConstantRange;
 	VkDescriptorPool descriptorPool;
-	VkDescriptorPool samplerDescriptorPool;
 	std::vector<VkDescriptorSet> descriptorSets;
-	std::vector<VkDescriptorSet> samplerDescriptorSets;
 
 	ShaderMan shaderMan;
 
@@ -149,8 +140,8 @@ private:
 	void createLogicalDevice();
 	void createSurface();
 	void createSwapChain();
-	VkImage createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags useFlags, VkSampleCountFlagBits numSamples, VkMemoryPropertyFlags propFlags, VkDeviceMemory* imageMemory);
-	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+	//VkImage createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags useFlags, VkSampleCountFlagBits numSamples, VkMemoryPropertyFlags propFlags, VkDeviceMemory* imageMemory);
+	//VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 	void createRenderPass();
 	void createDescriptorSetLayout();
 	void createPushConstantRange();
@@ -165,12 +156,13 @@ private:
 	void createUniformBuffers();
 	void createDescriptorPool();
 	void createDescriptorSets();
-	int createTextureImage(std::string fileName);
-	int createTexture(std::string fileName);
-	void createTextureSampler();
-	int createTextureDescriptor(VkImageView textureImage);
+	//int createTextureImage(std::string fileName);
+	//int createTexture(std::string fileName);
+	//void createTextureSampler();
+	//int createTextureDescriptor(VkImageView textureImage);
 	void createCamera();
 	void createLight();
+	void createScene();
 	
 	void compileShaders();
 
