@@ -21,6 +21,7 @@
 #include "Pipeline.h"
 #include "Debug.h"
 #include "Scene.h"
+#include "Image.h"
 
 //#define DEBUG_LOGS;
 
@@ -87,12 +88,8 @@ private:
 	std::vector<VkFramebuffer> swapchainFramebuffers;
 	std::vector<VkCommandBuffer> commandBuffer;
 
-	VkImage depthBufferImage;
-	VkDeviceMemory depthBufferImageMemory;
-	VkImageView depthBufferImageView;
-	VkImage colorImage;
-	VkDeviceMemory colorImageMemory;
-	VkImageView colorImageView;
+	Image depthBufferImage;
+	Image colorImage;
 
 
 

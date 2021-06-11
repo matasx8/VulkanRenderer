@@ -25,6 +25,12 @@ namespace Debug
 		printf("[Debug Frame Info] length: %.1fms FPS: %d\n", dtms / 10, fps);
 	}
 
+	// Logs a message that is null terminated
+	static void LogMsg(const char* msg)
+	{
+		printf("[Debug Message] %s", msg);
+	}
+
 	/*template void Log<Representable>()
 	{
 

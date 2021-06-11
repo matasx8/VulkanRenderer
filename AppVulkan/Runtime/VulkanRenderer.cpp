@@ -16,17 +16,19 @@ int VulkanRenderer::init(std::string wName, const int width, const int height)
         setupDebugMessenger();
         getPhysicalDevice();
         createLogicalDevice();
-        createScene();
+        //createScene();
         createSwapChain();
         createColorResources();
         createDepthBufferImage();
         createRenderPass();
         createDescriptorSetLayout();
         createPushConstantRange();
-        createGraphicsPipeline();
-        createFramebuffers();
         createCommandPool();
+        createFramebuffers();
         createCommandBuffers();
+        //temporary
+        createMeshModel("Models/12140_Skull_v3_L2.obj");
+        createGraphicsPipeline();
         createCamera();
         createLight();
         //allocateDynamicBufferTransferSpace();
@@ -141,15 +143,8 @@ void VulkanRenderer::cleanup()
     //wait until no actions being run on device
     vkDeviceWaitIdle(mainDevice.logicalDevice);
 
-    currentScene.CleanUp();
+    currentScene.CleanUp(mainDevice.logicalDevice);
 
-    vkDestroyImageView(mainDevice.logicalDevice, depthBufferImageView, nullptr);
-    vkDestroyImage(mainDevice.logicalDevice, depthBufferImage, nullptr);
-    vkFreeMemory(mainDevice.logicalDevice, depthBufferImageMemory, nullptr);
-
-    vkDestroyImageView(mainDevice.logicalDevice, colorImageView, nullptr);
-    vkDestroyImage(mainDevice.logicalDevice, colorImage, nullptr);
-    vkFreeMemory(mainDevice.logicalDevice, colorImageMemory, nullptr);
 
     vkDestroyDescriptorPool(mainDevice.logicalDevice, descriptorPool, nullptr);
     vkDestroyDescriptorSetLayout(mainDevice.logicalDevice, descriptorSetLayout, nullptr);
@@ -551,26 +546,6 @@ void VulkanRenderer::createDescriptorSetLayout()
         throw std::runtime_error("Failed to create a descriptor set layout");
     }
 
-    //texture sampler descriptor set layout
-    VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
-    samplerLayoutBinding.binding = 0;
-    samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerLayoutBinding.descriptorCount = 1;
-    samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    samplerLayoutBinding.pImmutableSamplers = nullptr;
-
-    //create a descriptor set layout with given bindings for texture
-    VkDescriptorSetLayoutCreateInfo textureLayoutCreateInfo = {};
-    textureLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    textureLayoutCreateInfo.bindingCount = 1;
-    textureLayoutCreateInfo.pBindings = &samplerLayoutBinding;
-
-    //create desciptor set layout!HERE
-    result = vkCreateDescriptorSetLayout(mainDevice.logicalDevice, &textureLayoutCreateInfo, nullptr, &currentScene.samplerSetLayout);
-    if (result != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to create a descriptor set layout");
-    }
 }
 
 void VulkanRenderer::createPushConstantRange()
@@ -583,6 +558,8 @@ void VulkanRenderer::createPushConstantRange()
 
 void VulkanRenderer::createGraphicsPipeline()
 {
+    Pipelines.push_back(Pipeline());
+
     shaderMan.WaitForCompile();
     auto vertexShaderCode = readFile("Shaders/shader_vert.spv");
     auto fragmentShaderCode = readFile("Shaders/shader_frag.spv");
@@ -720,8 +697,14 @@ void VulkanRenderer::createGraphicsPipeline()
     colourBlendingCreateInfo.attachmentCount = 1;
     colourBlendingCreateInfo.pAttachments = &colourState;
 
+    Pipelines[0].createTextureSampler(mainDevice.logicalDevice);
+    Pipelines[0].createTextureSamplerSetLayout(mainDevice.logicalDevice);
+    Pipelines[0].createTextureDescriptorPool(mainDevice.logicalDevice);
     // pipeline layout
-    std::array<VkDescriptorSetLayout, 2> descriptorSetLayouts = { descriptorSetLayout, currentScene.samplerSetLayout };
+    auto imageView = currentScene.getTexture(currentScene.GetModels()[0].getMesh(0)->getTexId());
+    //VVV must keep track of this somehow
+    int index = Pipelines[0].createTextureDescriptor(imageView.getImage(0).getImageView(), mainDevice.logicalDevice);
+    std::array<VkDescriptorSetLayout, 2> descriptorSetLayouts = { descriptorSetLayout, Pipelines[0].getTextureDescriptorSetLayout() };
 
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
     pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -746,7 +729,7 @@ void VulkanRenderer::createGraphicsPipeline()
     depthStencilCreateInfo.depthBoundsTestEnable = VK_FALSE; // depth bounds test - does the depth value exist between two bounds
     depthStencilCreateInfo.stencilTestEnable = VK_FALSE; // enable stencil test
 
-    Pipelines.push_back(Pipeline());
+   
     Pipelines[0].CreatePipeline(shaderStages, &vertexInputCreateInfo, &inputAssembly, &viewportStateCreateInfo, 
         NULL, &rasterizerCreateInfo, &multisamplingCreateInfo, &colourBlendingCreateInfo, &depthStencilCreateInfo, 
         pipelineLayout, renderPass, 0, VK_NULL_HANDLE, -1,
@@ -755,6 +738,7 @@ void VulkanRenderer::createGraphicsPipeline()
 
     //------------Create second pipeline here-------------
     // first get second set of shaders
+    /*
     auto vertexShaderCode2 = readFile("Shaders/shader2_vert.spv");
     auto fragmentShaderCode2 = readFile("Shaders/shader2_frag.spv");
 
@@ -785,7 +769,7 @@ void VulkanRenderer::createGraphicsPipeline()
         pipelineLayout, renderPass, 0, Pipelines[0].getPipeline(), -1,
         VK_PIPELINE_CREATE_DERIVATIVE_BIT,
         vertexShaderModule, fragmentShaderModule, mainDevice.logicalDevice);
-
+    */
     // destroy shader modules
     //vkDestroyShaderModule(mainDevice.logicalDevice, fragmentShaderModule, nullptr);
    // vkDestroyShaderModule(mainDevice.logicalDevice, vertexShaderModule, nullptr);
@@ -814,20 +798,23 @@ void VulkanRenderer::createDepthBufferImage()
     depthFormat = chooseSupportedFormat({ VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT },
         VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
     //create depth buffer image
-    depthBufferImage = Scene::createImage(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, msaaSamples, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &depthBufferImageMemory, mainDevice.physicalDevice, mainDevice.logicalDevice);
 
-    depthBufferImageView = Scene::createImageView(depthBufferImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, mainDevice.logicalDevice);
+
+    depthBufferImage.createImage(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, msaaSamples, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mainDevice.physicalDevice, mainDevice.logicalDevice);
+
+    depthBufferImage.createImageView(depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, mainDevice.logicalDevice);
 }
 
 void VulkanRenderer::createColorResources()
 {
     VkFormat colorFormat = swapChainImageFormat;
 
-    colorImage = Scene::createImage(swapChainExtent.width, swapChainExtent.height, colorFormat,
+
+    colorImage.createImage(swapChainExtent.width, swapChainExtent.height, colorFormat,
         VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 
-        msaaSamples, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &colorImageMemory, mainDevice.physicalDevice, mainDevice.logicalDevice);//hmm
-    colorImageView = Scene::createImageView(colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, mainDevice.logicalDevice);
+        msaaSamples, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mainDevice.physicalDevice, mainDevice.logicalDevice);//hmm
+    colorImage.createImageView(colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, mainDevice.logicalDevice);
 }
 
 void VulkanRenderer::createFramebuffers()
@@ -839,8 +826,8 @@ void VulkanRenderer::createFramebuffers()
     {
         std::array<VkImageView, 3> attachments =
         {
-                            colorImageView,
-            depthBufferImageView,
+                            colorImage.getImageView(),
+            depthBufferImage.getImageView(),
                         swapChainImages[i].imageView
         };
 
@@ -990,23 +977,6 @@ void VulkanRenderer::createDescriptorPool()
         throw std::runtime_error("Failed to create a descriptor pool!");
     }
 
-    //create sampler descriptor pool
-    // texture sampler pool
-    VkDescriptorPoolSize samplerPoolSize = {};
-    samplerPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerPoolSize.descriptorCount = MAX_OBJECTS;
-
-    VkDescriptorPoolCreateInfo samplerPoolCreateInfo = {};
-    samplerPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    samplerPoolCreateInfo.maxSets = MAX_OBJECTS;
-    samplerPoolCreateInfo.poolSizeCount = 1;
-    samplerPoolCreateInfo.pPoolSizes = &samplerPoolSize;
-
-    result = vkCreateDescriptorPool(mainDevice.logicalDevice, &samplerPoolCreateInfo, nullptr, &currentScene.samplerDescriptorPool);
-    if (result != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to create a descriptor pool");
-    }
 }
 
 void VulkanRenderer::createDescriptorSets()
@@ -1117,7 +1087,7 @@ void VulkanRenderer::createLight()
 void VulkanRenderer::createScene()
 {
     //create our scene
-    currentScene = Scene(mainDevice.physicalDevice, mainDevice.logicalDevice);
+    //currentScene = Scene(mainDevice.physicalDevice, mainDevice.logicalDevice);
 }
 
 void VulkanRenderer::compileShaders()
@@ -1128,7 +1098,7 @@ void VulkanRenderer::compileShaders()
 int VulkanRenderer::createMeshModel(std::string modelFile)
 {
  // Upload to current scene
-    currentScene.AddModel(modelFile, graphicsQueue, graphicsCommandPool);
+    currentScene.AddModel(modelFile, graphicsQueue, graphicsCommandPool, mainDevice.physicalDevice, mainDevice.logicalDevice);
  // Load model
     // create new pipeline if needed
     // add pipelines to pipelines-in-use
@@ -1230,7 +1200,7 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
 
 
                 //!HERE
-                std::array<VkDescriptorSet, 2> descriptorSetGroup = { descriptorSets[currentImage], currentScene.samplerDescriptorSets[0] };
+                std::array<VkDescriptorSet, 2> descriptorSetGroup = { descriptorSets[currentImage], Pipelines[0].getTextureDescriptureSet(0) };
 
                 // bind descriptor sets
                 vkCmdBindDescriptorSets(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
@@ -1420,8 +1390,9 @@ void VulkanRenderer::createSwapChain()
     {
         //store image handle
         SwapChainImage swapchainImage = {};
+        
         swapchainImage.image = image;
-        swapchainImage.imageView = Scene::createImageView(image, swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, mainDevice.logicalDevice);
+        swapchainImage.imageView = Image::createImageView(image, swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, mainDevice.logicalDevice);
 
         swapChainImages.push_back(swapchainImage);
     }

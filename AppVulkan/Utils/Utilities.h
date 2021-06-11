@@ -1,6 +1,7 @@
 #pragma once
 
 #include <fstream>
+#include <vector>
 
 #define GLFW_INCLUDE_VULKAN
 #include <glm/glm.hpp>
