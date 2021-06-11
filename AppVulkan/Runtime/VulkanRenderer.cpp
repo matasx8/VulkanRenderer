@@ -143,8 +143,6 @@ void VulkanRenderer::cleanup()
     //wait until no actions being run on device
     vkDeviceWaitIdle(mainDevice.logicalDevice);
 
-    currentScene.CleanUp(mainDevice.logicalDevice);
-
 
     vkDestroyDescriptorPool(mainDevice.logicalDevice, descriptorPool, nullptr);
     vkDestroyDescriptorSetLayout(mainDevice.logicalDevice, descriptorSetLayout, nullptr);
@@ -171,8 +169,13 @@ void VulkanRenderer::cleanup()
     {
         vkDestroyFramebuffer(mainDevice.logicalDevice, framebuffer, nullptr);
     }
-    for(auto& pipe : Pipelines)
-        vkDestroyPipeline(mainDevice.logicalDevice, pipe.getPipeline(), nullptr);
+    currentScene.CleanUp(mainDevice.logicalDevice);
+    depthBufferImage.destroyImage(mainDevice.logicalDevice);
+    colorImage.destroyImage(mainDevice.logicalDevice);
+    for (auto& pipe : Pipelines)
+    {
+        pipe.CleanUp(mainDevice.logicalDevice);
+    }
     vkDestroyPipelineLayout(mainDevice.logicalDevice, pipelineLayout, nullptr);
     vkDestroyRenderPass(mainDevice.logicalDevice, renderPass, nullptr);
     for (auto& image : swapChainImages)
