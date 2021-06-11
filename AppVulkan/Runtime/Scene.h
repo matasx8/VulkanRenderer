@@ -14,8 +14,10 @@ class Scene
 {
 public:
 	Scene();
+	Scene(VkQueue graphicsQueue, VkCommandPool graphicsCommandPool, VkPhysicalDevice physicalDevice, VkDevice logicalDevice);
 	// Add and load model to currently used scene
-	void AddModel(std::string path, VkQueue graphicsQueue, VkCommandPool graphicsCommandPool, VkPhysicalDevice physicalDevice, VkDevice logicalDevice);
+	// Will create a new pipeline if needed
+	void AddModel(std::string fileName);
 
 	std::vector<Model>& GetModels();
 	Texture& getTexture(int index) { return Textures[index]; }
@@ -32,5 +34,12 @@ private:
 	std::vector<Model> Models;
 	std::vector<Texture> Textures;
 	
+
+	VkQueue graphicsQueue;
+	VkCommandPool graphicsCommandPool;
+	VkPhysicalDevice physicalDevice;
+	VkDevice logicalDevice;
+
+	void AddModelInitial(std::string path);
 };
 

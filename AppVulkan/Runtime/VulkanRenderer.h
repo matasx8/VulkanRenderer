@@ -33,8 +33,7 @@ public:
 
 	int init(std::string wName = "Default Window", const int width = 800, const int height = 600);
 
-	void updateModel(int modelId, glm::mat4 newModel);
-	int createMeshModel(std::string modelFile);
+	void addModel(std::string fileName);
 	//TODO: void LoadScene();
 
 	void setupDebugMessenger();
@@ -137,8 +136,6 @@ private:
 	void createLogicalDevice();
 	void createSurface();
 	void createSwapChain();
-	//VkImage createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags useFlags, VkSampleCountFlagBits numSamples, VkMemoryPropertyFlags propFlags, VkDeviceMemory* imageMemory);
-	//VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 	void createRenderPass();
 	void createDescriptorSetLayout();
 	void createPushConstantRange();
@@ -153,13 +150,10 @@ private:
 	void createUniformBuffers();
 	void createDescriptorPool();
 	void createDescriptorSets();
-	//int createTextureImage(std::string fileName);
-	//int createTexture(std::string fileName);
-	//void createTextureSampler();
-	//int createTextureDescriptor(VkImageView textureImage);
 	void createCamera();
 	void createLight();
 	void createScene();
+	int createMeshModel(std::string modelFile);
 	
 	void compileShaders();
 

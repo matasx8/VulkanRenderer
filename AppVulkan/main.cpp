@@ -19,7 +19,7 @@ int main()
 	float deltaTime = 0.0f;
 	float lastTime = 0.0f;
 
-	//int ind = vulkanRenderer.createMeshModel("Models/12140_Skull_v3_L2.obj");
+	vulkanRenderer.addModel("Models/12140_Skull_v3_L2.obj");
 	//int secondSkull = vulkanRenderer.createMeshModel("Models/12140_Skull_v3_L2.obj");
 
 	while (!glfwWindowShouldClose(vulkanRenderer.window.window))
