@@ -49,12 +49,6 @@ int VulkanRenderer::init(std::string wName, const int width, const int height)
 
     return 0;
 }
-/*void VulkanRenderer::updateModel(int modelId, glm::mat4 newModel)
-{
-    if (modelId >= modelList.size()) !HERE
-        return;
-    modelList[modelId].setModel(newModel);
-}*/
 
 void VulkanRenderer::setupDebugMessenger()
 {
@@ -131,6 +125,7 @@ void VulkanRenderer::draw(float dt)
 
     //get next frame
     currentFrame = (currentFrame + 1) % MAX_FRAME_DRAWS;
+    currentScene->onFrameEnded();
 }
 
 void VulkanRenderer::cleanup()
@@ -164,14 +159,15 @@ void VulkanRenderer::cleanup()
     {
         vkDestroyFramebuffer(mainDevice.logicalDevice, framebuffer, nullptr);
     }
-    currentScene.CleanUp(mainDevice.logicalDevice);
+    currentScene->CleanUp(mainDevice.logicalDevice);
+    free(currentScene);
     depthBufferImage.destroyImage(mainDevice.logicalDevice);
     colorImage.destroyImage(mainDevice.logicalDevice);
     for (auto& pipe : Pipelines)
     {
         pipe.CleanUp(mainDevice.logicalDevice);
     }
-    vkDestroyPipelineLayout(mainDevice.logicalDevice, pipelineLayout, nullptr);
+    //vkDestroyPipelineLayout(mainDevice.logicalDevice, pipelineLayout, nullptr);
     vkDestroyRenderPass(mainDevice.logicalDevice, renderPass, nullptr);
     for (auto& image : swapChainImages)
     {
@@ -556,7 +552,7 @@ void VulkanRenderer::createPushConstantRange()
 
 void VulkanRenderer::createGraphicsPipeline()
 {
-    Pipelines.push_back(Pipeline());
+    Pipelines.push_back(Pipeline(mainDevice));
 
     shaderMan.WaitForCompile();
     auto vertexShaderCode = readFile("Shaders/shader_vert.spv");
@@ -699,7 +695,7 @@ void VulkanRenderer::createGraphicsPipeline()
     Pipelines[0].createTextureSamplerSetLayout(mainDevice.logicalDevice);
     Pipelines[0].createTextureDescriptorPool(mainDevice.logicalDevice);
     // pipeline layout
-    auto imageView = currentScene.getTexture(currentScene.GetModels()[0].getMesh(0)->getTexId());
+    auto imageView = currentScene->getTexture(currentScene->GetModels()[0].getMesh(0)->getTexId());
     //VVV must keep track of this somehow
     int index = Pipelines[0].createTextureDescriptor(imageView.getImage(0).getImageView(), mainDevice.logicalDevice);
     std::array<VkDescriptorSetLayout, 2> descriptorSetLayouts = { descriptorSetLayout, Pipelines[0].getTextureDescriptorSetLayout() };
@@ -712,6 +708,7 @@ void VulkanRenderer::createGraphicsPipeline()
     pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
 
     //create pipeline layout
+
     VkResult result = vkCreatePipelineLayout(mainDevice.logicalDevice, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout);
     if (result != VK_SUCCESS)
     {
@@ -1085,7 +1082,7 @@ void VulkanRenderer::createLight()
 void VulkanRenderer::createScene()
 {
     //create our scene
-    currentScene = Scene(graphicsQueue, graphicsCommandPool, mainDevice.physicalDevice, mainDevice.logicalDevice);
+    currentScene = new Scene(graphicsQueue, graphicsCommandPool, mainDevice.physicalDevice, mainDevice.logicalDevice);
 }
 
 void VulkanRenderer::compileShaders()
@@ -1096,18 +1093,21 @@ void VulkanRenderer::compileShaders()
 int VulkanRenderer::createMeshModel(std::string modelFile)
 {
  // Upload to current scene
-    currentScene.AddModel(modelFile);
+    currentScene->AddModel(modelFile);
  // Load model
     // create new pipeline if needed
     // add pipelines to pipelines-in-use
     return 0;
 }
 
-void VulkanRenderer::addModel(std::string fileName)
+void VulkanRenderer::addModel(std::string fileName, Material material)
 {
-    // Judge if new pipe needed by the material. Later bring in material here
-    // material will have shaders and other params?
-    currentScene.AddModel(fileName);
+    currentScene->addModel(fileName, material);
+}
+
+std::vector<Model>* VulkanRenderer::getModels()
+{
+    return &currentScene->getModels();
 }
 
 void VulkanRenderer::updateUniformBuffers(uint32_t index)
@@ -1183,7 +1183,7 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
     vkCmdBeginRenderPass(commandBuffer[currentImage], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     //bind pipeline to be used in render pass
-    for(auto& model : currentScene.GetModels())
+    for(auto& model : currentScene->GetModels())
     {
         // bind pipeline from index, but only if different
         // if(model.getPipeIndex() != lastindex) ! ------ !

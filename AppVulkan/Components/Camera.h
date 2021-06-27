@@ -1,5 +1,6 @@
 #pragma once
 #include "Representable.h"
+#include "vulkan.h"
 
 //#include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -18,7 +19,10 @@ public:
 	void mouseControl(GLfloat xChange, GLfloat yChange);
 
 	glm::vec3& getCameraPosition();
-	glm::vec3 getCameraDirection();
+	glm::vec3 getCameraDirection() const;
+	VkSampleCountFlagBits getMSAA() const { return msaaSamples; }
+
+	void setMSAA(VkSampleCountFlagBits msaaSamples);
 
 	glm::mat4 calculateViewMatrix();
 
@@ -40,6 +44,8 @@ private:
 
 	GLfloat moveSpeed;
 	GLfloat turnSpeed;
+
+	VkSampleCountFlagBits msaaSamples;
 
 	void update();
 };

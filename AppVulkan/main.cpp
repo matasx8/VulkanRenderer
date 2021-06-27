@@ -5,6 +5,26 @@
 #include "VulkanRenderer.h"
 
 VulkanRenderer vulkanRenderer;
+float angle;
+
+void updateModels(float dt)
+{
+	std::vector<Model>* Models = vulkanRenderer.getModels();
+	
+	angle += 10.0f * dt;
+	if (angle > 360)
+		angle -= 360;//here!@#!@! fix rot
+	//auto model = Models[0].getModel();
+	auto model = glm::translate(glm::mat4(1.0f), glm::vec3(50.0f, 0.0f, 0.0f));
+	model = glm::rotate(model, glm::radians(-angle), glm::vec3(0.0f, 1.0f, 0.0f));
+	model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	(*Models)[0].setModel(model);
+
+	//model = glm::translate(glm::mat4(1.0f), glm::vec3(50.0f, 0.0f, 0.0f));
+	model = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	(*Models)[1].setModel(model);
+}
 
 
 int main()
@@ -33,17 +53,7 @@ int main()
 		Debug::FrameInfo(deltaTime);
 #endif //  DEBUG_FRAME_INFO
 
-		angle += 10.f * deltaTime;
-		if (angle > 360.0f) { angle -= 360.0f; }
-
-		/*glm::mat4 testMat = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
-		testMat = glm::rotate(testMat, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		vulkanRenderer.updateModel(ind, testMat);*/
-
-		/*glm::mat4 testMat2 = glm::translate(glm::mat4(1.0f), glm::vec3(50.0f, 0.0f, 0.0f));
-		testMat2 = glm::rotate(testMat2, glm::radians(-angle), glm::vec3(0.0f, 1.0f, 0.0f));
-		testMat2 = glm::rotate(testMat2, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		vulkanRenderer.updateModel(secondSkull, testMat2);*/
+		updateModels(deltaTime);
 
 		vulkanRenderer.draw(deltaTime);
 	}

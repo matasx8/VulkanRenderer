@@ -33,7 +33,8 @@ public:
 
 	int init(std::string wName = "Default Window", const int width = 800, const int height = 600);
 
-	void addModel(std::string fileName);
+	void addModel(std::string fileName, Material material);
+	std::vector<Model>* getModels();
 	//TODO: void LoadScene();
 
 	void setupDebugMessenger();
@@ -54,7 +55,7 @@ private:
 	int currentFrame = 0;
 
 	//-- SCENE ---
-	Scene currentScene;
+	Scene* currentScene;
 
 	//scene settings -- later get this into scene
 	struct UboViewProjection {
@@ -74,10 +75,6 @@ private:
 
 	VkInstance instance;
 	VkDebugUtilsMessengerEXT debugMessenger;
-	struct Device {
-		VkPhysicalDevice physicalDevice;
-		VkDevice logicalDevice;
-	} mainDevice;
 	VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 	VkQueue graphicsQueue;
 	VkQueue presentationQueue;
@@ -116,8 +113,8 @@ private:
 
 	//pipeline
 	std::vector<Pipeline> Pipelines;
-	VkPipeline graphicsPipeline;
-	VkPipelineLayout pipelineLayout;
+	///VkPipeline graphicsPipeline;
+	//VkPipelineLayout pipelineLayout;
 	VkRenderPass renderPass;
 
 	//pools
@@ -135,6 +132,7 @@ private:
 	void createInstance();
 	void createLogicalDevice();
 	void createSurface();
+	// a queue of images that are waiting to be presented to the screen
 	void createSwapChain();
 	void createRenderPass();
 	void createDescriptorSetLayout();

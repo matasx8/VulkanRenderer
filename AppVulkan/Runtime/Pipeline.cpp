@@ -1,8 +1,45 @@
 #include "Pipeline.h"
 #include <stdexcept>
 
-Pipeline::Pipeline()
+Pipeline::Pipeline(Device device)
 {
+    this->device = device;
+    usedThisFrame = false;
+}
+
+Pipeline::Pipeline(const Material material, Device device)
+    :material(material), device(device)
+{
+}
+
+void Pipeline::createPipeline(VkExtent2D extent)
+{
+    //if(material is uninitialized)
+    // use default TODO
+    VkPipelineShaderStageCreateInfo shaderStages[2];
+    createPipelineShaderStageCreateInfo(shaderStages[0], material.vertexShader.c_str(), VK_SHADER_STAGE_VERTEX_BIT);
+    createPipelineShaderStageCreateInfo(shaderStages[0], material.fragmentShader.c_str(), VK_SHADER_STAGE_VERTEX_BIT);
+
+    VkVertexInputBindingDescription bindingDescription;
+    createVertexInputBindingDescription(bindingDescription);
+
+    std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions;
+    createVertexInputAttributeDescription(attributeDescriptions[0], 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, pos));
+    createVertexInputAttributeDescription(attributeDescriptions[1], 1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, norm));
+    createVertexInputAttributeDescription(attributeDescriptions[2], 2, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, tex));
+    
+    VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo;
+    createPipelineVertexInputStateCreateInfo(vertexInputCreateInfo, bindingDescription, attributeDescriptions.data());
+
+    VkViewport viewport;
+    createViewport(viewport, extent.width, extent.height);
+    VkRect2D scissor;
+    createScissor(scissor, extent);
+    VkPipelineViewportStateCreateInfo viewportStateCreateInfo;
+    createPipelineViewportStateCreateInfo(viewportStateCreateInfo, &viewport, &scissor);
+
+    // TODO dynamic states
+    
 
 }
 
@@ -169,13 +206,117 @@ void Pipeline::createTextureDescriptorPool(VkDevice logicalDevice)
 }
 
 
+
+
+bool Pipeline::isMaterialCompatible(const Material& mat) const
+{
+    return this->material == mat;
+}
+
 void Pipeline::CleanUp(VkDevice logicalDevice)
 {
     vkDestroyDescriptorPool(logicalDevice, samplerDescriptorPool, nullptr);
     vkDestroyDescriptorSetLayout(logicalDevice, samplerSetLayout, nullptr);
     vkDestroySampler(logicalDevice, textureSampler, nullptr);
 
+    vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
     vkDestroyPipeline(logicalDevice, pipeline, nullptr);
 }
 
 Pipeline::~Pipeline() {}
+
+void Pipeline::createPipelineShaderStageCreateInfo(VkPipelineShaderStageCreateInfo& createInfo, const char* shaderFileName, VkShaderStageFlagBits shaderStage)
+{
+    auto shaderCode = readFile(shaderFileName);
+
+    VkShaderModule shaderModule;
+    createShaderModule(shaderModule, shaderCode);
+
+    createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    createInfo.stage = shaderStage;
+    createInfo.module = shaderModule; //does it copy?
+    createInfo.pName = "main";
+}
+
+void Pipeline::createShaderModule(VkShaderModule& shaderModule, const std::vector<char>& code)
+{
+    VkShaderModuleCreateInfo shaderModuleCreateInfo = {};
+    shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    shaderModuleCreateInfo.codeSize = code.size();
+    shaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());//pointer to code
+
+    VkResult result = vkCreateShaderModule(device.logicalDevice, &shaderModuleCreateInfo, nullptr, &shaderModule);
+    if (result != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create a shader module!");
+    }
+}
+
+void Pipeline::createVertexInputBindingDescription(VkVertexInputBindingDescription& bindingDescription)
+{
+    bindingDescription.binding = 0;
+    bindingDescription.stride = sizeof(Vertex);
+    bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+}
+
+void Pipeline::createVertexInputAttributeDescription(VkVertexInputAttributeDescription& attributeDescription, uint32_t location, VkFormat format, uint32_t offset)
+{
+    attributeDescription.binding = 0;
+    attributeDescription.location = location;
+    attributeDescription.format = format;
+    attributeDescription.offset = offset;
+}
+
+void Pipeline::createPipelineVertexInputStateCreateInfo(VkPipelineVertexInputStateCreateInfo& vertexInputCreateInfo, VkVertexInputBindingDescription& bindingDescription, VkVertexInputAttributeDescription* attributeDescriptions)
+{
+    vertexInputCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInputCreateInfo.vertexBindingDescriptionCount = 1;
+    vertexInputCreateInfo.pVertexBindingDescriptions = &bindingDescription;
+    vertexInputCreateInfo.vertexAttributeDescriptionCount = 3;
+    vertexInputCreateInfo.pVertexAttributeDescriptions = attributeDescriptions;
+}
+
+void Pipeline::createPipelineInputAssemblyStateCreateInfo(VkPipelineInputAssemblyStateCreateInfo& inputAssembly)
+{
+    inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    inputAssembly.primitiveRestartEnable = VK_FALSE;
+}
+
+void Pipeline::createViewport(VkViewport& viewport, float width, float height)
+{
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = width;
+    viewport.height = height;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+}
+
+void Pipeline::createScissor(VkRect2D& scissor, VkExtent2D extent)
+{
+    scissor.offset = { 0,0 };
+    scissor.extent = extent;
+}
+
+void Pipeline::createPipelineViewportStateCreateInfo(VkPipelineViewportStateCreateInfo& viewportStateCreateInfo, VkViewport* viewports, VkRect2D* scissors)
+{
+    // Note: pass array of data and count here / array of data with count if i later want multiple viewports for some reason
+    viewportStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewportStateCreateInfo.viewportCount = 1;
+    viewportStateCreateInfo.pViewports = viewports;
+    viewportStateCreateInfo.scissorCount = 1;
+    viewportStateCreateInfo.pScissors = scissors;
+}
+
+void Pipeline::createPipelineRasterizationStateCreateInfo(VkPipelineRasterizationStateCreateInfo& rasterizerCreateInfo)
+{
+    rasterizerCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizerCreateInfo.depthClampEnable = VK_FALSE;
+    rasterizerCreateInfo.rasterizerDiscardEnable = VK_FALSE;
+    rasterizerCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
+    rasterizerCreateInfo.lineWidth = 1.0f;
+    rasterizerCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+    rasterizerCreateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rasterizerCreateInfo.depthBiasEnable = VK_FALSE;
+}

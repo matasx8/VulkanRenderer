@@ -28,7 +28,7 @@ namespace Debug
 	// Logs a message that is null terminated
 	static void LogMsg(const char* msg)
 	{
-		printf("[Debug Message] %s", msg);
+		printf("[Debug Message] %s\n", msg);
 	}
 
 	/*template void Log<Representable>()

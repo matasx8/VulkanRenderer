@@ -4,6 +4,12 @@ Model::Model()
 {
 }
 
+Model::Model(const Model& copy)
+{
+	this->meshList = copy.meshList;
+	this->model = copy.model;
+}
+
 Model::Model(std::vector<Mesh> newMeshList)
 {
 	meshList = newMeshList;
@@ -29,7 +35,7 @@ glm::mat4& Model::getModel()
 	return model;
 }
 
-void Model::setModel(glm::mat4 newModel)
+void Model::setModel(glm::mat4 newModel)// move rather than recreate?
 {
 	model = newModel;
 }

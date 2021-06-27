@@ -13,10 +13,10 @@ Scene::Scene(VkQueue graphicsQueue, VkCommandPool graphicsCommandPool, VkPhysica
     Textures.push_back(tex);
 
     // Initial model
-    AddModelInitial("Models/12140_Skull_v3_L2.obj");
+    addModelInitial("Models/12140_Skull_v3_L2.obj");
 }
 
-void Scene::AddModel(std::string fileName)
+void Scene::addModel(std::string fileName, Material material)
 {
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals | aiProcess_JoinIdenticalVertices);
@@ -52,10 +52,15 @@ void Scene::AddModel(std::string fileName)
         scene->mRootNode, scene, matToTex);
 
     Model meshModel = Model(modelMeshes);
-    Models.push_back(meshModel);
+
+    // use material to find out if we need to create a new pipeline
+    // if yes, then create one and append to pipelines. Also insert into model vector
+    // if no, find out which pipeline do we need to reuse.
+    meshModel.setPipelineIndex(setupPipeline(material));
+    Models.push_backaa(meshModel);// inser accordingly
 }
 
-void Scene::AddModelInitial(std::string path)
+void Scene::addModelInitial(std::string path)
 {
 
     // import model "scene"
@@ -96,9 +101,8 @@ void Scene::AddModelInitial(std::string path)
     Models.push_back(meshModel);
 }
 
-std::vector<Model>& Scene::GetModels()
+std::vector<Model>& Scene::getModels()
 {
-	// TODO: insert return statement here
     return Models;
 }
 
@@ -106,7 +110,55 @@ Scene::~Scene()
 {
 }
 
+void Scene::updateModelPipesFrom(int index)
+{
+    for (auto& model : Models)
+    {
+        if (model.getPipelineIndex() >= index)
+        {
+            model.updatePipelineIndex();
+        }
+    }
+}
 
+int Scene::setupPipeline(const Material& material)
+{
+    for (int i = 0; i < Pipelines.size(); i++)
+    {
+        if (Pipelines[i].isMaterialCompatible(material))
+            return i; // we can reuse this pipeline, hooray
+    }
+    // we did not find any compatible pipelines, let's create a new one
+    Pipeline newPipe = Pipeline(material);
+    Pipelines.push_back(newPipe);
+}
+
+
+
+Pipeline Scene::getPipeline(int index) const
+{
+    if (index >= Pipelines.size())
+        return Pipelines[0];
+
+    return Pipelines[index];
+}
+
+void Scene::onFrameEnded()
+{
+    int i = 0;
+    for (auto it = Pipelines.begin(); it != Pipelines.end(); it++)
+    {
+        i++;
+        if ((*it).wasUsedThisFrame())
+        {
+            Debug::LogMsg("a pipeline was thrown out because it has not been used\0");
+            Pipelines.erase(it);
+            // update the models from the index because we need to update their indices of the pipeline
+            updateModelPipesFrom(i);
+            continue;
+        }
+    }
+}
 
 void Scene::CleanUp(VkDevice logicalDevice)
 {

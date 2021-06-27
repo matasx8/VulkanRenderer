@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <vector>
+#include <array>
 
 #define GLFW_INCLUDE_VULKAN
 #include <glm/glm.hpp>
@@ -22,6 +23,11 @@ struct Vertex
 	glm::vec2 tex; // tex coords (u, v)
 	glm::vec3 norm;
 };
+
+struct Device {
+	VkPhysicalDevice physicalDevice;
+	VkDevice logicalDevice;
+} mainDevice;
 
 //indices (locations) of queue families if they exist
 struct QueueFamilyIndices

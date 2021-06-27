@@ -169,6 +169,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Components\Mesh.cpp" />
     <ClCompile Include="Components\Model.cpp" />
+    <ClCompile Include="Components\Material.cpp" />
     <ClCompile Include="Runtime\Pipeline.cpp" />
     <ClCompile Include="Runtime\VulkanRenderer.cpp" />
     <ClCompile Include="Runtime\Scene.cpp" />
@@ -182,6 +183,7 @@
     <ClInclude Include="Components\Mesh.h" />
     <ClInclude Include="Components\Model.h" />
     <ClInclude Include="Components\Image.h" />
+    <ClInclude Include="Components\Material.h" />
     <ClInclude Include="Runtime\Pipeline.h" />
     <ClInclude Include="Runtime\Scene.h" />
     <ClInclude Include="Components\Texture.h" />

@@ -1,7 +1,11 @@
 #include "Camera.h"
 
+// TODO easy: init all variables
+Camera::Camera()
+	:msaaSamples(VK_SAMPLE_COUNT_1_BIT)
+{
 
-Camera::Camera() {}
+}
 
 Camera::~Camera() {}
 
@@ -17,6 +21,8 @@ Camera::Camera(glm::vec3 startPosition, glm::vec3 startUp, float startYaw
 
 	moveSpeed = startMoveSpeed;
 	turnSpeed = startTurnSpeed;
+
+	msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
 	update();
 }
@@ -67,6 +73,11 @@ void Camera::mouseControl(GLfloat xChange, GLfloat yChange)
 	update();
 }
 
+void Camera::setMSAA(VkSampleCountFlagBits msaaSamples)
+{
+	this->msaaSamples = msaaSamples > VK_SAMPLE_COUNT_8_BIT ? VK_SAMPLE_COUNT_8_BIT : msaaSamples;
+}
+
 glm::mat4 Camera::calculateViewMatrix()
 {
 	return glm::lookAt(position, position + front, up);
@@ -93,7 +104,8 @@ glm::vec3& Camera::getCameraPosition()
 	return position;
 }
 
-glm::vec3 Camera::getCameraDirection()
+
+glm::vec3 Camera::getCameraDirection() const
 {
 	return glm::normalize(front);
 }

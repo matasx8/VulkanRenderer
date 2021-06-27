@@ -18,3 +18,13 @@ How do I do that? everything is intertwined.. Figure it out..
 !!--- for now it will do to just recreate ---!!
 all these samplers and descriptors that im having trouble with first will be
 for default pipeline which will have only one texture
+
+Pipelines should be in Scene -- dont forget to pass it to pipeline
+end frame, clean up scene stuff(pipes)
+Will let Models be a vector, because insertion will happen rarely. Will handle insert
+methd myself
+-- dont forget to pass pipeline index to model
+Pipeline()
+-- don't forgt - readFile should auto read from Shaders folder
+
+camera should be in scene.
