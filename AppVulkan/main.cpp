@@ -39,7 +39,7 @@ int main()
 	float deltaTime = 0.0f;
 	float lastTime = 0.0f;
 
-	vulkanRenderer.addModel("Models/12140_Skull_v3_L2.obj");
+	//vulkanRenderer.addModel("Models/12140_Skull_v3_L2.obj");
 	//int secondSkull = vulkanRenderer.createMeshModel("Models/12140_Skull_v3_L2.obj");
 
 	while (!glfwWindowShouldClose(vulkanRenderer.window.window))
@@ -53,7 +53,7 @@ int main()
 		Debug::FrameInfo(deltaTime);
 #endif //  DEBUG_FRAME_INFO
 
-		updateModels(deltaTime);
+		//updateModels(deltaTime);
 
 		vulkanRenderer.draw(deltaTime);
 	}

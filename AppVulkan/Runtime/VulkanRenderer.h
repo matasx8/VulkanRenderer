@@ -24,6 +24,7 @@
 #include "Image.h"
 
 //#define DEBUG_LOGS;
+#define DEBUG
 
 class VulkanRenderer
 {
@@ -55,13 +56,7 @@ private:
 	int currentFrame = 0;
 
 	//-- SCENE ---
-	Scene* currentScene;
-
-	//scene settings -- later get this into scene
-	struct UboViewProjection {
-		glm::mat4 projection;
-		glm::mat4 view;
-	} uboViewProjection;
+	Scene currentScene;
 
 	const std::vector<const char*> validationLayers = {//TODO: add more?
 "VK_LAYER_KHRONOS_validation"
@@ -74,6 +69,7 @@ private:
 #endif
 
 	VkInstance instance;
+	Device mainDevice;
 	VkDebugUtilsMessengerEXT debugMessenger;
 	VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 	VkQueue graphicsQueue;
@@ -87,25 +83,8 @@ private:
 	Image depthBufferImage;
 	Image colorImage;
 
-
-
-	//descriptors
-	VkDescriptorSetLayout descriptorSetLayout;
-	VkPushConstantRange pushConstantRange;
-	VkDescriptorPool descriptorPool;
-	std::vector<VkDescriptorSet> descriptorSets;
-
 	ShaderMan shaderMan;
 
-	std::vector<VkBuffer> vpUniformBuffer;
-	std::vector<VkDeviceMemory> vpUniformBufferMemory;
-	std::vector<VkBuffer> lightsUniformBuffer;
-	std::vector<VkDeviceMemory> lightsUniformBufferMemory;
-	std::vector<VkBuffer> cameraUniformBuffer;
-	std::vector<VkDeviceMemory> cameraUniformBufferMemory;
-
-	std::vector<VkBuffer> modelDUniformBuffer;
-	std::vector<VkDeviceMemory> modelDUniformBufferMemory;
 
 	//VkDeviceSize minUiformBufferOffset;
 	//s/ize_t modelUniformAlignment;
@@ -135,27 +114,16 @@ private:
 	// a queue of images that are waiting to be presented to the screen
 	void createSwapChain();
 	void createRenderPass();
-	void createDescriptorSetLayout();
-	void createPushConstantRange();
-	void createGraphicsPipeline();
-	VkShaderModule createShaderModule(const std::vector<char>& code);
 	void createDepthBufferImage();
 	void createColorResources();
 	void createFramebuffers();
 	void createCommandPool();
 	void createCommandBuffers();
 	void createSynchronization();
-	void createUniformBuffers();
-	void createDescriptorPool();
-	void createDescriptorSets();
-	void createCamera();
 	void createLight();
 	void createScene();
-	int createMeshModel(std::string modelFile);
 	
 	void compileShaders();
-
-	void updateUniformBuffers(uint32_t index);
 
 	//void allocateDynamicBufferTransferSpace();
 
@@ -186,8 +154,5 @@ private:
 	VkPresentModeKHR chooseBestPresentationMode(const std::vector<VkPresentModeKHR> presentationModes);
 	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfaceCapabilities);
 	VkFormat chooseSupportedFormat(const std::vector<VkFormat>& formats, VkImageTiling tiling, VkFormatFeatureFlags);
-
-	// loader functions
-	stbi_uc* loadTextureFile(std::string fileName, int* width, int* height, VkDeviceSize* imageSize);
 };
 

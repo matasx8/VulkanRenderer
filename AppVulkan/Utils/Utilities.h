@@ -27,7 +27,7 @@ struct Vertex
 struct Device {
 	VkPhysicalDevice physicalDevice;
 	VkDevice logicalDevice;
-} mainDevice;
+};
 
 //indices (locations) of queue families if they exist
 struct QueueFamilyIndices
@@ -40,6 +40,11 @@ struct QueueFamilyIndices
 	{
 		return graphicsFamily >= 0 && presentationFamily >= 0;
 	}
+};
+
+struct UboViewProjection {
+	glm::mat4 projection;
+	glm::mat4 view;
 };
 
 struct SwapChainDetails

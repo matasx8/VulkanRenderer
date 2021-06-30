@@ -28,3 +28,5 @@ Pipeline()
 -- don't forgt - readFile should auto read from Shaders folder
 
 camera should be in scene.
+
+add camera input and then fix all remaining mistakes! :o
