@@ -35,7 +35,7 @@ public:
 	int init(std::string wName = "Default Window", const int width = 800, const int height = 600);
 
 	void addModel(std::string fileName, Material material);
-	std::vector<Model>* getModels();
+	std::vector<glm::mat4>* getModelsMatrices();
 	//TODO: void LoadScene();
 
 	void setupDebugMessenger();

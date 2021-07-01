@@ -298,19 +298,36 @@ void Scene::updateModelPipesFrom(int index)
     }
 }
 
+void Scene::updateModelMatrixIndices(int index)
+{
+    throw std::runtime_error("Not implemented yet!");
+}
+
 void Scene::insertModel(Model& model)
 {
-    if (Models.size() == 0)
+    if (Models.size() == 0 || Models.back().getPipelineIndex() <= model.getPipelineIndex())
+    {
+        model.setModelMatrix(getNewModelMatrixIndex());
         Models.push_back(model);
+        return;
+    }
     // TODO medium annoying: binary search
     // currently O(n^2) and nobody likes that :)
-    for (auto it = Models.begin(); it != Models.end(); it++)
+    for (auto it = Models.begin(); it != Models.end();)
     {
         if ((*it).getPipelineIndex() >= model.getPipelineIndex())
         {
+            model.setModelMatrix(getNewModelMatrixIndex());
             Models.insert(it, model);
+            return;
         }
     }
+}
+
+size_t Scene::getNewModelMatrixIndex()
+{
+    ModelMatrices.emplace_back(1.0f);
+    return ModelMatrices.size() - 1;
 }
 
 int Scene::setupPipeline(Material& material, VkExtent2D extent, VkRenderPass renderPass)
@@ -325,6 +342,7 @@ int Scene::setupPipeline(Material& material, VkExtent2D extent, VkRenderPass ren
     Pipeline newPipe = Pipeline(material, device, &camera);
     newPipe.createPipeline(extent, renderPass, descriptorSetLayout);
     Pipelines.push_back(newPipe);
+    return Pipelines.size() - 1;
 }
 
 
@@ -341,7 +359,7 @@ void Scene::updateUniformBuffers(size_t index)
 {
     //do the transformations here or before calling this func
     viewProjection.view = camera.calculateViewMatrix();
-    Debug::Log(camera);
+    //Debug::Log(camera);
     // copy vp data
     void* data;
     vkMapMemory(logicalDevice, vpUniformBufferMemory[index], 0, sizeof(UboViewProjection), 0, &data);

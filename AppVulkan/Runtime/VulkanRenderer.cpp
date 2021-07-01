@@ -596,9 +596,9 @@ void VulkanRenderer::addModel(std::string fileName, Material material)
     currentScene.addModel(fileName, material, renderPass);
 }
 
-std::vector<Model>* VulkanRenderer::getModels()
+std::vector<glm::mat4>* VulkanRenderer::getModelsMatrices()
 {
-    return &currentScene.getModels();
+    return currentScene.getModelMatrices();
 }
 
 /*void VulkanRenderer::allocateDynamicBufferTransferSpace()
@@ -640,6 +640,7 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
     // finish off here, don't forget about command recording
     //bind pipeline to be used in render pass
     std::vector<Model> Models = currentScene.getModels();
+    std::vector<glm::mat4>* ModelMatrices = currentScene.getModelMatrices();
     int lastPipelineIndex = -1;
     for(size_t i = 0; i < Models.size(); i++)
     {
@@ -656,9 +657,12 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
         else if (currentPipelineIndex < lastPipelineIndex)
             throw std::runtime_error("Current pipeline index was lesser than old one. This indicates Model vector was not sorted.");
 #endif
-
+        //TODO dots
             auto pipelineLayout = currentScene.getPipeline(currentPipelineIndex).getPipelineLayout();
-            vkCmdPushConstants(commandBuffer[currentImage], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ModelMatrix), &model.getModel());
+            size_t modelMatrixIndex = model.getModelMatrixIndex();
+            auto modelMatrix = (*ModelMatrices)[modelMatrixIndex];
+
+            vkCmdPushConstants(commandBuffer[currentImage], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ModelMatrix), &modelMatrix);
 
             for (size_t k = 0; k < model.getMeshCount(); k++)
             {

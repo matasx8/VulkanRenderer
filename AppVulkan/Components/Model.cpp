@@ -4,16 +4,9 @@ Model::Model()
 {
 }
 
-Model::Model(const Model& copy)
-{
-	this->meshList = copy.meshList;
-	this->model = copy.model;
-}
-
 Model::Model(std::vector<Mesh> newMeshList)
 {
 	meshList = newMeshList;
-	model = glm::mat4(1.0f);
 }
 
 size_t Model::getMeshCount()
@@ -30,14 +23,12 @@ Mesh* Model::getMesh(size_t index)
 	return &meshList[index];
 }
 
-glm::mat4& Model::getModel()
+void Model::setModelMatrix(size_t index)
 {
-	return model;
-}
-
-void Model::setModel(glm::mat4 newModel)// move rather than recreate?
-{
-	model = newModel;
+	if (index >= 0)
+		modelMatrixIndex = index;
+	else
+		throw std::runtime_error("passed a negative index to setModelMatrix!");
 }
 
 void Model::destroyMeshModel()

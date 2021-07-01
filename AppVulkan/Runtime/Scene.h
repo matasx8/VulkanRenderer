@@ -27,6 +27,7 @@ public:
 	void createDescriptorSets();
 
 	std::vector<Model>& getModels(); // TODO: probably dont pass by ref
+		std::vector<glm::mat4>* getModelMatrices() { return &ModelMatrices; }
 	Texture& getTexture(int index) { return Textures[index]; }
 	// Returns pipeline, if index not found will return default one(index 0) 
 	Pipeline getPipeline(int index) const;
@@ -67,6 +68,8 @@ public:
 	// ---- temporary
 private:
 	std::vector<Model> Models;
+		// trying out dots
+		std::vector<glm::mat4> ModelMatrices;
 	std::vector<Texture> Textures;
 	std::vector<Pipeline> Pipelines;
 	Camera camera;
@@ -80,8 +83,11 @@ private:
 
 
 	void updateModelPipesFrom(int index);
+	void updateModelMatrixIndices(int index);
 
 	void insertModel(Model& model);
+
+	size_t getNewModelMatrixIndex();
 	// Uses material to find out if we need to create a new pipeline.
     // If yes, then creates a new one and appends to Pipelines.
     // If no, finds out which pipeline do we need to reuse.

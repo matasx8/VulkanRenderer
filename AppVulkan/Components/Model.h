@@ -6,15 +6,15 @@ class Model
 {
 public:
 	Model();
-	Model(const Model&);
 	Model(std::vector<Mesh> newMeshList);//find out if i can pass by ref
 
 	size_t getMeshCount();
 	Mesh* getMesh(size_t index);
-	glm::mat4& getModel();
-	int getPipelineIndex() const { return pipelineIndex; }
+	size_t getPipelineIndex() const { return pipelineIndex; }
+	size_t getModelMatrixIndex() const { return modelMatrixIndex; }
 
-	void setModel(glm::mat4 newModel);
+	//void setModel(glm::mat4 newModel);
+	void setModelMatrix(size_t index);
 	void setPipelineIndex(int index) { pipelineIndex = index; }
 	// Increment pipelineIndex by one. Used when a pipeline has been thrown out.
 	void updatePipelineIndex() { pipelineIndex++; }
@@ -31,7 +31,7 @@ public:
 
 private:
 	std::vector<Mesh> meshList;
-	glm::mat4 model;
-	int pipelineIndex;
+	size_t modelMatrixIndex;
+	size_t pipelineIndex;
 };
 
