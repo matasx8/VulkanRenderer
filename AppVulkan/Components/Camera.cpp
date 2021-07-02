@@ -1,12 +1,10 @@
 #include "Camera.h"
 
 Camera::Camera()
-	:msaaSamples(VK_SAMPLE_COUNT_1_BIT), position(glm::vec3(0.0f, 0.0f, 0.0f)), worldUp(glm::vec3(0.0f, 1.0f, 0.0f)),
-	yaw(-60.0f), pitch(0.0f), front(glm::vec3(0.0f, 0.0f, -1.0f)), moveSpeed(20.0f), turnSpeed(0.5f)
+	:msaaSamples(VK_SAMPLE_COUNT_1_BIT), position(glm::vec3(-12.0f, 33.0f, 25.0f)), worldUp(glm::vec3(0.0f, 1.0f, 0.0f)),
+	yaw(-60.0f), pitch(0.0f), front(glm::vec3(1.0f, -0.2f, -0.2f)), moveSpeed(20.0f), turnSpeed(0.5f)
 {
 }
-
-Camera::~Camera() {}
 
 
 Camera::Camera(glm::vec3 startPosition, glm::vec3 startUp, float startYaw
@@ -93,7 +91,7 @@ void Camera::RepresentCstr(char* const string, size_t size) const
 	if (string)
 	{
 		char buff[100];
-		sprintf_s(buff, "Position(x: %.1f; y: %.1f, z: %.1f)\n\0", position.x, position.y, position.z);
+		sprintf_s(buff, "Position(x: %.1f; y: %.1f, z: %.1f) Front(x: %.1f; y: %.1f, z: %.1f)\n\0", position.x, position.y, position.z, front.x, front.y, front.z);
 		strcpy_s(string, size, buff);
 	}
 }

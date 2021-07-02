@@ -30,8 +30,6 @@ public:
 
 	void destroyBuffers();
 
-	~Mesh();
-
 private:
 	ModelMatrix model;
 

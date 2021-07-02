@@ -15,8 +15,6 @@ public:
 	void CompileShadersAsync();
 	void WaitForCompile();
 
-	~ShaderMan();
-
 private:
 	void* pi_HProc;
 	void* pi_HThread;

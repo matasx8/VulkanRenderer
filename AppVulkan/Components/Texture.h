@@ -12,7 +12,6 @@ public:
 	Image& getImage(int index) { return Images[0]; }
 	
 	void DestroyTexture(VkDevice logicalDevice);
-	~Texture() {};
 
 private:
 	std::vector<Image> Images; // TODO: implement queue of images

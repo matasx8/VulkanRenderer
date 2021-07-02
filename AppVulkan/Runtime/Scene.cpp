@@ -283,10 +283,6 @@ std::vector<Model>& Scene::getModels()
     return Models;
 }
 
-Scene::~Scene()
-{
-}
-
 void Scene::updateModelPipesFrom(int index)
 {
     for (auto& model : Models)
@@ -412,6 +408,8 @@ void Scene::CleanUp(VkDevice logicalDevice)
 {
     vkDestroyDescriptorPool(logicalDevice, descriptorPool, nullptr);
     vkDestroyDescriptorSetLayout(logicalDevice, descriptorSetLayout, nullptr);
+    for (auto& pipeline : Pipelines)
+        pipeline.CleanUp(logicalDevice);
     for (size_t i = 0; i < swapchainImageCount; i++)
     {
         vkDestroyBuffer(logicalDevice, vpUniformBuffer[i], nullptr);

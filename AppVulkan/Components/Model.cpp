@@ -138,7 +138,3 @@ Mesh Model::LoadMesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQ
 	
 	return newMesh;
 }
-
-Model::~Model()
-{
-}

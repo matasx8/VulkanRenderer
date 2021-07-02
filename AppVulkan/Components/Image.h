@@ -14,7 +14,6 @@ public:
 	VkImageView getImageView() const { return imageView; }
 
 	void destroyImage(VkDevice logicalDevice);
-	~Image() {};
 
 private:
 	VkImage image;

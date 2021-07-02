@@ -48,8 +48,6 @@ public:
 	// TODO: async model upload
 	//void AddModels(paths);
 
-	~Scene();
-
 	// ---- temporary
 	std::vector<VkBuffer> vpUniformBuffer;
 	std::vector<VkDeviceMemory> vpUniformBufferMemory;

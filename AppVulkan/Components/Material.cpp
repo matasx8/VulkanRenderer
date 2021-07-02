@@ -14,8 +14,3 @@ bool Material::operator==(const Material& mat) const
 {
 	return vertexShader == mat.vertexShader;
 }
-
-Material::~Material()
-{
-
-}

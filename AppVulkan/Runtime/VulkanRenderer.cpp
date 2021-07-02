@@ -132,7 +132,7 @@ void VulkanRenderer::cleanup()
     currentScene.CleanUp(mainDevice.logicalDevice);
     depthBufferImage.destroyImage(mainDevice.logicalDevice);
     colorImage.destroyImage(mainDevice.logicalDevice);
-    for (auto& pipe : Pipelines)
+    for (auto& pipe : Pipelines)//!HERE
     {
         pipe.CleanUp(mainDevice.logicalDevice);
     }
@@ -171,10 +171,6 @@ void VulkanRenderer::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugU
     if (func != nullptr) {
         func(instance, debugMessenger, pAllocator);
     }
-}
-
-VulkanRenderer::~VulkanRenderer()
-{
 }
 
 void VulkanRenderer::createInstance()

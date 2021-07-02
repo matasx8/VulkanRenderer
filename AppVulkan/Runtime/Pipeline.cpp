@@ -82,6 +82,9 @@ void Pipeline::createPipeline(VkExtent2D extent, VkRenderPass renderPass, VkDesc
         NULL, &rasterizerCreateInfo, &multisamplingCreateInfo, &colorBlendingCreateInfo, &depthStencilCreateInfo,
         pipelineLayout, renderPass, 0, VK_NULL_HANDLE, -1,
         VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT, device.logicalDevice); // TODO medium, pipeline cache or at least derivatives
+
+    vkDestroyShaderModule(device.logicalDevice, shaderStages[0].module, nullptr);
+    vkDestroyShaderModule(device.logicalDevice, shaderStages[1].module, nullptr);
 }
 
 void Pipeline::CreatePipeline(VkPipelineShaderStageCreateInfo* shaderStages, VkPipelineVertexInputStateCreateInfo* vertexInputCreateInfo,
@@ -268,8 +271,6 @@ void Pipeline::CleanUp(VkDevice logicalDevice)
     vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
     vkDestroyPipeline(logicalDevice, pipeline, nullptr);
 }
-
-Pipeline::~Pipeline() {}
 
 void Pipeline::createPipelineShaderStageCreateInfo(VkPipelineShaderStageCreateInfo& createInfo, const char* shaderFileName, VkShaderStageFlagBits shaderStage) const
 {

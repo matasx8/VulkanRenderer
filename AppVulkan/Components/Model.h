@@ -27,7 +27,6 @@ public:
 		aiNode* node, const aiScene* scene, std::vector<int> matToTex);
 	static Mesh LoadMesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue transferQueue, VkCommandPool transferCommandPool,
 		aiMesh* mesh, const aiScene* scene, std::vector<int> matToTex);
-	~Model();
 
 private:
 	std::vector<Mesh> meshList;

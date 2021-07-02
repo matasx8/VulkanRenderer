@@ -37,7 +37,6 @@ public:
     bool isMaterialCompatible(Material& mat) const;
 
     void CleanUp(VkDevice logicalDevice);
-	~Pipeline();
 private:
     void createPipelineShaderStageCreateInfo(VkPipelineShaderStageCreateInfo& createInfo, const char* shaderFileName, VkShaderStageFlagBits shaderStage) const;
     void createShaderModule(VkShaderModule& shaderModule, const std::vector<char>& code) const;

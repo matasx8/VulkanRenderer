@@ -26,7 +26,7 @@ void updateModels(float dt)
 void addmodel(size_t i)
 {
 	Material initialMaterial;
-	if(i % 1000 == 0)
+	if(i % 5000 == 0)
 		initialMaterial = Material("Shaders/shader2_vert.spv", "Shaders/shader2_frag.spv");
 	else
 		initialMaterial = Material("Shaders/shader_vert.spv", "Shaders/shader_frag.spv");
@@ -60,7 +60,7 @@ int main()
 #ifdef  DEBUG_FRAME_INFO
 		Debug::FrameInfo(deltaTime);
 #endif //  DEBUG_FRAME_INFO
-		if (counter++ == 0 || counter % 500 == 0)
+		if (counter++ == 0 || counter % 2500 == 0)
 			addmodel(counter);
 
 		updateModels(deltaTime);

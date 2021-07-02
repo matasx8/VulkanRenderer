@@ -40,10 +40,6 @@ size_t Light::getDataSize()
 	return sizeof(position) + sizeof(colour) + 4;//hacked
 }
 
-Light::~Light()
-{
-}
-
 void Light::debugInput(bool* keys, float deltaTime)
 {
 	if (keys[GLFW_KEY_7])//R+

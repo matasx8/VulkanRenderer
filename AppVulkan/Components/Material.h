@@ -11,8 +11,6 @@ public:
 
 	bool operator==(const Material& mat) const;
 
-	~Material();
-
 	// info variables
 	std::string vertexShader;
 	std::string fragmentShader;

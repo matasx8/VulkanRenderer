@@ -30,8 +30,6 @@ public:
 	size_t GetRepresentCstrLen() const;
 	void RepresentCstr(char* const string, size_t size) const;
 
-	~Camera();
-
 private:
 	glm::vec3 position;
 	glm::vec3 front;
