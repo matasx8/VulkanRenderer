@@ -165,11 +165,15 @@
   <ItemGroup>
     <ClCompile Include="Components\Camera.cpp" />
     <ClCompile Include="Components\Light.cpp" />
+    <ClCompile Include="Components\Image.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Components\Mesh.cpp" />
     <ClCompile Include="Components\Model.cpp" />
+    <ClCompile Include="Components\Material.cpp" />
     <ClCompile Include="Runtime\Pipeline.cpp" />
     <ClCompile Include="Runtime\VulkanRenderer.cpp" />
+    <ClCompile Include="Runtime\Scene.cpp" />
+    <ClCompile Include="Components\Texture.cpp" />
     <ClCompile Include="Utils\ShaderMan.cpp" />
     <ClCompile Include="UI\Window.cpp" />
   </ItemGroup>
@@ -178,7 +182,11 @@
     <ClInclude Include="Components\Light.h" />
     <ClInclude Include="Components\Mesh.h" />
     <ClInclude Include="Components\Model.h" />
+    <ClInclude Include="Components\Image.h" />
+    <ClInclude Include="Components\Material.h" />
     <ClInclude Include="Runtime\Pipeline.h" />
+    <ClInclude Include="Runtime\Scene.h" />
+    <ClInclude Include="Components\Texture.h" />
     <ClInclude Include="Utils\Debug.h" />
     <ClInclude Include="Utils\Representable.h" />
     <ClInclude Include="Utils\ShaderMan.h" />

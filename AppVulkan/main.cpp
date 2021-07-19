@@ -1,10 +1,37 @@
 #pragma once
 #define STB_IMAGE_IMPLEMENTATION
-//#define DEBUG_FRAME_INFO
+#define DEBUG_FRAME_INFO
 #include<iostream>
 #include "VulkanRenderer.h"
 
 VulkanRenderer vulkanRenderer;
+float angle;
+
+void updateModels(float dt)
+{
+	std::vector<glm::mat4>* Models = vulkanRenderer.getModelsMatrices();
+
+	float offset = 0.0f;
+	for (auto& model : *Models)
+	{
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(50.0f + offset, 0.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(-angle), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		offset += 50.0f;
+	}
+	
+	angle += 10.0f * dt;
+}
+
+void addmodel(size_t i)
+{
+	Material initialMaterial;
+	if(i % 5000 == 0)
+		initialMaterial = Material("Shaders/shader2_vert.spv", "Shaders/shader2_frag.spv");
+	else
+		initialMaterial = Material("Shaders/shader_vert.spv", "Shaders/shader_frag.spv");
+	vulkanRenderer.addModel("Models/12140_Skull_v3_L2.obj", initialMaterial);
+}
 
 
 int main()
@@ -19,8 +46,9 @@ int main()
 	float deltaTime = 0.0f;
 	float lastTime = 0.0f;
 
-	int ind = vulkanRenderer.createMeshModel("Models/12140_Skull_v3_L2.obj");
-	int secondSkull = vulkanRenderer.createMeshModel("Models/12140_Skull_v3_L2.obj");
+	Material initialMaterial = Material("Shaders/shader2_vert.spv", "Shaders/shader2_frag.spv");
+	vulkanRenderer.addModel("Models/Old House 2 3D Models.obj", initialMaterial);
+	size_t counter = 0;
 
 	while (!glfwWindowShouldClose(vulkanRenderer.window.window))
 	{
@@ -32,18 +60,10 @@ int main()
 #ifdef  DEBUG_FRAME_INFO
 		Debug::FrameInfo(deltaTime);
 #endif //  DEBUG_FRAME_INFO
+		//if (counter++ == 0 || counter % 2500 == 0)
+		//	addmodel(counter);
 
-		angle += 10.f * deltaTime;
-		if (angle > 360.0f) { angle -= 360.0f; }
-
-		glm::mat4 testMat = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
-		testMat = glm::rotate(testMat, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		vulkanRenderer.updateModel(ind, testMat);
-
-		glm::mat4 testMat2 = glm::translate(glm::mat4(1.0f), glm::vec3(50.0f, 0.0f, 0.0f));
-		testMat2 = glm::rotate(testMat2, glm::radians(-angle), glm::vec3(0.0f, 1.0f, 0.0f));
-		testMat2 = glm::rotate(testMat2, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		vulkanRenderer.updateModel(secondSkull, testMat2);
+		updateModels(deltaTime);
 
 		vulkanRenderer.draw(deltaTime);
 	}

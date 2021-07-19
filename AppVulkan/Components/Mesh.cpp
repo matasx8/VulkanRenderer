@@ -56,10 +56,6 @@ void Mesh::destroyBuffers()
     vkFreeMemory(device, indexBufferMemory, nullptr);
 }
 
-Mesh::~Mesh()
-{
-}
-
 void Mesh::createVertexBuffer(VkQueue transferQueue, VkCommandPool transferCommandPool, std::vector<Vertex>* vertices)
 {
     //get size of buffer needed for verts

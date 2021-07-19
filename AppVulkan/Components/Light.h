@@ -14,7 +14,6 @@ public:
 	void getData(void* buffer);
 	static size_t getDataSize();
 
-	~Light();
 	//debug functions
 	void debugInput(bool* keys, float deltaTime);
 	void debugFollowCam(glm::vec3 newPos, glm::vec3 offset);

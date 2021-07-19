@@ -1,0 +1,32 @@
+1. Upload Model
+2. Load model
+	2.1 create pipeline
+	2.2 add pipeline to pipelines-in-use
+
+--
+after creating new model - check if we need to make a new pipeline
+-- dont forget fallback
+-- dont forget sampler set layout
+-- dont forget to make stuff private
+
+drawing -> bind pipeline
+-- need Texture.cpp and Image.cpp very badly..
+// samplers can be reused
+!----- PUT SAMPLERS ESLEWHERE, DON'T RECREATE -----!
+How do I do that? everything is intertwined.. Figure it out..
+!!--- when creating texture it must be known if we will need to create new samplers!!
+!!--- for now it will do to just recreate ---!!
+all these samplers and descriptors that im having trouble with first will be
+for default pipeline which will have only one texture
+
+Pipelines should be in Scene -- dont forget to pass it to pipeline
+end frame, clean up scene stuff(pipes)
+Will let Models be a vector, because insertion will happen rarely. Will handle insert
+methd myself
+-- dont forget to pass pipeline index to model
+Pipeline()
+-- don't forgt - readFile should auto read from Shaders folder
+
+camera should be in scene.
+
+add camera input and then fix all remaining mistakes! :o

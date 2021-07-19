@@ -1,6 +1,8 @@
 #pragma once
 
 #include <fstream>
+#include <vector>
+#include <array>
 
 #define GLFW_INCLUDE_VULKAN
 #include <glm/glm.hpp>
@@ -22,6 +24,11 @@ struct Vertex
 	glm::vec3 norm;
 };
 
+struct Device {
+	VkPhysicalDevice physicalDevice;
+	VkDevice logicalDevice;
+};
+
 //indices (locations) of queue families if they exist
 struct QueueFamilyIndices
 {
@@ -33,6 +40,11 @@ struct QueueFamilyIndices
 	{
 		return graphicsFamily >= 0 && presentationFamily >= 0;
 	}
+};
+
+struct UboViewProjection {
+	glm::mat4 projection;
+	glm::mat4 view;
 };
 
 struct SwapChainDetails

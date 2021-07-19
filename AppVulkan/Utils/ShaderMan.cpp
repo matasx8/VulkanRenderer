@@ -27,9 +27,6 @@ void ShaderMan::CompileShaders()
 	CloseHandle(pi.hProcess);
 	CloseHandle(pi.hThread);
 }
-ShaderMan::~ShaderMan()
-{
-}
 
 void ShaderMan::CompileShadersAsync()
 {

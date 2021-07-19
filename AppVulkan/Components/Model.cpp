@@ -7,7 +7,6 @@ Model::Model()
 Model::Model(std::vector<Mesh> newMeshList)
 {
 	meshList = newMeshList;
-	model = glm::mat4(1.0f);
 }
 
 size_t Model::getMeshCount()
@@ -24,14 +23,12 @@ Mesh* Model::getMesh(size_t index)
 	return &meshList[index];
 }
 
-glm::mat4& Model::getModel()
+void Model::setModelMatrix(size_t index)
 {
-	return model;
-}
-
-void Model::setModel(glm::mat4 newModel)
-{
-	model = newModel;
+	if (index >= 0)
+		modelMatrixIndex = index;
+	else
+		throw std::runtime_error("passed a negative index to setModelMatrix!");
 }
 
 void Model::destroyMeshModel()
@@ -140,8 +137,4 @@ Mesh Model::LoadMesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQ
 	Mesh newMesh = Mesh(newPhysicalDevice, newDevice, transferQueue, transferCommandPool, &vertices, &indices, matToTex[mesh->mMaterialIndex]);
 	
 	return newMesh;
-}
-
-Model::~Model()
-{
 }
