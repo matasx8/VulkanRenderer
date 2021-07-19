@@ -673,7 +673,8 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
 
                 // TODO: VVVVVVVVVVVVVVVVVVVVVVVVVVVVV bad
                 auto descriptorSet = currentScene.descriptorSets[currentImage];
-                auto textureDescriptorSet = currentScene.getPipeline(currentPipelineIndex).getTextureDescriptureSet(0);
+                int texId = model.getMesh(k)->getTexId();
+                auto textureDescriptorSet = currentScene.getTextureDescriptorSet(texId);
                 std::array<VkDescriptorSet, 2> descriptorSetGroup = { descriptorSet, textureDescriptorSet };
 
                 // bind descriptor sets

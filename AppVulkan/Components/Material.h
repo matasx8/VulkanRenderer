@@ -14,7 +14,7 @@ public:
 	// info variables
 	std::string vertexShader;
 	std::string fragmentShader;
-	Texture texture;
+	std::vector<Texture> textures;
 
 };
 

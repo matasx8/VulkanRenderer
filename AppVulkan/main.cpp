@@ -46,8 +46,8 @@ int main()
 	float deltaTime = 0.0f;
 	float lastTime = 0.0f;
 
-	//vulkanRenderer.addModel("Models/12140_Skull_v3_L2.obj");
-	//int secondSkull = vulkanRenderer.createMeshModel("Models/12140_Skull_v3_L2.obj");
+	Material initialMaterial = Material("Shaders/shader2_vert.spv", "Shaders/shader2_frag.spv");
+	vulkanRenderer.addModel("Models/Old House 2 3D Models.obj", initialMaterial);
 	size_t counter = 0;
 
 	while (!glfwWindowShouldClose(vulkanRenderer.window.window))
@@ -60,8 +60,8 @@ int main()
 #ifdef  DEBUG_FRAME_INFO
 		Debug::FrameInfo(deltaTime);
 #endif //  DEBUG_FRAME_INFO
-		if (counter++ == 0 || counter % 2500 == 0)
-			addmodel(counter);
+		//if (counter++ == 0 || counter % 2500 == 0)
+		//	addmodel(counter);
 
 		updateModels(deltaTime);
 

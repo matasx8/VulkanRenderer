@@ -2,8 +2,8 @@
 #include <stdexcept>
 
 Pipeline::Pipeline(Device device, Camera* camera)
-    :pipeline(), pipelineLayout(), device(device), samplerSetLayout(),
-    samplerDescriptorSets(), samplerDescriptorPool(), textureSampler(), pushConstantRange(), usedThisFrame(false), material(),
+    :pipeline(), pipelineLayout(), device(device), samplerSetLayout()
+    , samplerDescriptorPool(), textureSampler(), pushConstantRange(), usedThisFrame(false), material(),
     camera(camera)
 {
     if (camera == nullptr)
@@ -11,8 +11,8 @@ Pipeline::Pipeline(Device device, Camera* camera)
 }
 
 Pipeline::Pipeline(Material material, Device device, Camera* camera)
-    :pipeline(), pipelineLayout(), device(device), samplerSetLayout(),
-    samplerDescriptorSets(), samplerDescriptorPool(), textureSampler(), pushConstantRange(), usedThisFrame(false), material(material),
+    :pipeline(), pipelineLayout(), device(device), samplerSetLayout()
+    , samplerDescriptorPool(), textureSampler(), pushConstantRange(), usedThisFrame(false), material(material),
     camera(camera)
 {
     if (camera == nullptr)
@@ -68,9 +68,10 @@ void Pipeline::createPipeline(VkExtent2D extent, VkRenderPass renderPass, VkDesc
         createTextureSampler(device.logicalDevice);
         createTextureSamplerSetLayout(device.logicalDevice);
         createTextureDescriptorPool(device.logicalDevice);
-        Texture tex = material.texture;
+        // the default one has 1 texture, will do for now
+        //Texture tex = material.textures[0];
         // keep track of index
-        createTextureDescriptor(tex.getImage(0).getImageView(), device.logicalDevice);
+        //createTextureDescriptor(tex, 0, device.logicalDevice);
         // must pass descriptorsetlayout from scene wtf? this is definitely not good
         std::array<VkDescriptorSetLayout, 2> descriptorSetLayouts = { descriptorSetLayout, getTextureDescriptorSetLayout() };
 
@@ -171,7 +172,7 @@ void Pipeline::createTextureSamplerSetLayout(VkDevice logicalDevice)
     textureLayoutCreateInfo.pNext = nullptr;
     textureLayoutCreateInfo.flags = 0;
 
-    //create desciptor set layout!HERE
+    //create desciptor set layout
     VkResult result = vkCreateDescriptorSetLayout(logicalDevice, &textureLayoutCreateInfo, nullptr, &samplerSetLayout);
     if (result != VK_SUCCESS)
     {
@@ -179,7 +180,7 @@ void Pipeline::createTextureSamplerSetLayout(VkDevice logicalDevice)
     }
 }
 
-int Pipeline::createTextureDescriptor(VkImageView textureImage, VkDevice logicalDevice)
+VkDescriptorSet Pipeline::createTextureDescriptorSet(Texture texture, VkDevice logicalDevice)
 {
     VkDescriptorSet descriptorSet;
 
@@ -188,6 +189,8 @@ int Pipeline::createTextureDescriptor(VkImageView textureImage, VkDevice logical
     setAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     setAllocInfo.descriptorPool = samplerDescriptorPool;
     setAllocInfo.pSetLayouts = &samplerSetLayout;
+    // TODO: for now I'm allocating a fixed number of decriptor sets
+    // later ask a coworker on a good way to manage this
     setAllocInfo.descriptorSetCount = 1;
     setAllocInfo.pNext = nullptr;
     
@@ -202,7 +205,7 @@ int Pipeline::createTextureDescriptor(VkImageView textureImage, VkDevice logical
     //texture image info
     VkDescriptorImageInfo imageInfo = {};
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;// image layout when in use
-    imageInfo.imageView = textureImage; // image to bind to set
+    imageInfo.imageView = texture.getImage(0).getImageView(); // image to bind to set
     imageInfo.sampler = textureSampler; // sampler to use for set
 
     // descriptor write info
@@ -219,16 +222,8 @@ int Pipeline::createTextureDescriptor(VkImageView textureImage, VkDevice logical
     // update new descriptor set
     vkUpdateDescriptorSets(logicalDevice, 1, &descriptorWrite, 0, nullptr);
 
-    // add descriptor set to list
-    samplerDescriptorSets.push_back(descriptorSet);
-
     // return descriptor set location
-    return samplerDescriptorSets.size() - 1;
-}
-
-VkDescriptorSet Pipeline::getTextureDescriptureSet(int i) const
-{
-    return samplerDescriptorSets[i];
+    return descriptorSet;
 }
 
 void Pipeline::createTextureDescriptorPool(VkDevice logicalDevice)
@@ -237,7 +232,7 @@ void Pipeline::createTextureDescriptorPool(VkDevice logicalDevice)
     // texture sampler pool
     VkDescriptorPoolSize samplerPoolSize = {};
     samplerPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerPoolSize.descriptorCount = MAX_OBJECTS;
+    samplerPoolSize.descriptorCount = 1;
 
     VkDescriptorPoolCreateInfo samplerPoolCreateInfo = {};
     samplerPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;

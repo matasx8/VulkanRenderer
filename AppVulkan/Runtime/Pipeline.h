@@ -26,11 +26,10 @@ public:
     void createTextureSampler(VkDevice logicalDevice);
     void createTextureSamplerSetLayout(VkDevice logicalDevice);
     void createTextureDescriptorPool(VkDevice logicalDevice);
-    int createTextureDescriptor(VkImageView textureImage, VkDevice logicalDevice);
+    VkDescriptorSet createTextureDescriptorSet(Texture texture, VkDevice logicalDevice);
 
     VkPipeline getPipeline() { usedThisFrame = true;  return pipeline; }
     VkPipelineLayout getPipelineLayout() const { return pipelineLayout; }
-    VkDescriptorSet getTextureDescriptureSet(int i) const;
     VkDescriptorSetLayout getTextureDescriptorSetLayout() const { return samplerSetLayout; }
 
     bool wasUsedThisFrame() const { return usedThisFrame; }
@@ -61,7 +60,7 @@ private:
     Device device;
 
     VkDescriptorSetLayout samplerSetLayout;
-    std::vector<VkDescriptorSet> samplerDescriptorSets;
+    //std::vector<VkDescriptorSet> samplerDescriptorSets;
     VkDescriptorPool samplerDescriptorPool;
     VkSampler textureSampler;
     VkPushConstantRange pushConstantRange;

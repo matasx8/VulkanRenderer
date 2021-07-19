@@ -10,6 +10,8 @@ public:
 	void createTexture(std::string fileName, VkQueue graphicsQueue, VkCommandPool graphicsCommandPool, VkPhysicalDevice physicalDevice, VkDevice logicalDevice);
 
 	Image& getImage(int index) { return Images[0]; }
+
+	VkDescriptorSet descriptorSet;
 	
 	void DestroyTexture(VkDevice logicalDevice);
 

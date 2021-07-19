@@ -31,6 +31,7 @@ public:
 	Texture& getTexture(int index) { return Textures[index]; }
 	// Returns pipeline, if index not found will return default one(index 0) 
 	Pipeline getPipeline(int index) const;
+	VkDescriptorSet getTextureDescriptorSet(size_t index) const { return Textures[index].descriptorSet; }
 
 	void updateUniformBuffers(size_t index);
 
@@ -90,6 +91,7 @@ private:
     // If yes, then creates a new one and appends to Pipelines.
     // If no, finds out which pipeline do we need to reuse.
 	// returns the index of the pipeline
-	int setupPipeline(Material& material, VkExtent2D extent, VkRenderPass renderPass);
+	int setupPipeline(Material& material, std::vector<Texture>& Textures, uint32_t texturesFrom
+		, VkExtent2D extent, VkRenderPass renderPass);
 };
 

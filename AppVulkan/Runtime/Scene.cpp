@@ -43,6 +43,8 @@ void Scene::addModel(std::string fileName, Material material, VkRenderPass rende
     // conversion from the materials list IDs to our Descriptor Arrays IDs
     std::vector<int> matToTex(textureNames.size());
 
+    auto oldTexturesSize = Textures.size();
+
     // loop over textureNames and create textures for them
     for (size_t i = 0; i < textureNames.size(); i++)
     {//if material had no texture, set 0 to indicate no texture, texture 0 will be reserved for a default texture
@@ -64,14 +66,14 @@ void Scene::addModel(std::string fileName, Material material, VkRenderPass rende
         scene->mRootNode, scene, matToTex);
 
     Model meshModel = Model(modelMeshes);
-    //temporary i hope
-        int texID = meshModel.getMesh(0)->getTexId();
 
-        material.texture = Textures[texID];
+    uint32_t texturesFrom = (oldTexturesSize != Textures.size()) ? oldTexturesSize : 0;
+    if (Textures[0].descriptorSet == 0) texturesFrom = 0;
+
     // use material to find out if we need to create a new pipeline
     // if yes, then create one and append to pipelines. Also insert into model vector
     // if no, find out which pipeline do we need to reuse.
-    meshModel.setPipelineIndex(setupPipeline(material, extent, renderPass));
+    meshModel.setPipelineIndex(setupPipeline(material, Textures, texturesFrom, extent, renderPass));
     insertModel(meshModel);
 }
 
@@ -326,18 +328,32 @@ size_t Scene::getNewModelMatrixIndex()
     return ModelMatrices.size() - 1;
 }
 
-int Scene::setupPipeline(Material& material, VkExtent2D extent, VkRenderPass renderPass)
+int Scene::setupPipeline(Material& material, std::vector<Texture>& Textures, uint32_t texturesFrom
+    , VkExtent2D extent, VkRenderPass renderPass)
 {
     for (int i = 0; i < Pipelines.size(); i++)
     {
         if (Pipelines[i].isMaterialCompatible(material))
+        {
+            // create texture descriptor sets.. Temporary implementation, please remake to dynamic buffers
+            for (size_t j = texturesFrom; j < Textures.size(); i++)
+            {
+                Textures[j].descriptorSet = Pipelines[i].createTextureDescriptorSet(Textures[j], logicalDevice);
+            }
             return i; // we can reuse this pipeline, hooray
+        }
     }
     // we did not find any compatible pipelines, let's create a new one
     Device device = { physicalDevice, logicalDevice };//TODO
     Pipeline newPipe = Pipeline(material, device, &camera);
     newPipe.createPipeline(extent, renderPass, descriptorSetLayout);
     Pipelines.push_back(newPipe);
+
+    for (size_t i = texturesFrom; i < Textures.size(); i++)
+    {
+        Textures[i].descriptorSet = Pipelines.back().createTextureDescriptorSet(Textures[i], logicalDevice);
+    }
+
     return Pipelines.size() - 1;
 }
 
