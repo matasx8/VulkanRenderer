@@ -16,7 +16,7 @@ Scene::Scene(VkQueue graphicsQueue, VkCommandPool graphicsCommandPool, VkPhysica
     camera.setMSAA(msaaSamples);
 
     //TODO put in initilizer list
-    viewProjection.projection = glm::perspective(glm::radians(45.0f), (float)extent.width / (float)extent.height, 0.1f, 500.0f);
+    viewProjection.projection = glm::perspective(glm::radians(45.0f), (float)extent.width / (float)extent.height, 0.1f, 1000.0f);
     viewProjection.view = glm::lookAt(glm::vec3(0.0f, 30.0f, 100.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     viewProjection.projection[1][1] *= -1;//invert matrix
