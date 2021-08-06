@@ -578,7 +578,8 @@ void VulkanRenderer::createScene()
     currentScene = Scene(graphicsQueue, graphicsCommandPool, mainDevice.physicalDevice, mainDevice.logicalDevice,swapChainImages.size(), swapChainExtent, msaaSamples);
 
     //initial model
-    Material initialMaterial = Material("Shaders/shader_vert.spv", "Shaders/shader_frag.spv");
+    ShaderCreateInfo shaderInfo = { "Shaders/shader_vert.spv", "Shaders/shader_frag.spv" };
+    Material initialMaterial = Material(shaderInfo);
     currentScene.addModel("Models/12140_Skull_v3_L2.obj", initialMaterial, renderPass);
 }
 

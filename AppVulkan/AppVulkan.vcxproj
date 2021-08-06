@@ -166,6 +166,7 @@
     <ClCompile Include="Components\Camera.cpp" />
     <ClCompile Include="Components\Light.cpp" />
     <ClCompile Include="Components\Image.cpp" />
+    <ClCompile Include="Components\Shader.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Components\Mesh.cpp" />
     <ClCompile Include="Components\Model.cpp" />
@@ -184,6 +185,7 @@
     <ClInclude Include="Components\Model.h" />
     <ClInclude Include="Components\Image.h" />
     <ClInclude Include="Components\Material.h" />
+    <ClInclude Include="Components\Shader.h" />
     <ClInclude Include="Runtime\Pipeline.h" />
     <ClInclude Include="Runtime\Scene.h" />
     <ClInclude Include="Components\Texture.h" />

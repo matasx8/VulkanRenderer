@@ -24,8 +24,8 @@ void Pipeline::createPipeline(VkExtent2D extent, VkRenderPass renderPass, VkDesc
     //if(material is uninitialized)
     // use default TODO
     VkPipelineShaderStageCreateInfo shaderStages[2];
-    createPipelineShaderStageCreateInfo(shaderStages[0], material.vertexShader.c_str(), VK_SHADER_STAGE_VERTEX_BIT);
-    createPipelineShaderStageCreateInfo(shaderStages[1], material.fragmentShader.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
+    createPipelineShaderStageCreateInfo(shaderStages[0], material.getVertexShader(), VK_SHADER_STAGE_VERTEX_BIT);
+    createPipelineShaderStageCreateInfo(shaderStages[1], material.getFragmentShader(), VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkVertexInputBindingDescription bindingDescription = {};
     createVertexInputBindingDescription(bindingDescription);
@@ -73,6 +73,7 @@ void Pipeline::createPipeline(VkExtent2D extent, VkRenderPass renderPass, VkDesc
         // keep track of index
         //createTextureDescriptor(tex, 0, device.logicalDevice);
         // must pass descriptorsetlayout from scene wtf? this is definitely not good
+        //!HERE from shader create info..
         std::array<VkDescriptorSetLayout, 2> descriptorSetLayouts = { descriptorSetLayout, getTextureDescriptorSetLayout() };
 
     createPushConstantRange();
