@@ -68,8 +68,12 @@ void Pipeline::createPipeline(VkExtent2D extent, VkRenderPass renderPass)
     uint32_t shaderFlags = material.getShaderFlags();
     if (material.getUboCount() > 0)
     {
+        // TODO: make class for dslayout or something. So we can efficiently reuse them
+        // still making one layout for this pipeline
         createDescriptorSetLayout(material.getUboCount());
+        // create buffers uboCount x swapchainImageCount
         createUniformBuffers(material.getDataSizes(), material.getUboCount());
+
         createDescriptorPool();
         createDescriptorSets(material.getDataSizes().data());
     }
@@ -142,19 +146,21 @@ void Pipeline::CreatePipeline(VkPipelineShaderStageCreateInfo* shaderStages, VkP
 
 void Pipeline::createDescriptorSetLayout(size_t UboCount)
 {
-    VkDescriptorSetLayoutBinding layoutBinding = {};
-    layoutBinding.binding = 0;
-    layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    layoutBinding.descriptorCount = UboCount;
-    layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-    std::vector<VkDescriptorSetLayoutBinding> layoutBindings = { layoutBinding };
+    // here we show what uniforms we need.
+    std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings(UboCount);
+    for (size_t i = 0; i < UboCount; i++)
+    {
+        descriptorSetLayoutBindings[i].binding = i;
+        descriptorSetLayoutBindings[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorSetLayoutBindings[i].descriptorCount = 1;
+        descriptorSetLayoutBindings[i].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    }
 
     // create descriptor set layout with given bidnings
     VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
     layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutCreateInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size()); // number of binding infos
-    layoutCreateInfo.pBindings = layoutBindings.data(); //array of binding infos
+    layoutCreateInfo.bindingCount = static_cast<uint32_t>(descriptorSetLayoutBindings.size()); // number of binding infos
+    layoutCreateInfo.pBindings = descriptorSetLayoutBindings.data(); //array of binding infos
 
     //create descriptor set layout
     VkResult result = vkCreateDescriptorSetLayout(device.logicalDevice, &layoutCreateInfo, nullptr, &descriptorSetLayout);
@@ -189,21 +195,17 @@ void Pipeline::createUniformBuffers(const std::vector<size_t>& dataSizes, size_t
 
 void Pipeline::createDescriptorPool()
 {
-    //type of descriptors
-//view projection pool
+    const uint32_t MAX_COUNT_DESCRIPTORS = 20;
     VkDescriptorPoolSize PoolSize = {};
     PoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    PoolSize.descriptorCount = static_cast<uint32_t>(UniformBuffers.size() * UniformBuffers[0].buffer.size());
-
-    /* VkDescriptorPoolSize modelPoolSize = {};
-     modelPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-     modelPoolSize.descriptorCount = static_cast<uint32_t>(modelDUniformBuffer.size());*/
+    //TODO: have one pool overall?
+    PoolSize.descriptorCount = MAX_COUNT_DESCRIPTORS;
 
     std::vector<VkDescriptorPoolSize> descriptorPoolSizes = { PoolSize};
 
     VkDescriptorPoolCreateInfo poolCreateInfo = {};
     poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolCreateInfo.maxSets = static_cast<uint32_t>(swapchainImageCount); //max number of descriptor sets that can be created from pool
+    poolCreateInfo.maxSets = MAX_COUNT_DESCRIPTORS; //max number of descriptor sets that can be created from pool
     poolCreateInfo.poolSizeCount = static_cast<uint32_t>(descriptorPoolSizes.size()); // amount of pool sizes being passed
     poolCreateInfo.pPoolSizes = descriptorPoolSizes.data();
 
@@ -217,15 +219,16 @@ void Pipeline::createDescriptorPool()
 
 void Pipeline::createDescriptorSets(const size_t* dataSizes)
 {
-    //resize descriptor set list so one for every buffer
-    descriptorSets.resize(swapchainImageCount);
+    const size_t setSize = swapchainImageCount;
+    //resize descriptor set list so one for swapchain image
+    descriptorSets.resize(setSize);
 
-    std::vector<VkDescriptorSetLayout> setLayouts(swapchainImageCount, descriptorSetLayout);
+    std::vector<VkDescriptorSetLayout> setLayouts(setSize, descriptorSetLayout);
     // descriptor set allocation info
     VkDescriptorSetAllocateInfo setAllocInfo = {};
     setAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     setAllocInfo.descriptorPool = descriptorPool; //pool to allocate descriptor set from
-    setAllocInfo.descriptorSetCount = static_cast<uint32_t>(swapchainImageCount); // number of sets to allocate
+    setAllocInfo.descriptorSetCount = static_cast<uint32_t>(setSize); // number of sets to allocate
     setAllocInfo.pSetLayouts = setLayouts.data(); // layouts to use to allocate sets (1:1 relationship)
 
     // allocate descriptor sets(multiple)
@@ -235,10 +238,11 @@ void Pipeline::createDescriptorSets(const size_t* dataSizes)
         throw std::runtime_error("Failed to allocate descriptor sets");
     }
 
-    std::vector<VkDescriptorBufferInfo> BufferInfos(UniformBuffers.size());
+    std::vector<VkDescriptorBufferInfo> BufferInfos(setSize);
+    std::vector<VkWriteDescriptorSet> SetWrites(setSize * UniformBuffers.size());
+    size_t index = 0;
     for (size_t i = 0; i < swapchainImageCount; i++)
     {
-        // copy over the buffer info for each ubo for this swapchain image
         for (size_t j = 0; j < UniformBuffers.size(); j++)
         {
             auto bufferInfo = &BufferInfos[j];
@@ -246,19 +250,18 @@ void Pipeline::createDescriptorSets(const size_t* dataSizes)
             // i - swapchainImages
             bufferInfo->buffer = UniformBuffers[j].buffer[i];
             bufferInfo->range = dataSizes[j];
+
+            SetWrites[index].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            SetWrites[index].dstSet = descriptorSets[i]; // descriptor set to update (as many as swapchainImages)
+            SetWrites[index].dstBinding = j; // binding to update
+            SetWrites[index].dstArrayElement = 0; // index in array to update
+            SetWrites[index].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; // type of descriptor
+            SetWrites[index].descriptorCount = 1; // amount to update
+            SetWrites[index].pBufferInfo = bufferInfo; // info about buffer data to bind
+            index++;
         }
-
-        VkWriteDescriptorSet SetWrite = {};
-        SetWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        SetWrite.dstSet = descriptorSets[i]; // descriptor set to update (as many as swapchainImages)
-        SetWrite.dstBinding = 0; // binding to update
-        SetWrite.dstArrayElement = 0; // index in array to update
-        SetWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; // type of descriptor
-        SetWrite.descriptorCount = 3; // amount to update
-        SetWrite.pBufferInfo = BufferInfos.data(); // info about buffer data to bind
-
-        vkUpdateDescriptorSets(device.logicalDevice, 1, &SetWrite, 0, nullptr);
     }
+    vkUpdateDescriptorSets(device.logicalDevice, index, SetWrites.data(), 0, nullptr);
 }
 
 void Pipeline::createTextureSampler(VkDevice logicalDevice)

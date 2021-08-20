@@ -166,7 +166,7 @@ Pipeline Scene::getPipeline(int index) const
 
 void Scene::updateScene(size_t index)
 {
-    Lights[0].randomize();
+    //Lights[0].randomize();
     // do the transformations here or before calling this func
     viewProjection.view = camera.calculateViewMatrix();
 
