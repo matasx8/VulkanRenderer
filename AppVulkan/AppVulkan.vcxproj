@@ -190,6 +190,7 @@
     <ClInclude Include="Runtime\Scene.h" />
     <ClInclude Include="Components\Texture.h" />
     <ClInclude Include="Utils\Debug.h" />
+    <ClInclude Include="Utils\NonCopyable.h" />
     <ClInclude Include="Utils\Representable.h" />
     <ClInclude Include="Utils\ShaderMan.h" />
     <ClInclude Include="Utils\Utilities.h" />

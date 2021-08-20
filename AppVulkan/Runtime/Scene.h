@@ -20,11 +20,7 @@ public:
 	// Add and load model to currently used scene
 	// Will create a new pipeline if needed
 	void addModel(std::string fileName, Material material, VkRenderPass renderPass);
-
-	void createUniformBuffers();
-	void createDescriptorPool();
-	void createDescriptorSetLayout();
-	void createDescriptorSets();
+	void addLight();
 
 	std::vector<Model>& getModels(); // TODO: probably dont pass by ref
 		std::vector<glm::mat4>* getModelMatrices() { return &ModelMatrices; }
@@ -32,8 +28,12 @@ public:
 	// Returns pipeline, if index not found will return default one(index 0) 
 	Pipeline getPipeline(int index) const;
 	VkDescriptorSet getTextureDescriptorSet(size_t index) const { return Textures[index].descriptorSet; }
+	void* getViewProjectionPtr() const { return (void*)(&viewProjection); }
+	Light& getLight(size_t index) { return Lights[index]; }
+	Camera& getCamera() { return camera; }
 
-	void updateUniformBuffers(size_t index);
+	// Updates components (eg. Lights, Camera..)
+	void updateScene(size_t index);
 
 
 	void onFrameEnded();
@@ -44,34 +44,16 @@ public:
 	void cameraMouseControl(float xChange, float yChange);
 	// -- temporary Input
 
-	//void AddCamera();
-	//void AddLight();
-	// TODO: async model upload
-	//void AddModels(paths);
-
-	// ---- temporary
-	std::vector<VkBuffer> vpUniformBuffer;
-	std::vector<VkDeviceMemory> vpUniformBufferMemory;
-	std::vector<VkBuffer> lightsUniformBuffer;
-	std::vector<VkDeviceMemory> lightsUniformBufferMemory;
-	std::vector<VkBuffer> cameraUniformBuffer;
-	std::vector<VkDeviceMemory> cameraUniformBufferMemory;
-
-	std::vector<VkBuffer> modelDUniformBuffer;
-	std::vector<VkDeviceMemory> modelDUniformBufferMemory;
-
-	UboViewProjection viewProjection;
-	VkDescriptorPool descriptorPool;
-	VkDescriptorSetLayout descriptorSetLayout;
-	std::vector<VkDescriptorSet> descriptorSets;
-	// ---- temporary
 private:
+	ViewProjectionMatrix viewProjection;
 	std::vector<Model> Models;
 		// trying out dots
 		std::vector<glm::mat4> ModelMatrices;
 	std::vector<Texture> Textures;
 	std::vector<Pipeline> Pipelines;
+	std::vector<Light> Lights;
 	Camera camera;
+
 
 	VkQueue graphicsQueue;
 	VkCommandPool graphicsCommandPool;

@@ -12,6 +12,16 @@ public:
 
 	const char* getVertexShader() const;
 	const char* getFragmentShader() const;
+	const std::vector<UniformData>& getUniformData() const;
+	const std::vector<size_t> getDataSizes() const;
+	size_t getUboCount() const;
+	uint32_t getShaderFlags() const;
+	const void* getPushConstantDataBuffer() const;
+	const size_t getPushConstantSize() const;
+	const bool hasPushConstant() const;
+	const bool hasFlag(ShaderCreateInfoFlags flag) const;
+
+
 
 	bool operator==(const Material& mat) const;
 

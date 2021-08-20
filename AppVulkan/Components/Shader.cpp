@@ -5,8 +5,8 @@ Shader::Shader()
 }
 
 Shader::Shader(ShaderCreateInfo& shaderInfo)
-	:m_ShaderInfo(shaderInfo)
 {
+	m_ShaderInfo = std::move(shaderInfo);
 }
 
 bool Shader::operator==(const Shader& shader) const

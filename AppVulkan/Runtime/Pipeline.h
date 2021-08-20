@@ -7,14 +7,27 @@
 #include "Mesh.h"
 #include "Light.h"
 //TODO: create default pipeline and make function for user that creates a pipeline using derivatives
+struct UniformBuffer
+{
+    std::vector<VkBuffer> buffer;
+    std::vector<VkDeviceMemory> deviceMemory;
 
+    void freeBuffer(VkDevice logicalDevice)
+    {
+        for (size_t i = 0; i < buffer.size(); i++)
+        {
+            vkDestroyBuffer(logicalDevice, buffer[i], nullptr);
+            vkFreeMemory(logicalDevice, deviceMemory[i], nullptr);
+        }
+    }
+};
 class Pipeline
 {
 public:
-	Pipeline(Device device, Camera* camera);
-    Pipeline(Material material, Device device, Camera* camera);
+	Pipeline(Device device, Camera* camera, size_t swapchainImageCount);
+    Pipeline(Material material, Device device, Camera* camera, size_t swapchainImageCount);
 
-    void createPipeline(VkExtent2D extent, VkRenderPass renderPass, VkDescriptorSetLayout descriptorSetLayout);
+    void createPipeline(VkExtent2D extent, VkRenderPass renderPass);
     // temporary.. for creation of initial pipeline
 	void CreatePipeline(VkPipelineShaderStageCreateInfo* shaderStages, VkPipelineVertexInputStateCreateInfo* vertexInputCreateInfo,
         VkPipelineInputAssemblyStateCreateInfo* inputAssembly, VkPipelineViewportStateCreateInfo* viewportStateCreateInfo,
@@ -23,6 +36,10 @@ public:
         VkPipelineDepthStencilStateCreateInfo* depthStencilCreateInfo, VkPipelineLayout pipelineLayout,
         VkRenderPass renderPass, uint32_t subpass, VkPipeline basePipelineHandle, uint32_t basePipelineIndex,
         VkPipelineCreateFlags flags, VkDevice device);
+    void createDescriptorSetLayout(size_t UboCount);
+    void createDescriptorPool();
+    void createDescriptorSets(const size_t* dataSizes);
+    void createUniformBuffers(const std::vector<size_t>& dataSizes, size_t UboCount);
     void createTextureSampler(VkDevice logicalDevice);
     void createTextureSamplerSetLayout(VkDevice logicalDevice);
     void createTextureDescriptorPool(VkDevice logicalDevice);
@@ -31,7 +48,13 @@ public:
     VkPipeline getPipeline() { usedThisFrame = true;  return pipeline; }
     VkPipelineLayout getPipelineLayout() const { return pipelineLayout; }
     VkDescriptorSetLayout getTextureDescriptorSetLayout() const { return samplerSetLayout; }
+    uint32_t getPushConstantSize() const { return material.getPushConstantSize(); }
+    const void* getPushConstantDataBuffer() const { return material.getPushConstantDataBuffer(); }
+    VkDescriptorSet getDescriptorSet(size_t index) const { return descriptorSets[index]; }
 
+    bool hasPushConstant() const { return material.hasPushConstant(); }
+    bool useModelMatrixForPushConstant() const { return material.hasFlag(kUseModelMatrixForPushConstant); }
+    void update(size_t index);
     bool wasUsedThisFrame() const { return usedThisFrame; }
     bool isMaterialCompatible(Material& mat) const;
 
@@ -58,7 +81,12 @@ private:
     VkPipelineLayout pipelineLayout;
 
     Device device;
+    size_t swapchainImageCount;
 
+    VkDescriptorSetLayout descriptorSetLayout;
+    VkDescriptorPool descriptorPool;
+    std::vector<VkDescriptorSet> descriptorSets;
+    std::vector<UniformBuffer> UniformBuffers;
     VkDescriptorSetLayout samplerSetLayout;
     //std::vector<VkDescriptorSet> samplerDescriptorSets;
     VkDescriptorPool samplerDescriptorPool;

@@ -1,6 +1,7 @@
 #pragma once
 #include "Representable.h"
 #include "vulkan.h"
+#include "NonCopyable.h"
 
 //#include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -8,7 +9,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-class Camera : public Representable
+class Camera : public Representable, NonCopyable
 {
 public:
 	Camera();

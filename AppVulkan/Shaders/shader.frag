@@ -32,7 +32,6 @@ void main()
 	vec3 diffuse = diff * lightColor;
 	
 	vec4 objectColor = texture(textureSampler, fragTex);
-	
-	vec3 result = (ambient + diffuse + specular) * objectColor.xyz;
+	vec3 result = lightPos;//(ambient + diffuse + specular) * objectColor.xyz;
 	outColour = vec4(result, objectColor.w);
 }

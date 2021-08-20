@@ -9,14 +9,14 @@ layout(set = 0, binding = 0) uniform UboViewProjection{
 	mat4 view;
 } uboViewProjection;
 
-layout(set = 0, binding = 1) uniform UboLights
+layout(set = 0, binding = 0) uniform UboLights
 {
 	vec4 position;
 	vec4 colour;
 } uboLights;
-layout(set = 0, binding = 2) uniform Camera
+layout(set = 0, binding = 0) uniform Camera
 {
-vec3 pos;
+vec4 pos;
 } camera;
 // not in use, left for reference
 /*
@@ -43,7 +43,11 @@ void main()
 	fragTex = tex;
 	fragNorm = norm;
 	fragNorm = mat3(transpose(inverse(pushModel.model))) * norm;
-	directionalLightSpacePos = uboLights.position.xyz;
+	//directionalLightSpacePos = uboLights.position.xyz;
+	if(uboLights.position.x == 0)
+		directionalLightSpacePos = vec3(1,1,1);
+	else
+		directionalLightSpacePos = vec3(0,0,0);
 	directionalLightColour = uboLights.colour.xyz;
-	camPos = camera.pos;
+	camPos = camera.pos.xyz;
 }

@@ -1,3 +1,4 @@
+// TODO: #define VK_check_result
 #pragma once
 #include <stdexcept>
 #include <vector>
@@ -48,15 +49,12 @@ public:
 
 private:
 
-	Camera camera;
-	std::vector<Light> lights;
-
 	int currentFrame = 0;
 
 	//-- SCENE ---
 	Scene currentScene;
 
-	const std::vector<const char*> validationLayers = {//TODO: add more?
+	const std::vector<const char*> validationLayers = {//TODO: add more? - yes
 "VK_LAYER_KHRONOS_validation"
 	};
 
