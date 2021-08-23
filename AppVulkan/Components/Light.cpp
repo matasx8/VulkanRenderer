@@ -1,15 +1,16 @@
 #include "Light.h"
+#include <random>
 
 Light::Light()
 {
-	this->position = glm::vec3(50.0f, 1000.0f, 0.0f);
-	this->colour = glm::vec3(1.0f, 1.0f, 1.0f);
+	this->position = glm::vec4(50.0f, 1000.0f, 0.0f, 0.0f);
+	this->colour = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
 }
 
-Light::Light(glm::vec3 position)
+Light::Light(glm::vec4 position)
 {
 	this->position = position;
-	this->colour = glm::vec3(1.0f, 1.0f, 1.0f);
+	this->colour = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
 }
 //get the data of the light and store it in the buffer
 //must allocate the space before calling this
@@ -19,18 +20,7 @@ void Light::getData(void* pbuffer)
 	char* tptr = static_cast<char*>(pbuffer);
 	memcpy(pbuffer, &position, sizeof(position));
 	tptr += sizeof(glm::vec3) + 4;
-
 	memcpy(tptr, &colour, sizeof(colour));
-	/*debug
-	float colr;
-	memcpy(&colr, tptr, 4);
-	tptr += sizeof(float);
-	float colg;
-	memcpy(&colg, tptr, 4);
-	tptr += sizeof(float);
-	float colb;
-	memcpy(&colb, tptr, 4);
-	*/
 }
 
 //get the size of the data used
@@ -75,7 +65,13 @@ void Light::debugInput(bool* keys, float deltaTime)
 
 }
 
-void Light::debugFollowCam(glm::vec3 newPos, glm::vec3 offset)
+void Light::debugFollowCam(glm::vec4 newPos, glm::vec4 offset)
 {
 	position = newPos + offset;
+}
+
+void Light::randomize()
+{
+	position = glm::vec4(std::rand(), std::rand(), std::rand(), std::rand());
+	colour = position = glm::vec4(std::rand(), std::rand(), std::rand(), std::rand());
 }

@@ -2,7 +2,7 @@
 
 Camera::Camera()
 	:msaaSamples(VK_SAMPLE_COUNT_1_BIT), position(glm::vec3(-12.0f, 33.0f, 25.0f)), worldUp(glm::vec3(0.0f, 1.0f, 0.0f)),
-	yaw(-60.0f), pitch(0.0f), front(glm::vec3(1.0f, -0.2f, -0.2f)), moveSpeed(20.0f), turnSpeed(0.5f)
+	yaw(-60.0f), pitch(0.0f), front(glm::vec3(1.0f, -0.2f, -0.2f)), moveSpeed(80.0f), turnSpeed(0.5f)
 {
 }
 

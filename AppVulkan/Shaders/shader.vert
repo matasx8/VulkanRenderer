@@ -16,7 +16,7 @@ layout(set = 0, binding = 1) uniform UboLights
 } uboLights;
 layout(set = 0, binding = 2) uniform Camera
 {
-vec3 pos;
+vec4 pos;
 } camera;
 // not in use, left for reference
 /*
@@ -45,5 +45,5 @@ void main()
 	fragNorm = mat3(transpose(inverse(pushModel.model))) * norm;
 	directionalLightSpacePos = uboLights.position.xyz;
 	directionalLightColour = uboLights.colour.xyz;
-	camPos = camera.pos;
+	camPos = camera.pos.xyz;
 }

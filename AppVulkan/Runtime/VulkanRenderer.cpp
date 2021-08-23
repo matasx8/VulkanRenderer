@@ -25,7 +25,6 @@ int VulkanRenderer::init(std::string wName, const int width, const int height)
         createCommandBuffers();
         // default model, pipeline, components
         createScene();
-        createLight();
         createSynchronization();
 
     }
@@ -70,7 +69,7 @@ void VulkanRenderer::draw(float dt)
     recordCommands(imageIndex);
     //change the VP ubo here
 
-    currentScene.updateUniformBuffers(imageIndex);
+    currentScene.updateScene(imageIndex);
 
     // submit command bufferto queue for execution, making sure it waits for the image to be signalled as available before drawing
     //and signals when it has finished rendering
@@ -568,7 +567,7 @@ void VulkanRenderer::createSynchronization()
 void VulkanRenderer::createLight()
 {
     //create a light. Currently we will only use this one but I should add support for multiple lights later
-    lights.push_back(Light(glm::vec3(0.0f, 100.0f, 0.0f)));
+    currentScene.addLight();
 }
 
 void VulkanRenderer::createScene()
@@ -577,8 +576,31 @@ void VulkanRenderer::createScene()
     // not sure if we need to malloc
     currentScene = Scene(graphicsQueue, graphicsCommandPool, mainDevice.physicalDevice, mainDevice.logicalDevice,swapChainImages.size(), swapChainExtent, msaaSamples);
 
+    currentScene.addLight();
+
     //initial model
-    Material initialMaterial = Material("Shaders/shader_vert.spv", "Shaders/shader_frag.spv");
+    ShaderCreateInfo shaderInfo = { "Shaders/shader_vert.spv", "Shaders/shader_frag.spv" };
+    shaderInfo.uniformCount = 3;
+
+    std::vector<UniformData> UniformDatas(3);
+        UniformDatas[0].name = "ViewProjection uniform";
+        UniformDatas[0].sizes = { sizeof(ViewProjectionMatrix) };
+        UniformDatas[0].dataBuffers = { currentScene.getViewProjectionPtr() };
+
+        Light& light = currentScene.getLight(0);
+        UniformDatas[1].name = "Light uniform";
+        UniformDatas[1].sizes = { sizeof(glm::vec4), sizeof(glm::vec4) };
+        UniformDatas[1].dataBuffers = { &light.position, &light.colour };
+
+        Camera& camera = currentScene.getCamera();
+        UniformDatas[2].name = "Camera";
+        UniformDatas[2].sizes = { sizeof(glm::vec4) };
+        UniformDatas[2].dataBuffers = { &camera.getCameraPosition() };
+
+    shaderInfo.uniformData = std::move(UniformDatas);
+    shaderInfo.pushConstantSize = 0;
+    shaderInfo.shaderFlags = kUseModelMatrixForPushConstant;
+    Material initialMaterial = Material(shaderInfo);
     currentScene.addModel("Models/12140_Skull_v3_L2.obj", initialMaterial, renderPass);
 }
 
@@ -597,17 +619,17 @@ std::vector<glm::mat4>* VulkanRenderer::getModelsMatrices()
     return currentScene.getModelMatrices();
 }
 
-/*void VulkanRenderer::allocateDynamicBufferTransferSpace()
-{
-    //calculate allignment of model data
-  /*  modelUniformAlignment = (sizeof(Model) + minUiformBufferOffset - 1) & ~(minUiformBufferOffset - 1);
-
-    //create space in memory to hold dynamic buffer that is alligned to our required alignemnt and holds max-objects
-    modelTransferSpace = (Model*)_aligned_malloc(modelUniformAlignment * MAX_OBJECTS, modelUniformAlignment);
-}*/
 
 void VulkanRenderer::recordCommands(uint32_t currentImage)
 {
+    // new plan:
+    // 1. begin render pass
+    // 2. get Models
+    // 3. for each model
+    //      3.1. Models are sorted by gfx pipeline. If we need new pipeline, switch
+    //      3.2. record commands for the model
+    // TODO: https://developer.nvidia.com/vulkan-shader-resource-binding
+    // TODO: Client-worker??
     VkCommandBufferBeginInfo bufferBeginInfo = {};
     bufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -633,8 +655,7 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
     }
 
     vkCmdBeginRenderPass(commandBuffer[currentImage], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-    // finish off here, don't forget about command recording
-    //bind pipeline to be used in render pass
+
     std::vector<Model> Models = currentScene.getModels();
     std::vector<glm::mat4>* ModelMatrices = currentScene.getModelMatrices();
     int lastPipelineIndex = -1;
@@ -653,36 +674,52 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
         else if (currentPipelineIndex < lastPipelineIndex)
             throw std::runtime_error("Current pipeline index was lesser than old one. This indicates Model vector was not sorted.");
 #endif
-        //TODO dots
-            auto pipelineLayout = currentScene.getPipeline(currentPipelineIndex).getPipelineLayout();
-            size_t modelMatrixIndex = model.getModelMatrixIndex();
-            auto modelMatrix = (*ModelMatrices)[modelMatrixIndex];
+        Pipeline gfxPipeline = currentScene.getPipeline(currentPipelineIndex);
+        VkPipelineLayout pipelineLayout = gfxPipeline.getPipelineLayout();
 
-            vkCmdPushConstants(commandBuffer[currentImage], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ModelMatrix), &modelMatrix);
 
-            for (size_t k = 0; k < model.getMeshCount(); k++)
+        size_t modelMatrixIndex = model.getModelMatrixIndex();
+        const auto& modelMatrix = (*ModelMatrices)[modelMatrixIndex];
+
+        // TODO: was used last frame?? if yes maybe we don't need to bind.. maybe we don't need to bind a lot of things also?
+        if (gfxPipeline.hasPushConstant())
+        {
+            if (gfxPipeline.useModelMatrixForPushConstant())
             {
-                VkBuffer vertexBuffers[] = { model.getMesh(k)->getVertexBuffer() }; //buffers to bind
-                VkDeviceSize offsets[] = { 0 }; //offsets into buffers being bound
-                vkCmdBindVertexBuffers(commandBuffer[currentImage], 0, 1, vertexBuffers, offsets);
-
-                vkCmdBindIndexBuffer(commandBuffer[currentImage], model.getMesh(k)->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
-
-                // dynamic offset amount
-                //uint32_t dynamicOffset = static_cast<uint32_t>(modelUniformAlignment) * j;
-
-                // TODO: VVVVVVVVVVVVVVVVVVVVVVVVVVVVV bad
-                auto descriptorSet = currentScene.descriptorSets[currentImage];
-                int texId = model.getMesh(k)->getTexId();
-                auto textureDescriptorSet = currentScene.getTextureDescriptorSet(texId);
-                std::array<VkDescriptorSet, 2> descriptorSetGroup = { descriptorSet, textureDescriptorSet };
-
-                // bind descriptor sets
-                vkCmdBindDescriptorSets(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-                    0, static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr);// will only apply offset to descriptors that are dynamic
-
-                vkCmdDrawIndexed(commandBuffer[currentImage], model.getMesh(k)->getIndexCount(), 1, 0, 0, 0);
+                uint32_t size = sizeof(modelMatrix);
+                const void* pushDataBuffer = &modelMatrix;
+                vkCmdPushConstants(commandBuffer[currentImage], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, size, pushDataBuffer);
             }
+            else
+            {// shouldn't be able to have a size that exceeds gfx caps
+                uint32_t size = gfxPipeline.getPushConstantSize();
+                const void* pushDataBuffer = gfxPipeline.getPushConstantDataBuffer();
+                vkCmdPushConstants(commandBuffer[currentImage], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, size, pushDataBuffer);
+            }   
+        }
+
+        for (size_t k = 0; k < model.getMeshCount(); k++)
+        {
+            VkBuffer vertexBuffers[] = { model.getMesh(k)->getVertexBuffer() }; //buffers to bind
+            VkDeviceSize offsets[] = { 0 }; //offsets into buffers being bound
+            vkCmdBindVertexBuffers(commandBuffer[currentImage], 0, 1, vertexBuffers, offsets);
+
+            vkCmdBindIndexBuffer(commandBuffer[currentImage], model.getMesh(k)->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
+
+            // TODO: VVVVVVVVVVVVVVVVVVVVVVVVVVVVV bad
+            auto descriptorSet = gfxPipeline.getDescriptorSet(currentImage);
+            int texId = model.getMesh(k)->getTexId();
+            auto textureDescriptorSet = currentScene.getTextureDescriptorSet(texId);
+            std::array<VkDescriptorSet, 2> descriptorSetGroup = { descriptorSet, textureDescriptorSet };
+
+            // bind descriptor sets
+            vkCmdBindDescriptorSets(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
+                0, static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr);// will only apply offset to descriptors that are dynamic
+
+            // why can't I group all the meshes into one if they use the same texture and all.. ?
+            vkCmdDrawIndexed(commandBuffer[currentImage], model.getMesh(k)->getIndexCount(), 1, 0, 0, 0);
+        }
        // }
     }
     vkCmdEndRenderPass(commandBuffer[currentImage]);
