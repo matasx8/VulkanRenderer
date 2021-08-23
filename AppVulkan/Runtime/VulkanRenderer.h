@@ -37,7 +37,7 @@ public:
 
 	void addModel(std::string fileName, Material material);
 	std::vector<glm::mat4>* getModelsMatrices();
-	//TODO: void LoadScene();
+	Scene& getActiveScene() { return currentScene; }
 
 	void setupDebugMessenger();
 	void draw(float dt);
