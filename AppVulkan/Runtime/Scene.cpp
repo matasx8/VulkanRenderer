@@ -133,7 +133,7 @@ int Scene::setupPipeline(Material& material, std::vector<Texture>& Textures, uin
         if (Pipelines[i].isMaterialCompatible(material))
         {
             // create texture descriptor sets.. Temporary implementation, please remake to dynamic buffers
-            for (size_t j = texturesFrom; j < Textures.size(); i++)
+            for (size_t j = texturesFrom; j < Textures.size(); j++)
             {
                 Textures[j].descriptorSet = Pipelines[i].createTextureDescriptorSet(Textures[j], logicalDevice);
             }

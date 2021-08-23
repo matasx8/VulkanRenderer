@@ -7,9 +7,6 @@ void Texture::createTexture(std::string fileName, VkQueue graphicsQueue, VkComma
 
     //create imageview and add to list
     Images[textureImageLoc].createImageView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, logicalDevice);
-
-    // We probably don't need to return anything, use size-1 of textures?
-    //return 1;
 }
 
 void Texture::DestroyTexture(VkDevice logicalDevice)
