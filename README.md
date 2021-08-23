@@ -2,6 +2,9 @@
 I'm creating a 3D rendering engine with Vulkan. The purpose of this project is to learn about graphics programming. This code is a continuation of what I learned from Ben Cook's Vulkan course.
 
 # What has been implemented by me:
+- Implemented custom shader addition. User has to specify uniform layout in the shader and my engine will take care of the rest. <br>
+- ![Capture](https://user-images.githubusercontent.com/78436416/130431273-e2b41013-f9e3-4c8d-bc36-4d1db7fdbdee.PNG)
+
 - Implemented automatic graphics pipeline creation. Also added api for the user to add a model during runtime. During addition a pipeline is reused or a new one is created.
 - Implemented MSAA <br>
 ![msaa](https://user-images.githubusercontent.com/78436416/120897241-c07a4a80-c62d-11eb-8194-643524a0fc13.PNG)
