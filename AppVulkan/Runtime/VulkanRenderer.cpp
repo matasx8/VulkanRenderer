@@ -590,7 +590,7 @@ void VulkanRenderer::createScene()
         Light& light = currentScene.getLight(0);
         UniformDatas[1].name = "Light uniform";
         UniformDatas[1].sizes = { sizeof(glm::vec4), sizeof(glm::vec4) };
-        UniformDatas[1].dataBuffers = { &light.position, &light.colour };
+        UniformDatas[1].dataBuffers = { &light.m_Position, &light.m_Colour };
 
         Camera& camera = currentScene.getCamera();
         UniformDatas[2].name = "Camera";

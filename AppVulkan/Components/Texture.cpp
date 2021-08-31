@@ -78,7 +78,9 @@ stbi_uc* Texture::loadTextureFile(std::string fileName, int* width, int* height,
 
     if (!image)
     {
-        throw std::runtime_error("Failed to load a Texture file: " + fileName + "\n");
+        image = stbi_load(fileLoc.c_str(), width, height, &channels, STBI_rgb);
+        if (!image)
+            throw std::runtime_error("Failed to load a Texture file: " + fileName + "\n");
     }
 
     *imageSize = *width * *height * 4;

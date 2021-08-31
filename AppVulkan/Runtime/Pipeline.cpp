@@ -374,7 +374,7 @@ void Pipeline::createTextureDescriptorPool(VkDevice logicalDevice)
 
     VkDescriptorPoolCreateInfo samplerPoolCreateInfo = {};
     samplerPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    samplerPoolCreateInfo.maxSets = MAX_OBJECTS;
+    samplerPoolCreateInfo.maxSets = 1000; // !TODO!HERE grow the pool!!
     samplerPoolCreateInfo.poolSizeCount = 1;
     samplerPoolCreateInfo.pPoolSizes = &samplerPoolSize;
     samplerPoolCreateInfo.pNext = nullptr;

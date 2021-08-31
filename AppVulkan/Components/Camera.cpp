@@ -1,70 +1,62 @@
 #include "Camera.h"
 
 Camera::Camera()
-	:msaaSamples(VK_SAMPLE_COUNT_1_BIT), position(glm::vec3(-12.0f, 33.0f, 25.0f)), worldUp(glm::vec3(0.0f, 1.0f, 0.0f)),
-	yaw(-60.0f), pitch(0.0f), front(glm::vec3(1.0f, -0.2f, -0.2f)), moveSpeed(80.0f), turnSpeed(0.5f)
+	: m_Position(glm::vec3(-12.0f, 33.0f, 25.0f)), m_Front(glm::vec3(1.0f, -0.2f, -0.2f)), m_WorldUp(glm::vec3(0.0f, 1.0f, 0.0f)),
+	m_Yaw(-60.0f), m_Pitch(0.0f), m_MoveSpeed(80.0f), m_TurnSpeed(0.5f), m_MsaaSamples(VK_SAMPLE_COUNT_1_BIT)
 {
+	update();
 }
 
 
-Camera::Camera(glm::vec3 startPosition, glm::vec3 startUp, float startYaw
-	, float startPitch, float startMoveSpeed, float startTurnSpeed)
+Camera::Camera(glm::vec3 startPosition, glm::vec3 startUp, float startYaw, 
+	float startPitch, float startMoveSpeed, float startTurnSpeed)
+	: m_Position(startPosition), m_Front(glm::vec3(1.0f, -0.2f, -0.2f)), m_WorldUp(startUp),
+	m_Yaw(startYaw), m_Pitch(startPitch), m_MoveSpeed(startMoveSpeed), m_TurnSpeed(startTurnSpeed), m_MsaaSamples(VK_SAMPLE_COUNT_1_BIT)
 {
-	position = startPosition;
-	worldUp = startUp;
-	yaw = startYaw;
-	pitch = startPitch;
-	front = glm::vec3(0.0f, 0.0f, -1.0f);
-
-	moveSpeed = startMoveSpeed;
-	turnSpeed = startTurnSpeed;
-
-	msaaSamples = VK_SAMPLE_COUNT_1_BIT;
-
 	update();
 }
 
 void Camera::keyControl(bool* keys, GLfloat deltaTime)
 {
-	GLfloat velocity = moveSpeed * deltaTime;
+	float velocity = m_MoveSpeed * deltaTime;
 	if (keys[GLFW_KEY_W])
 	{
-		position += front * velocity;
+		m_Position += m_Front * velocity;
 	}
 
 	if (keys[GLFW_KEY_S])
 	{
-		position -= front * velocity;
+		m_Position -= m_Front * velocity;
 	}
 
 	if (keys[GLFW_KEY_A])
 	{
-		position -= right * velocity;
+		m_Position -= m_Right * velocity;
 	}
 
 	if (keys[GLFW_KEY_D])
 	{
-		position += right * velocity;
+		m_Position += m_Right * velocity;
 	}
 }
 
 void Camera::mouseControl(GLfloat xChange, GLfloat yChange)
 {
 
-	xChange *= turnSpeed;
-	yChange *= turnSpeed;
+	xChange *= m_TurnSpeed;
+	yChange *= m_TurnSpeed;
 
-	yaw += xChange;
-	pitch += yChange;
+	m_Yaw += xChange;
+	m_Pitch += yChange;
 
-	if (pitch > 89.0f)
+	if (m_Pitch > 89.0f)
 	{
-		pitch = 89.0f;
+		m_Pitch = 89.0f;
 	}
 
-	if (pitch < -89.0f)
+	if (m_Pitch < -89.0f)
 	{
-		pitch = -89.0f;
+		m_Pitch = -89.0f;
 	}
 
 	update();
@@ -72,12 +64,12 @@ void Camera::mouseControl(GLfloat xChange, GLfloat yChange)
 
 void Camera::setMSAA(VkSampleCountFlagBits msaaSamples)
 {
-	this->msaaSamples = msaaSamples > VK_SAMPLE_COUNT_8_BIT ? VK_SAMPLE_COUNT_8_BIT : msaaSamples;
+	this->m_MsaaSamples = msaaSamples > VK_SAMPLE_COUNT_8_BIT ? VK_SAMPLE_COUNT_8_BIT : msaaSamples;
 }
 
 glm::mat4 Camera::calculateViewMatrix()
 {
-	return glm::lookAt(position, position + front, up);
+	return glm::lookAt(m_Position, m_Position + m_Front, m_Up);
 }
 
 size_t Camera::GetRepresentCstrLen() const
@@ -91,30 +83,30 @@ void Camera::RepresentCstr(char* const string, size_t size) const
 	if (string)
 	{
 		char buff[100];
-		sprintf_s(buff, "Position(x: %.1f; y: %.1f, z: %.1f) Front(x: %.1f; y: %.1f, z: %.1f)\n\0", position.x, position.y, position.z, front.x, front.y, front.z);
+		sprintf_s(buff, "Position(x: %.1f; y: %.1f, z: %.1f) Front(x: %.1f; y: %.1f, z: %.1f)\n\0", m_Position.x, m_Position.y, m_Position.z, m_Front.x, m_Front.y, m_Front.z);
 		strcpy_s(string, size, buff);
 	}
 }
 
 glm::vec3& Camera::getCameraPosition()
 {
-	return position;
+	return m_Position;
 }
 
 
 glm::vec3 Camera::getCameraDirection() const
 {
-	return glm::normalize(front);
+	return glm::normalize(m_Front);
 }
 
 void Camera::update()
 {
-	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-	front.y = sin(glm::radians(pitch));
-	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-	front = glm::normalize(front);//make unit vec
+	m_Front.x = cos(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));
+	m_Front.y = sin(glm::radians(m_Pitch));
+	m_Front.z = sin(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));
+	m_Front = glm::normalize(m_Front);//make unit vec
 
-	right = glm::normalize(glm::cross(front, worldUp));
-	up = glm::normalize(glm::cross(right, front));
+	m_Right = glm::normalize(glm::cross(m_Front, m_WorldUp));
+	m_Up = glm::normalize(glm::cross(m_Right, m_Front));
 
 }

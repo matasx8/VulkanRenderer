@@ -22,8 +22,8 @@ public:
 	void debugFollowCam(glm::vec4 newPos, glm::vec4 offset);
 	void randomize();
 
-	glm::vec4 position;//the UI will need pointers to this so it's probably a good idea to leave them public
-	glm::vec4 colour;
+	glm::vec4 m_Position;//the UI will need pointers to this so it's probably a good idea to leave them public
+	glm::vec4 m_Colour;
 	//float brightness;
 
 private:

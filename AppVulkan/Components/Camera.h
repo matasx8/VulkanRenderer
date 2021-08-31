@@ -21,7 +21,7 @@ public:
 
 	glm::vec3& getCameraPosition();
 	glm::vec3 getCameraDirection() const;
-	VkSampleCountFlagBits getMSAA() const { return msaaSamples; }
+	VkSampleCountFlagBits getMSAA() const { return m_MsaaSamples; }
 
 	void setMSAA(VkSampleCountFlagBits msaaSamples);
 
@@ -32,19 +32,19 @@ public:
 	void RepresentCstr(char* const string, size_t size) const;
 
 private:
-	glm::vec3 position;
-	glm::vec3 front;
-	glm::vec3 up;
-	glm::vec3 right;
-	glm::vec3 worldUp;
+	glm::vec3 m_Position;
+	glm::vec3 m_Front;
+	glm::vec3 m_Up;
+	glm::vec3 m_Right;
+	glm::vec3 m_WorldUp;
 
-	GLfloat yaw;
-	GLfloat pitch;
+	float m_Yaw;
+	float m_Pitch;
 
-	GLfloat moveSpeed;
-	GLfloat turnSpeed;
+	float m_MoveSpeed;
+	float m_TurnSpeed;
 
-	VkSampleCountFlagBits msaaSamples;
+	VkSampleCountFlagBits m_MsaaSamples;
 
 	void update();
 };
