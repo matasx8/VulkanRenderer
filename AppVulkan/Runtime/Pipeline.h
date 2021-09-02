@@ -6,6 +6,7 @@
 #include "Camera.h"
 #include "Mesh.h"
 #include "Light.h"
+#include "DescriptorPool.h"
 //TODO: create default pipeline and make function for user that creates a pipeline using derivatives
 struct UniformBuffer
 {
@@ -24,8 +25,8 @@ struct UniformBuffer
 class Pipeline
 {
 public:
-	Pipeline(Device device, Camera* camera, size_t swapchainImageCount);
-    Pipeline(Material material, Device device, Camera* camera, size_t swapchainImageCount);
+	Pipeline(Device device, Camera* camera, size_t swapchainImageCount, DescriptorPool* descriptorPool);
+    Pipeline(Material material, Device device, Camera* camera, size_t swapchainImageCount, DescriptorPool* descriptorPool);
 
     void createPipeline(VkExtent2D extent, VkRenderPass renderPass);
     // temporary.. for creation of initial pipeline
@@ -37,12 +38,10 @@ public:
         VkRenderPass renderPass, uint32_t subpass, VkPipeline basePipelineHandle, uint32_t basePipelineIndex,
         VkPipelineCreateFlags flags, VkDevice device);
     void createDescriptorSetLayout(size_t UboCount);
-    void createDescriptorPool();
     void createDescriptorSets(const size_t* dataSizes);
     void createUniformBuffers(const std::vector<size_t>& dataSizes, size_t UboCount);
     void createTextureSampler(VkDevice logicalDevice);
     void createTextureSamplerSetLayout(VkDevice logicalDevice);
-    void createTextureDescriptorPool(VkDevice logicalDevice);
     VkDescriptorSet createTextureDescriptorSet(Texture texture, VkDevice logicalDevice);
 
     VkPipeline getPipeline() { usedThisFrame = true;  return pipeline; }
@@ -84,12 +83,10 @@ private:
     size_t swapchainImageCount;
 
     VkDescriptorSetLayout descriptorSetLayout;
-    VkDescriptorPool descriptorPool;
+    DescriptorPool* m_DescriptorPool;
     std::vector<VkDescriptorSet> descriptorSets;
     std::vector<UniformBuffer> UniformBuffers;
     VkDescriptorSetLayout samplerSetLayout;
-    //std::vector<VkDescriptorSet> samplerDescriptorSets;
-    VkDescriptorPool samplerDescriptorPool;
     VkSampler textureSampler;
     VkPushConstantRange pushConstantRange;
 

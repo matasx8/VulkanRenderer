@@ -1,19 +1,23 @@
 #include "Pipeline.h"
 #include <stdexcept>
 
-Pipeline::Pipeline(Device device, Camera* camera, size_t swapchainImageCount)
-    :device(device), usedThisFrame(false), swapchainImageCount(swapchainImageCount), camera(camera)
+Pipeline::Pipeline(Device device, Camera* camera, size_t swapchainImageCount, DescriptorPool* descriptorPool)
+    :device(device), usedThisFrame(false), swapchainImageCount(swapchainImageCount), camera(camera), m_DescriptorPool(descriptorPool)
 {
     if (camera == nullptr)
         throw std::runtime_error("Pointer to camera was null!");
+    if(descriptorPool == nullptr)
+        throw std::runtime_error("Pointer to Descriptor Pool was null!");
 }
 
-Pipeline::Pipeline(Material material, Device device, Camera* camera, size_t swapchainImageCount)
+Pipeline::Pipeline(Material material, Device device, Camera* camera, size_t swapchainImageCount, DescriptorPool* descriptorPool)
     : device(device), usedThisFrame(false), material(material),
-    swapchainImageCount(swapchainImageCount), camera(camera)
+    swapchainImageCount(swapchainImageCount), camera(camera), m_DescriptorPool(descriptorPool)
 {
     if (camera == nullptr)
         throw std::runtime_error("Pointer to camera was null!");
+    if (descriptorPool == nullptr)
+        throw std::runtime_error("Pointer to Descriptor Pool was null!");
 }
 
 void Pipeline::createPipeline(VkExtent2D extent, VkRenderPass renderPass)
@@ -74,7 +78,6 @@ void Pipeline::createPipeline(VkExtent2D extent, VkRenderPass renderPass)
         // create buffers uboCount x swapchainImageCount
         createUniformBuffers(material.getDataSizes(), material.getUboCount());
 
-        createDescriptorPool();
         createDescriptorSets(material.getDataSizes().data());
     }
     else
@@ -83,7 +86,6 @@ void Pipeline::createPipeline(VkExtent2D extent, VkRenderPass renderPass)
     //TODO IMPORTANT
         createTextureSampler(device.logicalDevice);
         createTextureSamplerSetLayout(device.logicalDevice);
-        createTextureDescriptorPool(device.logicalDevice);
         // the default one has 1 texture, will do for now
         //Texture tex = material.textures[0];
         // keep track of index
@@ -193,30 +195,6 @@ void Pipeline::createUniformBuffers(const std::vector<size_t>& dataSizes, size_t
     }
 }
 
-void Pipeline::createDescriptorPool()
-{
-    const uint32_t MAX_COUNT_DESCRIPTORS = 20;
-    VkDescriptorPoolSize PoolSize = {};
-    PoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    //TODO: have one pool overall?
-    PoolSize.descriptorCount = MAX_COUNT_DESCRIPTORS;
-
-    std::vector<VkDescriptorPoolSize> descriptorPoolSizes = { PoolSize};
-
-    VkDescriptorPoolCreateInfo poolCreateInfo = {};
-    poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolCreateInfo.maxSets = MAX_COUNT_DESCRIPTORS; //max number of descriptor sets that can be created from pool
-    poolCreateInfo.poolSizeCount = static_cast<uint32_t>(descriptorPoolSizes.size()); // amount of pool sizes being passed
-    poolCreateInfo.pPoolSizes = descriptorPoolSizes.data();
-
-    // create descriptor pool
-    VkResult result = vkCreateDescriptorPool(device.logicalDevice, &poolCreateInfo, nullptr, &descriptorPool);
-    if (result != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to create a descriptor pool!");
-    }
-}
-
 void Pipeline::createDescriptorSets(const size_t* dataSizes)
 {
     const size_t setSize = swapchainImageCount;
@@ -224,19 +202,9 @@ void Pipeline::createDescriptorSets(const size_t* dataSizes)
     descriptorSets.resize(setSize);
 
     std::vector<VkDescriptorSetLayout> setLayouts(setSize, descriptorSetLayout);
-    // descriptor set allocation info
-    VkDescriptorSetAllocateInfo setAllocInfo = {};
-    setAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    setAllocInfo.descriptorPool = descriptorPool; //pool to allocate descriptor set from
-    setAllocInfo.descriptorSetCount = static_cast<uint32_t>(setSize); // number of sets to allocate
-    setAllocInfo.pSetLayouts = setLayouts.data(); // layouts to use to allocate sets (1:1 relationship)
-
-    // allocate descriptor sets(multiple)
-    VkResult result = vkAllocateDescriptorSets(device.logicalDevice, &setAllocInfo, descriptorSets.data());
-    if (result != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to allocate descriptor sets");
-    }
+    
+    m_DescriptorPool->AllocateDescriptorSets(descriptorSets, setLayouts, kDescriptorTypeUniformBuffer);
+    
 
     std::vector<VkDescriptorBufferInfo> BufferInfos(setSize);
     std::vector<VkWriteDescriptorSet> SetWrites(setSize * UniformBuffers.size());
@@ -320,25 +288,10 @@ void Pipeline::createTextureSamplerSetLayout(VkDevice logicalDevice)
 
 VkDescriptorSet Pipeline::createTextureDescriptorSet(Texture texture, VkDevice logicalDevice)
 {
-    VkDescriptorSet descriptorSet;
+    std::vector<VkDescriptorSet> descriptorSets(1);
+    std::vector<VkDescriptorSetLayout> setLayouts = { samplerSetLayout };
 
-    // descriptor set allocation info
-    VkDescriptorSetAllocateInfo setAllocInfo = {};
-    setAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    setAllocInfo.descriptorPool = samplerDescriptorPool;
-    setAllocInfo.pSetLayouts = &samplerSetLayout;
-    // TODO: for now I'm allocating a fixed number of decriptor sets
-    // later ask a coworker on a good way to manage this
-    setAllocInfo.descriptorSetCount = 1;
-    setAllocInfo.pNext = nullptr;
-    
-
-    // allocate descriptor sets
-    VkResult result = vkAllocateDescriptorSets(logicalDevice, &setAllocInfo, &descriptorSet);
-    if (result != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to allocate Texture Descriptor Sets");
-    }
+    m_DescriptorPool->AllocateDescriptorSets(descriptorSets, setLayouts, kDescriptorTypeImageSampler);
 
     //texture image info
     VkDescriptorImageInfo imageInfo = {};
@@ -349,7 +302,7 @@ VkDescriptorSet Pipeline::createTextureDescriptorSet(Texture texture, VkDevice l
     // descriptor write info
     VkWriteDescriptorSet descriptorWrite = {};
     descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrite.dstSet = descriptorSet;
+    descriptorWrite.dstSet = descriptorSets[0];
     descriptorWrite.dstBinding = 0;
     descriptorWrite.dstArrayElement = 0;
     descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -361,30 +314,7 @@ VkDescriptorSet Pipeline::createTextureDescriptorSet(Texture texture, VkDevice l
     vkUpdateDescriptorSets(logicalDevice, 1, &descriptorWrite, 0, nullptr);
 
     // return descriptor set location
-    return descriptorSet;
-}
-
-void Pipeline::createTextureDescriptorPool(VkDevice logicalDevice)
-{
-    //create sampler descriptor pool
-    // texture sampler pool
-    VkDescriptorPoolSize samplerPoolSize = {};
-    samplerPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerPoolSize.descriptorCount = 1;
-
-    VkDescriptorPoolCreateInfo samplerPoolCreateInfo = {};
-    samplerPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    samplerPoolCreateInfo.maxSets = 1000; // !TODO!HERE grow the pool!!
-    samplerPoolCreateInfo.poolSizeCount = 1;
-    samplerPoolCreateInfo.pPoolSizes = &samplerPoolSize;
-    samplerPoolCreateInfo.pNext = nullptr;
-    samplerPoolCreateInfo.flags = 0;
-
-    VkResult result = vkCreateDescriptorPool(logicalDevice, &samplerPoolCreateInfo, nullptr, &samplerDescriptorPool);
-    if (result != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to create a descriptor pool");
-    }
+    return descriptorSets[0];
 }
 
 void Pipeline::update(size_t index)
@@ -412,11 +342,9 @@ bool Pipeline::isMaterialCompatible(Material& mat) const
 
 void Pipeline::CleanUp(VkDevice logicalDevice)
 {
-    vkDestroyDescriptorPool(logicalDevice, samplerDescriptorPool, nullptr);
     vkDestroyDescriptorSetLayout(logicalDevice, samplerSetLayout, nullptr);
     vkDestroySampler(logicalDevice, textureSampler, nullptr);
 
-    vkDestroyDescriptorPool(logicalDevice, descriptorPool, nullptr);
     vkDestroyDescriptorSetLayout(logicalDevice, descriptorSetLayout, nullptr);
 
     for (size_t i = 0; i < swapchainImageCount; i++)

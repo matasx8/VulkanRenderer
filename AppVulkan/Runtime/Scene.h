@@ -16,7 +16,7 @@ class Scene
 {
 public:
 	Scene();
-	Scene(VkQueue graphicsQueue, VkCommandPool graphicsCommandPool, VkPhysicalDevice physicalDevice, VkDevice logicalDevice, size_t swapchainImageCount, VkExtent2D extent, VkSampleCountFlagBits msaaSamples);
+	Scene(VkQueue graphicsQueue, VkCommandPool graphicsCommandPool, VkPhysicalDevice physicalDevice, VkDevice logicalDevice, size_t swapchainImageCount, VkExtent2D extent, VkSampleCountFlagBits msaaSamples, DescriptorPool* descriptorPool);
 	// Add and load model to currently used scene
 	// Will create a new pipeline if needed
 	void addModel(std::string fileName, Material material, VkRenderPass renderPass);
@@ -59,6 +59,7 @@ private:
 	VkCommandPool graphicsCommandPool;
 	VkPhysicalDevice physicalDevice;
 	VkDevice logicalDevice;
+	DescriptorPool* m_DescriptorPool;
 	VkExtent2D extent;
 	size_t swapchainImageCount;
 

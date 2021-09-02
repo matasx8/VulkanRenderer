@@ -23,6 +23,7 @@
 #include "Debug.h"
 #include "Scene.h"
 #include "Image.h"
+#include "DescriptorPool.h"
 
 //#define DEBUG_LOGS;
 #define DEBUG
@@ -44,7 +45,6 @@ public:
 	void cleanup();
 	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
 	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
-	//GLFWwindow* window;//temp
 	Window window;
 
 private:
@@ -81,19 +81,14 @@ private:
 
 	ShaderMan shaderMan;
 
-
-	//VkDeviceSize minUiformBufferOffset;
-	//s/ize_t modelUniformAlignment;
-	//Model* modelTransferSpace;
-
 	//pipeline
 	std::vector<Pipeline> Pipelines;
-	///VkPipeline graphicsPipeline;
-	//VkPipelineLayout pipelineLayout;
+
 	VkRenderPass renderPass;
 
 	//pools
 	VkCommandPool graphicsCommandPool;
+	DescriptorPool m_DescriptorPool;
 
 	//synch
 	std::vector<VkSemaphore> imageAvailable;
@@ -117,11 +112,10 @@ private:
 	void createCommandBuffers();
 	void createSynchronization();
 	void createLight();
-	void createScene();
+	void createInitialScene();
+	void CreateDescriptorPool();
 	
 	void compileShaders();
-
-	//void allocateDynamicBufferTransferSpace();
 
 	// record funcs
 	void recordCommands(uint32_t currentImage);
