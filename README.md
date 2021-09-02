@@ -2,6 +2,7 @@
 I'm creating a 3D rendering engine with Vulkan. The purpose of this project is to learn about graphics programming. This code is a continuation of what I learned from Ben Cook's Vulkan course.
 
 # What has been implemented by me:
+- Implemented a Descriptor Pool API that takes care of Descriptor Set allocation, improving previous solution of creating a pool for each new pipeline created.
 - Implemented custom shader addition. User has to specify uniform layout in the shader and my engine will take care of the rest. <br>
 - ![Capture](https://user-images.githubusercontent.com/78436416/130431273-e2b41013-f9e3-4c8d-bc36-4d1db7fdbdee.PNG)
 
