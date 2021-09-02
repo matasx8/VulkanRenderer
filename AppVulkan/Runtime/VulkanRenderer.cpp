@@ -1,7 +1,7 @@
 #include "VulkanRenderer.h"
 #include <iostream>
 
-VulkanRenderer::VulkanRenderer() {}
+VulkanRenderer::VulkanRenderer() {} // TODO: initialize variables
 
 int VulkanRenderer::init(std::string wName, const int width, const int height)
 {
@@ -24,7 +24,8 @@ int VulkanRenderer::init(std::string wName, const int width, const int height)
         createFramebuffers();
         createCommandBuffers();
         // default model, pipeline, components
-        createScene();
+        CreateDescriptorPool();
+        createInitialScene();
         createSynchronization();
 
     }
@@ -128,6 +129,9 @@ void VulkanRenderer::cleanup()
     {
         vkDestroyFramebuffer(mainDevice.logicalDevice, framebuffer, nullptr);
     }
+
+    m_DescriptorPool.DestroyDescriptorPool();
+
     currentScene.CleanUp(mainDevice.logicalDevice);
     depthBufferImage.destroyImage(mainDevice.logicalDevice);
     colorImage.destroyImage(mainDevice.logicalDevice);
@@ -135,7 +139,7 @@ void VulkanRenderer::cleanup()
     {
         pipe.CleanUp(mainDevice.logicalDevice);
     }
-    //vkDestroyPipelineLayout(mainDevice.logicalDevice, pipelineLayout, nullptr);
+
     vkDestroyRenderPass(mainDevice.logicalDevice, renderPass, nullptr);
     for (auto& image : swapChainImages)
     {
@@ -570,11 +574,9 @@ void VulkanRenderer::createLight()
     currentScene.addLight();
 }
 
-void VulkanRenderer::createScene()
+void VulkanRenderer::createInitialScene()
 {
-    //create our scene
-    // not sure if we need to malloc
-    currentScene = Scene(graphicsQueue, graphicsCommandPool, mainDevice.physicalDevice, mainDevice.logicalDevice,swapChainImages.size(), swapChainExtent, msaaSamples);
+    currentScene = Scene(graphicsQueue, graphicsCommandPool, mainDevice.physicalDevice, mainDevice.logicalDevice,swapChainImages.size(), swapChainExtent, msaaSamples, &m_DescriptorPool);
 
     currentScene.addLight();
 
@@ -590,7 +592,7 @@ void VulkanRenderer::createScene()
         Light& light = currentScene.getLight(0);
         UniformDatas[1].name = "Light uniform";
         UniformDatas[1].sizes = { sizeof(glm::vec4), sizeof(glm::vec4) };
-        UniformDatas[1].dataBuffers = { &light.position, &light.colour };
+        UniformDatas[1].dataBuffers = { &light.m_Position, &light.m_Colour };
 
         Camera& camera = currentScene.getCamera();
         UniformDatas[2].name = "Camera";
@@ -602,6 +604,11 @@ void VulkanRenderer::createScene()
     shaderInfo.shaderFlags = kUseModelMatrixForPushConstant;
     Material initialMaterial = Material(shaderInfo);
     currentScene.addModel("Models/12140_Skull_v3_L2.obj", initialMaterial, renderPass);
+}
+
+void VulkanRenderer::CreateDescriptorPool()
+{
+    m_DescriptorPool.CreateDescriptorPool(mainDevice.logicalDevice);
 }
 
 void VulkanRenderer::compileShaders()

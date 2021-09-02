@@ -18,7 +18,7 @@ void Image::createImage(uint32_t width, uint32_t height, VkFormat format, VkImag
     imageCreateInfo.samples = numSamples;
     imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    VkResult result = vkCreateImage(logicalDevice, &imageCreateInfo, nullptr, &image);
+    VkResult result = vkCreateImage(logicalDevice, &imageCreateInfo, nullptr, &m_Image);
     if (result != VK_SUCCESS)
     {
         throw std::runtime_error("Failed to create an image");
@@ -29,32 +29,32 @@ void Image::createImage(uint32_t width, uint32_t height, VkFormat format, VkImag
 
     // get memory requirements for a type of image
     VkMemoryRequirements memoryRequirements;
-    vkGetImageMemoryRequirements(logicalDevice, image, &memoryRequirements);
+    vkGetImageMemoryRequirements(logicalDevice, m_Image, &memoryRequirements);
 
     VkMemoryAllocateInfo memoryAllocInfo = {};
     memoryAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     memoryAllocInfo.allocationSize = memoryRequirements.size;
     memoryAllocInfo.memoryTypeIndex = findMemoryTypeIndex(physicalDevice, memoryRequirements.memoryTypeBits, propFlags);
 
-    result = vkAllocateMemory(logicalDevice, &memoryAllocInfo, nullptr, &imageMemory);
+    result = vkAllocateMemory(logicalDevice, &memoryAllocInfo, nullptr, &m_ImageMemory);
     if (result != VK_SUCCESS)
     {
         throw std::runtime_error("Failed to allocate memory for image!");
     }
 
     // connect memory to image
-    vkBindImageMemory(logicalDevice, image, imageMemory, 0);
+    vkBindImageMemory(logicalDevice, m_Image, m_ImageMemory, 0);
 
 }
 
 void Image::createImageView(VkFormat format, VkImageAspectFlags aspectFlags, VkDevice logicalDevice)
 {
-    if (image == 0)
+    if (m_Image == 0)
         throw std::runtime_error("Trying to create image view for uninitialized image!");
     
     VkImageViewCreateInfo viewCreateInfo = {};
     viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewCreateInfo.image = image; // image to create view for
+    viewCreateInfo.image = m_Image; // image to create view for
     viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
     viewCreateInfo.format = format; //format of image data
     viewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY; //allows remapping of rgba components to other rgba vlues
@@ -69,7 +69,7 @@ void Image::createImageView(VkFormat format, VkImageAspectFlags aspectFlags, VkD
     viewCreateInfo.subresourceRange.baseArrayLayer = 0; //start array level to view from
     viewCreateInfo.subresourceRange.layerCount = 1; //number of array levels to view
 
-    VkResult result = vkCreateImageView(logicalDevice, &viewCreateInfo, nullptr, &imageView);
+    VkResult result = vkCreateImageView(logicalDevice, &viewCreateInfo, nullptr, &m_ImageView);
     if (result != VK_SUCCESS)
     {
         throw std::runtime_error("Failed to create an image view");
@@ -110,10 +110,10 @@ VkImageView Image::createImageView(VkImage image, VkFormat format, VkImageAspect
 
 void Image::destroyImage(VkDevice logicalDevice)
 {
-    vkDestroyImageView(logicalDevice, imageView, nullptr);
-    vkDestroyImage(logicalDevice, image, nullptr);
-    if (imageMemory)
-        vkFreeMemory(logicalDevice, imageMemory, nullptr);
+    vkDestroyImageView(logicalDevice, m_ImageView, nullptr);
+    vkDestroyImage(logicalDevice, m_Image, nullptr);
+    if (m_ImageMemory)
+        vkFreeMemory(logicalDevice, m_ImageMemory, nullptr);
     else
         Debug::LogMsg("an Image was just destroyed that didn't have memory.. That's probably not right :)\0");
 }

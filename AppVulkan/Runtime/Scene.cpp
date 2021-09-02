@@ -4,10 +4,12 @@ Scene::Scene()
 {
 }
 
-Scene::Scene(VkQueue graphicsQueue, VkCommandPool graphicsCommandPool, VkPhysicalDevice physicalDevice, VkDevice logicalDevice, size_t swapchainImageCount, VkExtent2D extent, VkSampleCountFlagBits msaaSamples)
+Scene::Scene(VkQueue graphicsQueue, VkCommandPool graphicsCommandPool, VkPhysicalDevice physicalDevice, VkDevice logicalDevice, size_t swapchainImageCount, VkExtent2D extent, VkSampleCountFlagBits msaaSamples, DescriptorPool* descriptorPool)
     :graphicsQueue(graphicsQueue), graphicsCommandPool(graphicsCommandPool), physicalDevice(physicalDevice), logicalDevice(logicalDevice), camera(Camera())
-    , swapchainImageCount(swapchainImageCount), extent(extent)
+    , swapchainImageCount(swapchainImageCount), extent(extent), m_DescriptorPool(descriptorPool)
 {
+    if (descriptorPool == nullptr)
+        throw std::runtime_error("descriptor pool was null!");
     // Fallback Texture
     Texture tex;
     tex.createTexture("plain.png", graphicsQueue, graphicsCommandPool, physicalDevice, logicalDevice);
@@ -142,7 +144,7 @@ int Scene::setupPipeline(Material& material, std::vector<Texture>& Textures, uin
     }
     // we did not find any compatible pipelines, let's create a new one
     Device device = { physicalDevice, logicalDevice };//TODO
-    Pipeline newPipe = Pipeline(material, device, &camera, swapchainImageCount);
+    Pipeline newPipe = Pipeline(material, device, &camera, swapchainImageCount, m_DescriptorPool);
     newPipe.createPipeline(extent, renderPass);
     Pipelines.push_back(newPipe);
 
