@@ -28,7 +28,7 @@
 //#define DEBUG_LOGS;
 #define DEBUG
 
-class VulkanRenderer
+class VulkanRenderer // : NonCopyable
 {
 public:
 
@@ -39,9 +39,10 @@ public:
 	void addModel(std::string fileName, Material material);
 	std::vector<glm::mat4>* getModelsMatrices();
 	Scene& getActiveScene() { return currentScene; }
+	float GetDeltaTime() { return m_DeltaTime; }
 
 	void setupDebugMessenger();
-	void draw(float dt);
+	void draw();
 	void cleanup();
 	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
 	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
@@ -50,6 +51,8 @@ public:
 private:
 
 	int currentFrame = 0;
+	float m_DeltaTime;
+	float m_LastTime;
 
 	//-- SCENE ---
 	Scene currentScene;
@@ -116,6 +119,8 @@ private:
 	void CreateDescriptorPool();
 	
 	void compileShaders();
+
+	void UpdateDeltaTime();
 
 	// record funcs
 	void recordCommands(uint32_t currentImage);

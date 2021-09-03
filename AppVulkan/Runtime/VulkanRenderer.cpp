@@ -1,7 +1,11 @@
 #include "VulkanRenderer.h"
 #include <iostream>
 
-VulkanRenderer::VulkanRenderer() {} // TODO: initialize variables
+VulkanRenderer::VulkanRenderer() 
+{
+    m_DeltaTime = 0;
+    m_LastTime = 0;
+} // TODO: initialize variables
 
 int VulkanRenderer::init(std::string wName, const int width, const int height)
 {
@@ -50,14 +54,13 @@ void VulkanRenderer::setupDebugMessenger()
     }
 }
 
-void VulkanRenderer::draw(float dt)
-{//!HERE
-    //update camera?
-    currentScene.cameraKeyControl(window.getKeys(), dt);
+void VulkanRenderer::draw()
+{
+    UpdateDeltaTime();
+
+    currentScene.cameraKeyControl(window.getKeys(), m_DeltaTime);
     currentScene.cameraMouseControl(window.getXChange(), window.getYchange());
 
-   // lights[0].debugInput(window.getKeys(), dt);
-    //lights[0].debugFollowCam(camera.getCameraPosition(), glm::vec3(0.0f, -20.0f, 0.0f));
     //wait for given fence to signal open from last draw before xontinuing
     vkWaitForFences(mainDevice.logicalDevice, 1, &drawFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
     //manually reset close fences
@@ -614,6 +617,13 @@ void VulkanRenderer::CreateDescriptorPool()
 void VulkanRenderer::compileShaders()
 {
     shaderMan.CompileShadersAsync();
+}
+
+void VulkanRenderer::UpdateDeltaTime()
+{
+    float now = glfwGetTime();
+    m_DeltaTime = now - m_LastTime;
+    m_LastTime = now;
 }
 
 void VulkanRenderer::addModel(std::string fileName, Material material)

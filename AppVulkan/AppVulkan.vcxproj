@@ -167,6 +167,7 @@
     <ClCompile Include="Components\Light.cpp" />
     <ClCompile Include="Components\Image.cpp" />
     <ClCompile Include="Components\Shader.cpp" />
+    <ClCompile Include="GameDir\GameScript.cpp" />
     <ClCompile Include="Runtime\DescriptorPool.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Components\Mesh.cpp" />
@@ -187,6 +188,7 @@
     <ClInclude Include="Components\Image.h" />
     <ClInclude Include="Components\Material.h" />
     <ClInclude Include="Components\Shader.h" />
+    <ClInclude Include="GameDir\GameScript.h" />
     <ClInclude Include="Runtime\DescriptorPool.h" />
     <ClInclude Include="Runtime\Pipeline.h" />
     <ClInclude Include="Runtime\Scene.h" />

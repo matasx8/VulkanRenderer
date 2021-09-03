@@ -93,6 +93,13 @@ void DescriptorPool::AllocateDescriptorSets(std::vector<VkDescriptorSet>& descri
 
 void DescriptorPool::DestroyDescriptorPool()
 {
+	for (auto& poolSlot : m_DescriptorPools)
+	{
+		for (auto& pool : poolSlot)
+		{
+			vkDestroyDescriptorPool(m_LogicalDevice, pool.pool, nullptr);
+		}
+	}
 }
 
 VkDescriptorPool DescriptorPool::GetDescriptorPool(DescriptorPoolFlags descriptorPoolType, uint32_t index) const
