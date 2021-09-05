@@ -5,6 +5,7 @@ static size_t s_AllTimeModelCount = 0;
 Model::Model()
 {
 	m_IsDuplicate = false;
+	m_IsInstanced = false;
 	m_Handle = s_AllTimeModelCount++;
 }
 
@@ -12,6 +13,7 @@ Model::Model(std::vector<Mesh>& newMeshList)
 {
 	meshList = newMeshList;
 	m_IsDuplicate = false;
+	m_IsInstanced = false;
 	m_Handle = s_AllTimeModelCount++;
 }
 
@@ -39,11 +41,12 @@ ModelMatrix& Model::GetModelMatrix()
 	return m_ModelMatrix;
 }
 
-Model Model::Duplicate() const
+Model Model::Duplicate(bool instanced) const
 {
 	Model tmp = Model(*this);
 	tmp.m_Handle = s_AllTimeModelCount++;
 	tmp.m_IsDuplicate = true;
+	tmp.m_IsInstanced = instanced;
 	return tmp;
 }
 

@@ -62,8 +62,9 @@ private:
     void createPipelineShaderStageCreateInfo(VkPipelineShaderStageCreateInfo& createInfo, const char* shaderFileName, VkShaderStageFlagBits shaderStage) const;
     void createShaderModule(VkShaderModule& shaderModule, const std::vector<char>& code) const;
     void createVertexInputBindingDescription(VkVertexInputBindingDescription& bindingDescription) const;
+    void createVertexInputInstancedBindingDescription(VkVertexInputBindingDescription& bindingDescription) const;
     void createVertexInputAttributeDescription(VkVertexInputAttributeDescription& attributeDescription, uint32_t location, VkFormat format, uint32_t offset) const;
-    void createPipelineVertexInputStateCreateInfo(VkPipelineVertexInputStateCreateInfo& vertexInputCreateInfo, VkVertexInputBindingDescription& bindingDescription, VkVertexInputAttributeDescription* attributeDescriptions) const;
+    void createPipelineVertexInputStateCreateInfo(VkPipelineVertexInputStateCreateInfo& vertexInputCreateInfo, VkVertexInputBindingDescription* bindingDescriptions, VkVertexInputAttributeDescription* attributeDescriptions) const;
     void createPipelineInputAssemblyStateCreateInfo(VkPipelineInputAssemblyStateCreateInfo& inputAssembly) const;
     void createViewport(VkViewport& viewport, float width, float height) const;
     void createScissor(VkRect2D& scissor, VkExtent2D extent) const;

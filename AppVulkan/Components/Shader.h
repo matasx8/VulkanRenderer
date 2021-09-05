@@ -67,6 +67,7 @@ struct ShaderCreateInfo
 	void* pushConstantDataBuffer;
 
 	// >textures.. tbc..<
+	bool isInstanced;
 
 	unsigned int shaderFlags;
 

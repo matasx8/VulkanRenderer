@@ -5,6 +5,7 @@ VulkanRenderer::VulkanRenderer()
 {
     m_DeltaTime = 0;
     m_LastTime = 0;
+    m_InstancingBuffer;
 } // TODO: initialize variables
 
 int VulkanRenderer::init(std::string wName, const int width, const int height)
@@ -669,9 +670,12 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
 
     std::vector<Model> Models = currentScene.getModels();
     int lastPipelineIndex = -1;
+    bool instanced = false;
     for(size_t i = 0; i < Models.size(); i++)
     {
         Model& model = Models[i];
+        instanced = model.IsInstanced();
+
         int currentPipelineIndex = model.getPipelineIndex();
         // pipeline indices should be sorted
         if (currentPipelineIndex > lastPipelineIndex)
@@ -684,6 +688,78 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
         else if (currentPipelineIndex < lastPipelineIndex)
             throw std::runtime_error("Current pipeline index was lesser than old one. This indicates Model vector was not sorted.");
 #endif
+        if (instanced)
+        {
+            // encounter a model that's instanced
+            // means the pipeline just started
+            // need to iterate until instance data has been gathered
+            // bind stuff and make drawcall
+            // Need to create an instance buffer for data
+
+        }
+        recordingInstancedPath(currentPipelineIndex, model, currentImage, );
+        recordingDefaultPath(currentPipelineIndex, model, currentImage);
+    }
+    vkCmdEndRenderPass(commandBuffer[currentImage]);
+
+    //stop recording to command buffer
+    result = vkEndCommandBuffer(commandBuffer[currentImage]);
+    if (result != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to stop recording a Command Buffer");
+    }
+}
+
+bool VulkanRenderer::recordingInstancedPath(int currentPipelineIndex, Model& model, int currentImage, uint32_t instanceCount)
+{
+    // I created the instancing buffer, now make it so it collects intancing data and gets bound at the end, then cleared
+    Pipeline gfxPipeline = currentScene.getPipeline(currentPipelineIndex);
+    VkPipelineLayout pipelineLayout = gfxPipeline.getPipelineLayout();
+
+    const auto& modelMatrix = model.GetModelMatrix();
+
+    // TODO: was used last frame?? if yes maybe we don't need to bind.. maybe we don't need to bind a lot of things also?
+    if (gfxPipeline.hasPushConstant())
+    {
+        if (gfxPipeline.useModelMatrixForPushConstant())
+        {
+            uint32_t size = sizeof(modelMatrix);
+            const void* pushDataBuffer = &modelMatrix;
+            vkCmdPushConstants(commandBuffer[currentImage], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, size, pushDataBuffer);
+        }
+        else
+        {// TODO: shouldn't be able to have a size that exceeds gfx caps
+            uint32_t size = gfxPipeline.getPushConstantSize();
+            const void* pushDataBuffer = gfxPipeline.getPushConstantDataBuffer();
+            vkCmdPushConstants(commandBuffer[currentImage], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, size, pushDataBuffer);
+        }
+    }
+
+    for (size_t k = 0; k < model.getMeshCount(); k++)
+    {
+        VkBuffer vertexBuffers[] = { model.getMesh(k)->getVertexBuffer() }; //buffers to bind
+        VkBuffer instanceBuffers[] = { model.getMesh(k)->getInstanceBuffer() };
+        VkDeviceSize offsets[] = { 0 }; //offsets into buffers being bound
+        vkCmdBindVertexBuffers(commandBuffer[currentImage], 0, 1, vertexBuffers, offsets);
+        vkCmdBindVertexBuffers(commandBuffer[currentImage], 1, 1, instanceBuffers, offsets);
+
+        vkCmdBindIndexBuffer(commandBuffer[currentImage], model.getMesh(k)->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
+        auto descriptorSet = gfxPipeline.getDescriptorSet(currentImage);
+        int texId = model.getMesh(k)->getTexId();
+        auto textureDescriptorSet = currentScene.getTextureDescriptorSet(texId);
+        std::array<VkDescriptorSet, 2> descriptorSetGroup = { descriptorSet, textureDescriptorSet };
+
+        // bind descriptor sets
+        vkCmdBindDescriptorSets(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
+            0, static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr);// will only apply offset to descriptors that are dynamic
+
+        vkCmdDrawIndexed(commandBuffer[currentImage], model.getMesh(k)->getIndexCount(), instanceCount, 0, 0, 0);
+    }
+}
+
+void VulkanRenderer::recordingDefaultPath(int currentPipelineIndex, Model& model, int currentImage)
+{
         Pipeline gfxPipeline = currentScene.getPipeline(currentPipelineIndex);
         VkPipelineLayout pipelineLayout = gfxPipeline.getPipelineLayout();
 
@@ -703,7 +779,7 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
                 uint32_t size = gfxPipeline.getPushConstantSize();
                 const void* pushDataBuffer = gfxPipeline.getPushConstantDataBuffer();
                 vkCmdPushConstants(commandBuffer[currentImage], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, size, pushDataBuffer);
-            }   
+            }
         }
 
         for (size_t k = 0; k < model.getMeshCount(); k++)
@@ -725,19 +801,8 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
             vkCmdBindDescriptorSets(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
                 0, static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr);// will only apply offset to descriptors that are dynamic
 
-            // why can't I group all the meshes into one if they use the same texture and all.. ?
             vkCmdDrawIndexed(commandBuffer[currentImage], model.getMesh(k)->getIndexCount(), 1, 0, 0, 0);
         }
-       // }
-    }
-    vkCmdEndRenderPass(commandBuffer[currentImage]);
-
-    //stop recording to command buffer
-    result = vkEndCommandBuffer(commandBuffer[currentImage]);
-    if (result != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to stop recording a Command Buffer");
-    }
 }
 
 void VulkanRenderer::createLogicalDevice()

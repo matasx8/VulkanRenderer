@@ -24,6 +24,7 @@
 #include "Scene.h"
 #include "Image.h"
 #include "DescriptorPool.h"
+#include "InstanceDataBuffer.h"
 
 //#define DEBUG_LOGS;
 #define DEBUG
@@ -90,6 +91,8 @@ private:
 	//pools
 	VkCommandPool graphicsCommandPool;
 	DescriptorPool m_DescriptorPool;
+	InstanceData m_InstancingBuffer;
+
 
 	//synch
 	std::vector<VkSemaphore> imageAvailable;
@@ -124,6 +127,8 @@ private:
 
 	// record funcs
 	void recordCommands(uint32_t currentImage);
+	bool recordingInstancedPath(int currentPipelineIndex, Model& model, int currentImage, uint32_t instanceCount);
+	void recordingDefaultPath(int currentPipelineIndex, Model& model, int currentImage);
 
 	//getters
 	void getPhysicalDevice();

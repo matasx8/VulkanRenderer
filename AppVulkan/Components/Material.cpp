@@ -50,6 +50,11 @@ const size_t Material::getPushConstantSize() const
 	return m_Shader.m_ShaderInfo.pushConstantSize;
 }
 
+uint32_t Material::GetInstanceCount() const
+{
+	return m_InstanceCount;
+}
+
 const bool Material::hasPushConstant() const
 {
 	return getPushConstantSize() || (m_Shader.m_ShaderInfo.shaderFlags & kUseModelMatrixForPushConstant);
@@ -58,6 +63,11 @@ const bool Material::hasPushConstant() const
 const bool Material::hasFlag(ShaderCreateInfoFlags flag) const
 {
 	return m_Shader.m_ShaderInfo.shaderFlags & flag;
+}
+
+bool Material::IsInstanced() const
+{
+	return m_Shader.m_ShaderInfo.isInstanced;
 }
 
 bool Material::operator==(const Material& mat) const

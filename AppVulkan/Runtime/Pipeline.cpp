@@ -28,16 +28,29 @@ void Pipeline::createPipeline(VkExtent2D extent, VkRenderPass renderPass)
     createPipelineShaderStageCreateInfo(shaderStages[0], material.getVertexShader(), VK_SHADER_STAGE_VERTEX_BIT);
     createPipelineShaderStageCreateInfo(shaderStages[1], material.getFragmentShader(), VK_SHADER_STAGE_FRAGMENT_BIT);
 
+    std::vector<VkVertexInputBindingDescription> bindingDescriptions(material.IsInstanced() ? 2 : 1);
     VkVertexInputBindingDescription bindingDescription = {};
     createVertexInputBindingDescription(bindingDescription);
+    if (material.IsInstanced())
+    {
+        VkVertexInputBindingDescription instancedBindingDescription = {};
+        createVertexInputInstancedBindingDescription(instancedBindingDescription);
+        bindingDescriptions[1] = instancedBindingDescription;
+    }
 
-    std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions;
+    std::vector<VkVertexInputAttributeDescription> attributeDescriptions(material.IsInstanced() ? 6 : 3);
     createVertexInputAttributeDescription(attributeDescriptions[0], 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, pos));
     createVertexInputAttributeDescription(attributeDescriptions[1], 1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, norm));
     createVertexInputAttributeDescription(attributeDescriptions[2], 2, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, tex));
+    if (material.IsInstanced())
+    {
+        createVertexInputAttributeDescription(attributeDescriptions[3], 3, VK_FORMAT_R32G32B32_SFLOAT, offsetof(InstanceData, pos));
+        createVertexInputAttributeDescription(attributeDescriptions[4], 4, VK_FORMAT_R32G32B32_SFLOAT, offsetof(InstanceData, rot));
+        createVertexInputAttributeDescription(attributeDescriptions[5], 5, VK_FORMAT_R32_SFLOAT, offsetof(InstanceData, scale));
+    }
     
     VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo = {};
-    createPipelineVertexInputStateCreateInfo(vertexInputCreateInfo, bindingDescription, attributeDescriptions.data());
+    createPipelineVertexInputStateCreateInfo(vertexInputCreateInfo, bindingDescriptions.data(), attributeDescriptions.data());
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
     createPipelineInputAssemblyStateCreateInfo(inputAssembly);
@@ -395,6 +408,13 @@ void Pipeline::createVertexInputBindingDescription(VkVertexInputBindingDescripti
     bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 }
 
+void Pipeline::createVertexInputInstancedBindingDescription(VkVertexInputBindingDescription& bindingDescription) const
+{
+    bindingDescription.binding = 1;
+    bindingDescription.stride = sizeof(glm::mat4x4);
+    bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+}
+
 void Pipeline::createVertexInputAttributeDescription(VkVertexInputAttributeDescription& attributeDescription, uint32_t location, VkFormat format, uint32_t offset) const
 {
     attributeDescription.binding = 0;
@@ -403,12 +423,12 @@ void Pipeline::createVertexInputAttributeDescription(VkVertexInputAttributeDescr
     attributeDescription.offset = offset;
 }
 
-void Pipeline::createPipelineVertexInputStateCreateInfo(VkPipelineVertexInputStateCreateInfo& vertexInputCreateInfo, VkVertexInputBindingDescription& bindingDescription, VkVertexInputAttributeDescription* attributeDescriptions) const
+void Pipeline::createPipelineVertexInputStateCreateInfo(VkPipelineVertexInputStateCreateInfo& vertexInputCreateInfo, VkVertexInputBindingDescription* bindingDescriptions, VkVertexInputAttributeDescription* attributeDescriptions) const
 {
     vertexInputCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputCreateInfo.vertexBindingDescriptionCount = 1;
-    vertexInputCreateInfo.pVertexBindingDescriptions = &bindingDescription;
-    vertexInputCreateInfo.vertexAttributeDescriptionCount = 3;
+    vertexInputCreateInfo.vertexBindingDescriptionCount = material.IsInstanced() ? 2 : 1;
+    vertexInputCreateInfo.pVertexBindingDescriptions = bindingDescriptions;
+    vertexInputCreateInfo.vertexAttributeDescriptionCount = material.IsInstanced() ? 6 : 3;
     vertexInputCreateInfo.pVertexAttributeDescriptions = attributeDescriptions;
     vertexInputCreateInfo.pNext = nullptr;
     vertexInputCreateInfo.flags = 0;

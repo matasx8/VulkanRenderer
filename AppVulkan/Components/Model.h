@@ -16,17 +16,17 @@ public:
 	size_t getMeshCount();
 	Mesh* getMesh(size_t index);
 	size_t getPipelineIndex() const { return pipelineIndex; }
-	size_t getModelMatrixIndex() const { return modelMatrixIndex; }
 	size_t GetModelHandle() const;
 	glm::mat4x4& GetModelMatrix();
 
-	Model Duplicate() const;
+	Model Duplicate(bool instanced = false) const;
 
 	void SetModelMatrix(ModelMatrix&& matrix);
 	void setPipelineIndex(int index) { pipelineIndex = index; }
 	// Increment pipelineIndex by one. Used when a pipeline has been thrown out.
 	void updatePipelineIndex() { pipelineIndex++; }
 
+	bool IsInstanced() const { return m_IsInstanced; }
 
 	void destroyMeshModel();
 // move to some model manager or somethig
@@ -40,10 +40,10 @@ private:
 	
 	// Duplicates won't have their own memory and will adress to the memory of the original
 	bool m_IsDuplicate;
+	bool m_IsInstanced;
 	ModelHandle m_Handle;
 	std::vector<Mesh> meshList;
 	ModelMatrix m_ModelMatrix;
-	size_t modelMatrixIndex;
 	size_t pipelineIndex;
 };
 
