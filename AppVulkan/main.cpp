@@ -1,5 +1,5 @@
 //TODO: rename member variables to m_VariableName
-//TODO: try for exception before calling script functions to give error when the error is there
+
 #pragma once
 #define STB_IMAGE_IMPLEMENTATION
 #include<iostream>

@@ -606,7 +606,7 @@ void VulkanRenderer::createInitialScene()
     shaderInfo.pushConstantSize = 0;
     shaderInfo.shaderFlags = kUseModelMatrixForPushConstant;
     Material initialMaterial = Material(shaderInfo);
-    currentScene.addModel("Models/12140_Skull_v3_L2.obj", initialMaterial, renderPass);
+    currentScene.AddModel("Models/12140_Skull_v3_L2.obj", initialMaterial, renderPass);
 }
 
 void VulkanRenderer::CreateDescriptorPool()
@@ -626,16 +626,10 @@ void VulkanRenderer::UpdateDeltaTime()
     m_LastTime = now;
 }
 
-void VulkanRenderer::addModel(std::string fileName, Material material)
+void VulkanRenderer::AddModel(std::string fileName, Material material)
 {
-    currentScene.addModel(fileName, material, renderPass);
+    currentScene.AddModel(fileName, material, renderPass);
 }
-
-std::vector<glm::mat4>* VulkanRenderer::getModelsMatrices()
-{
-    return currentScene.getModelMatrices();
-}
-
 
 void VulkanRenderer::recordCommands(uint32_t currentImage)
 {
@@ -674,11 +668,10 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
     vkCmdBeginRenderPass(commandBuffer[currentImage], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     std::vector<Model> Models = currentScene.getModels();
-    std::vector<glm::mat4>* ModelMatrices = currentScene.getModelMatrices();
     int lastPipelineIndex = -1;
     for(size_t i = 0; i < Models.size(); i++)
     {
-        Model model = Models[i];
+        Model& model = Models[i];
         int currentPipelineIndex = model.getPipelineIndex();
         // pipeline indices should be sorted
         if (currentPipelineIndex > lastPipelineIndex)
@@ -694,9 +687,7 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
         Pipeline gfxPipeline = currentScene.getPipeline(currentPipelineIndex);
         VkPipelineLayout pipelineLayout = gfxPipeline.getPipelineLayout();
 
-
-        size_t modelMatrixIndex = model.getModelMatrixIndex();
-        const auto& modelMatrix = (*ModelMatrices)[modelMatrixIndex];
+        const auto& modelMatrix = model.GetModelMatrix();
 
         // TODO: was used last frame?? if yes maybe we don't need to bind.. maybe we don't need to bind a lot of things also?
         if (gfxPipeline.hasPushConstant())

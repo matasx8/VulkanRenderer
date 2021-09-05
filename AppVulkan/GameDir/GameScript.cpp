@@ -3,11 +3,14 @@
 
 namespace GameScript
 {
-	void updateModels(float dt);
+	void UpdateModelsNew(float dt);
+	void Input();
 
 	VulkanRenderer* g_Engine;
 
-	float angle = 0.0f;
+	float g_Angle = 0.0f;
+
+	std::vector<ModelHandle> g_ModelHandles;
 
 	void GameScript::OnStart(VulkanRenderer* engine)
 	{
@@ -40,17 +43,20 @@ namespace GameScript
 		shaderInfo.pushConstantSize = 0;
 		shaderInfo.shaderFlags = kUseModelMatrixForPushConstant;
 		Material material1 = Material(shaderInfo);
-		g_Engine->addModel("Models/Old House 2 3D Models.obj", material1);
-		g_Engine->addModel("Models/Old House 2 3D Models.obj", material1);
-		g_Engine->addModel("Models/Old House 2 3D Models.obj", material1);
-		g_Engine->addModel("Models/Old House 2 3D Models.obj", material1);
-		g_Engine->addModel("Models/Old House 2 3D Models.obj", material1);
-		g_Engine->addModel("Models/Group4.obj", material1);
+		Scene& scene = g_Engine->getActiveScene();
+
+		/*g_ModelHandles.emplace_back(scene.AddModel("Models/Old House 2 3D Models.obj", material1));
+		g_ModelHandles.emplace_back(scene.AddModel("Models/Old House 2 3D Models.obj", material1));
+		g_ModelHandles.emplace_back(scene.AddModel("Models/Old House 2 3D Models.obj", material1));
+		g_ModelHandles.emplace_back(scene.AddModel("Models/Old House 2 3D Models.obj", material1));
+		g_ModelHandles.emplace_back(scene.AddModel("Models/Old House 2 3D Models.obj", material1));*/
+		//g_ModelHandles.emplace_back(scene.AddModel("Models/Group4.obj", material1));
 	}
 
 	void GameScript::OnUpdate()
 	{
-		updateModels(g_Engine->GetDeltaTime());
+		Input();
+		UpdateModelsNew(g_Engine->GetDeltaTime());
 	}
 
 	void GameScript::OnEndOfFrame()
@@ -58,45 +64,47 @@ namespace GameScript
 
 	}
 
-	void updateModels(float dt)
+	void UpdateModelsNew(float dt)
 	{
-		std::vector<glm::mat4>* Models = g_Engine->getModelsMatrices();
-
+		Scene& scene = g_Engine->getActiveScene();
 		float offset = 0.0f;
-		auto& model = (*Models)[0];
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(50.0f + offset, 0.0f, 0.0f));
-		model = glm::rotate(model, glm::radians(-angle), glm::vec3(0.0f, 1.0f, 0.0f));
-		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		{
+			Model& model = scene.GetModel(0);
+			auto& modelMatrix = model.GetModelMatrix();
+			modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(50.0f + offset, 0.0f, 0.0f));
+			modelMatrix = glm::rotate(modelMatrix, glm::radians(-g_Angle), glm::vec3(0.0f, 1.0f, 0.0f));
+			modelMatrix = glm::rotate(modelMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		}
 
-		auto& model2 = (*Models)[1];
-		model2 = glm::translate(glm::mat4(1.0f), glm::vec3(500.0f + offset, 0.0f, 0.0f));
+		int counter = 1;
+		float yOffset = 0.0f;
+		for (auto modelHandle : g_ModelHandles)
+		{
+			if (counter % 21 == 0)
+			{
+				counter = 0;
+				yOffset += 50.0f;
+				offset = 0;
+			}
+			Model& model = scene.GetModel(modelHandle);
+			auto& modelMatrix = model.GetModelMatrix();
+			modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(50.0f + offset, 0.0f - yOffset, 0.0f));
+			modelMatrix = glm::rotate(modelMatrix, glm::radians(-g_Angle), glm::vec3(0.0f, 1.0f, 0.0f));
+			modelMatrix = glm::rotate(modelMatrix, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+			offset += 50.0f;
+			counter++;
+		}
+		g_Angle += 10.0f * dt;
+	}
 
-		model2 = glm::rotate(model2, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		offset += 50.0f;
+	void Input()
+	{
+		Scene& scene = g_Engine->getActiveScene();
+		bool* keys = g_Engine->window.getKeys();
 
-		auto& model3 = (*Models)[2];
-		model3 = glm::translate(glm::mat4(1.0f), glm::vec3(500.0f + offset, 200.0f, 0.0f));
-		////model2 = glm::rotate(model2, glm::radians(-angle), glm::vec3(0.0f, 1.0f, 0.0f));
-		model3 = glm::rotate(model3, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		offset += 50.0f;
-
-		auto& model4 = (*Models)[3];
-		model4 = glm::translate(glm::mat4(1.0f), glm::vec3(500.0f + offset, 200.0f, 0.0f));
-		////model2 = glm::rotate(model2, glm::radians(-angle), glm::vec3(0.0f, 1.0f, 0.0f));
-		model4 = glm::rotate(model4, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		offset += 50.0f;
-
-		auto& model5 = (*Models)[4];
-		model5 = glm::translate(glm::mat4(1.0f), glm::vec3(500.0f + offset, 200.0f, 0.0f));
-		////model2 = glm::rotate(model2, glm::radians(-angle), glm::vec3(0.0f, 1.0f, 0.0f));
-		model5 = glm::rotate(model5, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		offset += 50.0f;
-
-		auto& model6 = (*Models)[5];
-		model6 = glm::translate(glm::mat4(1.0f), glm::vec3(500.0f + offset, 200.0f, 0.0f));
-		////model2 = glm::rotate(model2, glm::radians(-angle), glm::vec3(0.0f, 1.0f, 0.0f));
-		model6 = glm::rotate(model6, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		offset += 50.0f;
-		angle += 10.0f * dt;
+		if (g_ModelHandles.size() < 100 && keys[GLFW_KEY_P])
+		{
+			g_ModelHandles.push_back(scene.DuplicateModel(0));
+		}
 	}
 }

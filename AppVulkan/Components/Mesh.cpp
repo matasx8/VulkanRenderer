@@ -13,18 +13,7 @@ Mesh::Mesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue trans
     createVertexBuffer(transferQueue, transferCommandPool, vertices);
     createIndexBuffer(transferQueue, transferCommandPool, indices);
 
-    model.model = glm::mat4(1.0f);
     texId = newTexId;
-}
-
-void Mesh::setModel(glm::mat4 newModel)
-{
-    model.model = newModel;
-}
-
-ModelMatrix Mesh::getModel()
-{
-    return model;
 }
 
 

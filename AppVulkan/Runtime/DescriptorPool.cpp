@@ -152,7 +152,6 @@ void DescriptorPool::GrowPool(DescriptorPoolFlags descriptorPoolType)
 	singlePool.poolMaxSets = newMaxSets;
 	singlePool.type = descriptorPoolType;
 	m_DescriptorPools[poolIndex].push_back(pool);
-	//m_DescriptorPools[poolIndex].emplace_back(descriptorPoolType, 0, newMaxSets);
 
 	VkResult result = vkCreateDescriptorPool(m_LogicalDevice, &poolCreateInfo, nullptr, &m_DescriptorPools[poolIndex].back().pool);
 	if (result != VK_SUCCESS)

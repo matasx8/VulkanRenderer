@@ -1,12 +1,18 @@
 #include "Model.h"
 
+static size_t s_AllTimeModelCount = 0;
+
 Model::Model()
 {
+	m_IsDuplicate = false;
+	m_Handle = s_AllTimeModelCount++;
 }
 
-Model::Model(std::vector<Mesh> newMeshList)
+Model::Model(std::vector<Mesh>& newMeshList)
 {
 	meshList = newMeshList;
+	m_IsDuplicate = false;
+	m_Handle = s_AllTimeModelCount++;
 }
 
 size_t Model::getMeshCount()
@@ -23,20 +29,36 @@ Mesh* Model::getMesh(size_t index)
 	return &meshList[index];
 }
 
-void Model::setModelMatrix(size_t index)
+size_t Model::GetModelHandle() const
 {
-	if (index >= 0)
-		modelMatrixIndex = index;
-	else
-		throw std::runtime_error("passed a negative index to setModelMatrix!");
+	return m_Handle;
+}
+
+ModelMatrix& Model::GetModelMatrix()
+{
+	return m_ModelMatrix;
+}
+
+Model Model::Duplicate() const
+{
+	Model tmp = Model(*this);
+	tmp.m_Handle = s_AllTimeModelCount++;
+	tmp.m_IsDuplicate = true;
+	return tmp;
+}
+
+void Model::SetModelMatrix(ModelMatrix&& matrix)
+{
+	m_ModelMatrix = std::move(matrix);
 }
 
 void Model::destroyMeshModel()
 {
-	for (auto& mesh : meshList)
-	{
-		mesh.destroyBuffers();
-	}
+	if (!m_IsDuplicate)
+		for (auto& mesh : meshList)
+		{
+			mesh.destroyBuffers();
+		}
 }
 
 std::vector<std::string> Model::LoadMaterials(const aiScene* scene)

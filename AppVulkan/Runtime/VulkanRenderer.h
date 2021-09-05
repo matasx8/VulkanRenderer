@@ -36,8 +36,6 @@ public:
 
 	int init(std::string wName = "Default Window", const int width = 800, const int height = 600);
 
-	void addModel(std::string fileName, Material material);
-	std::vector<glm::mat4>* getModelsMatrices();
 	Scene& getActiveScene() { return currentScene; }
 	float GetDeltaTime() { return m_DeltaTime; }
 
@@ -121,6 +119,8 @@ private:
 	void compileShaders();
 
 	void UpdateDeltaTime();
+
+	void AddModel(std::string fileName, Material material);
 
 	// record funcs
 	void recordCommands(uint32_t currentImage);

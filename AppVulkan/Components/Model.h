@@ -3,19 +3,26 @@
 #include "Mesh.h"
 #include <assimp/scene.h>
 
+// unique identifier for a Model
+typedef unsigned int ModelHandle;
+typedef glm::mat4x4 ModelMatrix;
+
 class Model
 {
 public:
 	Model();
-	Model(std::vector<Mesh> newMeshList);//find out if i can pass by ref
+	Model(std::vector<Mesh>& newMeshList);//find out if i can pass by ref
 
 	size_t getMeshCount();
 	Mesh* getMesh(size_t index);
 	size_t getPipelineIndex() const { return pipelineIndex; }
 	size_t getModelMatrixIndex() const { return modelMatrixIndex; }
+	size_t GetModelHandle() const;
+	glm::mat4x4& GetModelMatrix();
 
-	//void setModel(glm::mat4 newModel);
-	void setModelMatrix(size_t index);
+	Model Duplicate() const;
+
+	void SetModelMatrix(ModelMatrix&& matrix);
 	void setPipelineIndex(int index) { pipelineIndex = index; }
 	// Increment pipelineIndex by one. Used when a pipeline has been thrown out.
 	void updatePipelineIndex() { pipelineIndex++; }
@@ -30,7 +37,12 @@ public:
 		aiMesh* mesh, const aiScene* scene, std::vector<int> matToTex);
 
 private:
+	
+	// Duplicates won't have their own memory and will adress to the memory of the original
+	bool m_IsDuplicate;
+	ModelHandle m_Handle;
 	std::vector<Mesh> meshList;
+	ModelMatrix m_ModelMatrix;
 	size_t modelMatrixIndex;
 	size_t pipelineIndex;
 };

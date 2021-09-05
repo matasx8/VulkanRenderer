@@ -4,7 +4,7 @@
 #include <vector>
 #include "Material.h"
 #include "Camera.h"
-#include "Mesh.h"
+#include "Model.h"
 #include "Light.h"
 #include "DescriptorPool.h"
 //TODO: create default pipeline and make function for user that creates a pipeline using derivatives
