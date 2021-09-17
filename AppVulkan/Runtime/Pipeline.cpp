@@ -44,9 +44,10 @@ void Pipeline::createPipeline(VkExtent2D extent, VkRenderPass renderPass)
     createVertexInputAttributeDescription(attributeDescriptions[2], 2, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, tex));
     if (material.IsInstanced())
     {
-        createVertexInputAttributeDescription(attributeDescriptions[3], 3, VK_FORMAT_R32G32B32_SFLOAT, offsetof(InstanceData, pos));
-        createVertexInputAttributeDescription(attributeDescriptions[4], 4, VK_FORMAT_R32G32B32_SFLOAT, offsetof(InstanceData, rot));
-        createVertexInputAttributeDescription(attributeDescriptions[5], 5, VK_FORMAT_R32_SFLOAT, offsetof(InstanceData, scale));
+        createVertexInputAttributeDescription(attributeDescriptions[3], 3, VK_FORMAT_R32G32B32A32_SFLOAT, 0);
+        createVertexInputAttributeDescription(attributeDescriptions[4], 4, VK_FORMAT_R32G32B32A32_SFLOAT, 4);
+        createVertexInputAttributeDescription(attributeDescriptions[5], 5, VK_FORMAT_R32G32B32A32_SFLOAT, 8);
+        createVertexInputAttributeDescription(attributeDescriptions[5], 5, VK_FORMAT_R32G32B32A32_SFLOAT, 12);
     }
     
     VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo = {};
@@ -411,7 +412,7 @@ void Pipeline::createVertexInputBindingDescription(VkVertexInputBindingDescripti
 void Pipeline::createVertexInputInstancedBindingDescription(VkVertexInputBindingDescription& bindingDescription) const
 {
     bindingDescription.binding = 1;
-    bindingDescription.stride = sizeof(glm::mat4x4);
+    bindingDescription.stride = sizeof(InstanceData);
     bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 }
 

@@ -50,6 +50,13 @@ Model Model::Duplicate(bool instanced) const
 	return tmp;
 }
 
+void Model::CopyInInstanceData(void* dst) const
+{
+	InstanceData data;
+	data.model = m_ModelMatrix;
+	memcpy(dst, &data, sizeof(InstanceData));
+}
+
 void Model::SetModelMatrix(ModelMatrix&& matrix)
 {
 	m_ModelMatrix = std::move(matrix);

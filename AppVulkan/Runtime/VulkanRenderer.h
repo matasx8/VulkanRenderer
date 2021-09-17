@@ -91,7 +91,7 @@ private:
 	//pools
 	VkCommandPool graphicsCommandPool;
 	DescriptorPool m_DescriptorPool;
-	InstanceData m_InstancingBuffer;
+	std::vector<InstanceDataBuffer> m_InstancingBuffers;
 
 
 	//synch
@@ -118,12 +118,15 @@ private:
 	void createLight();
 	void createInitialScene();
 	void CreateDescriptorPool();
+	void CreateInstancingBuffers();
 	
 	void compileShaders();
 
 	void UpdateDeltaTime();
 
 	void AddModel(std::string fileName, Material material);
+
+	void DrawInstanced(int instancedModelIndex, uint32_t currentImage);
 
 	// record funcs
 	void recordCommands(uint32_t currentImage);

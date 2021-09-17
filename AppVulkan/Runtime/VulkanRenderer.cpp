@@ -5,7 +5,7 @@ VulkanRenderer::VulkanRenderer()
 {
     m_DeltaTime = 0;
     m_LastTime = 0;
-    m_InstancingBuffer;
+    m_InstancingBuffers;
 } // TODO: initialize variables
 
 int VulkanRenderer::init(std::string wName, const int width, const int height)
@@ -28,6 +28,7 @@ int VulkanRenderer::init(std::string wName, const int width, const int height)
         createCommandPool();
         createFramebuffers();
         createCommandBuffers();
+        CreateInstancingBuffers();
         // default model, pipeline, components
         CreateDescriptorPool();
         createInitialScene();
@@ -606,6 +607,7 @@ void VulkanRenderer::createInitialScene()
     shaderInfo.uniformData = std::move(UniformDatas);
     shaderInfo.pushConstantSize = 0;
     shaderInfo.shaderFlags = kUseModelMatrixForPushConstant;
+    shaderInfo.isInstanced = false;
     Material initialMaterial = Material(shaderInfo);
     currentScene.AddModel("Models/12140_Skull_v3_L2.obj", initialMaterial, renderPass);
 }
@@ -613,6 +615,15 @@ void VulkanRenderer::createInitialScene()
 void VulkanRenderer::CreateDescriptorPool()
 {
     m_DescriptorPool.CreateDescriptorPool(mainDevice.logicalDevice);
+}
+
+void VulkanRenderer::CreateInstancingBuffers()
+{
+    m_InstancingBuffers = std::vector<InstanceDataBuffer>(swapChainImages.size());
+    for (size_t i = 0; i < swapChainImages.size(); i++)
+    {
+        m_InstancingBuffers[i].Create(mainDevice);
+    }
 }
 
 void VulkanRenderer::compileShaders()
@@ -630,6 +641,46 @@ void VulkanRenderer::UpdateDeltaTime()
 void VulkanRenderer::AddModel(std::string fileName, Material material)
 {
     currentScene.AddModel(fileName, material, renderPass);
+}
+
+void VulkanRenderer::DrawInstanced(int index, uint32_t currentImage)
+{
+    auto& Models = currentScene.getModels();
+    int currentPipelineIndex = static_cast<int>(Models[index].getPipelineIndex());
+    Pipeline gfxPipeline = currentScene.getPipeline(currentPipelineIndex);
+    int meshCount = Models[index].getMeshCount();
+
+    if (false && gfxPipeline.hasPushConstant())
+    {
+        // TODO: add push constants
+        uint32_t size = gfxPipeline.getPushConstantSize();
+        const void* pushDataBuffer = gfxPipeline.getPushConstantDataBuffer();
+        // vkCmdPushConstants(commandBuffer[currentImage], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, size, pushDataBuffer);    
+    }
+
+    // try to bind instance buffer once
+    for (size_t i = 0; i < Models[index].getMeshCount(); i++)
+    {
+        VkBuffer vertexBuffers[] = { Models[index].getMesh(i)->getVertexBuffer() };
+        VkBuffer instanceBuffers[] = { m_InstancingBuffers[currentImage].GetInstanceData() };
+        VkDeviceSize offsets[] = { 0 }; //offsets into buffers being bound
+        vkCmdBindVertexBuffers(commandBuffer[currentImage], 0, 1, vertexBuffers, offsets);
+        vkCmdBindVertexBuffers(commandBuffer[currentImage], 1, 1, instanceBuffers, offsets);
+
+        vkCmdBindIndexBuffer(commandBuffer[currentImage], Models[index].getMesh(i)->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
+        auto descriptorSet = gfxPipeline.getDescriptorSet(currentImage);
+        int texId = Models[index].getMesh(i)->getTexId();
+        auto textureDescriptorSet = currentScene.getTextureDescriptorSet(texId);
+        std::array<VkDescriptorSet, 2> descriptorSetGroup = { descriptorSet, textureDescriptorSet };
+
+        // bind descriptor sets
+        vkCmdBindDescriptorSets(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, gfxPipeline.getPipelineLayout(),
+            0, static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr);// will only apply offset to descriptors that are dynamic
+
+        vkCmdDrawIndexed(commandBuffer[currentImage], Models[index].getMesh(0)->getIndexCount(), m_InstancingBuffers[currentImage].GetCurrentSize(), 0, 0, 0);
+    }
+    m_InstancingBuffers[currentImage].Reset();
 }
 
 void VulkanRenderer::recordCommands(uint32_t currentImage)
@@ -668,13 +719,24 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
 
     vkCmdBeginRenderPass(commandBuffer[currentImage], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    std::vector<Model> Models = currentScene.getModels();
+    std::vector<Model>& Models = currentScene.getModels();
     int lastPipelineIndex = -1;
+
     bool instanced = false;
-    for(size_t i = 0; i < Models.size(); i++)
+    void* instanceDataBuffer = alloca(sizeof(InstanceData));
+
+    for(size_t i = 0; i < Models.size(); i++) // have a dummy model at the end of this container for easier algorithm?
     {
         Model& model = Models[i];
-        instanced = model.IsInstanced();
+        bool isInstanced = model.IsInstanced();
+        if (isInstanced && !instanced) // means we just started instancing
+        {
+            m_InstancingBuffers[currentImage].Reset();
+        }
+        else if (!isInstanced && instanced)// means instancing ended
+        {
+            DrawInstanced(i - 1, currentImage); // loop over this range and finish instanced meshes
+        }
 
         int currentPipelineIndex = model.getPipelineIndex();
         // pipeline indices should be sorted
@@ -690,14 +752,10 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
 #endif
         if (instanced)
         {
-            // encounter a model that's instanced
-            // means the pipeline just started
-            // need to iterate until instance data has been gathered
-            // bind stuff and make drawcall
-            // Need to create an instance buffer for data
-
+            model.CopyInInstanceData(instanceDataBuffer);
+            m_InstancingBuffers[currentImage].InsertBuffer(instanceDataBuffer, sizeof(InstanceData));
+            continue;
         }
-        recordingInstancedPath(currentPipelineIndex, model, currentImage, );
         recordingDefaultPath(currentPipelineIndex, model, currentImage);
     }
     vkCmdEndRenderPass(commandBuffer[currentImage]);
@@ -707,54 +765,6 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
     if (result != VK_SUCCESS)
     {
         throw std::runtime_error("Failed to stop recording a Command Buffer");
-    }
-}
-
-bool VulkanRenderer::recordingInstancedPath(int currentPipelineIndex, Model& model, int currentImage, uint32_t instanceCount)
-{
-    // I created the instancing buffer, now make it so it collects intancing data and gets bound at the end, then cleared
-    Pipeline gfxPipeline = currentScene.getPipeline(currentPipelineIndex);
-    VkPipelineLayout pipelineLayout = gfxPipeline.getPipelineLayout();
-
-    const auto& modelMatrix = model.GetModelMatrix();
-
-    // TODO: was used last frame?? if yes maybe we don't need to bind.. maybe we don't need to bind a lot of things also?
-    if (gfxPipeline.hasPushConstant())
-    {
-        if (gfxPipeline.useModelMatrixForPushConstant())
-        {
-            uint32_t size = sizeof(modelMatrix);
-            const void* pushDataBuffer = &modelMatrix;
-            vkCmdPushConstants(commandBuffer[currentImage], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, size, pushDataBuffer);
-        }
-        else
-        {// TODO: shouldn't be able to have a size that exceeds gfx caps
-            uint32_t size = gfxPipeline.getPushConstantSize();
-            const void* pushDataBuffer = gfxPipeline.getPushConstantDataBuffer();
-            vkCmdPushConstants(commandBuffer[currentImage], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, size, pushDataBuffer);
-        }
-    }
-
-    for (size_t k = 0; k < model.getMeshCount(); k++)
-    {
-        VkBuffer vertexBuffers[] = { model.getMesh(k)->getVertexBuffer() }; //buffers to bind
-        VkBuffer instanceBuffers[] = { model.getMesh(k)->getInstanceBuffer() };
-        VkDeviceSize offsets[] = { 0 }; //offsets into buffers being bound
-        vkCmdBindVertexBuffers(commandBuffer[currentImage], 0, 1, vertexBuffers, offsets);
-        vkCmdBindVertexBuffers(commandBuffer[currentImage], 1, 1, instanceBuffers, offsets);
-
-        vkCmdBindIndexBuffer(commandBuffer[currentImage], model.getMesh(k)->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
-
-        auto descriptorSet = gfxPipeline.getDescriptorSet(currentImage);
-        int texId = model.getMesh(k)->getTexId();
-        auto textureDescriptorSet = currentScene.getTextureDescriptorSet(texId);
-        std::array<VkDescriptorSet, 2> descriptorSetGroup = { descriptorSet, textureDescriptorSet };
-
-        // bind descriptor sets
-        vkCmdBindDescriptorSets(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-            0, static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr);// will only apply offset to descriptors that are dynamic
-
-        vkCmdDrawIndexed(commandBuffer[currentImage], model.getMesh(k)->getIndexCount(), instanceCount, 0, 0, 0);
     }
 }
 

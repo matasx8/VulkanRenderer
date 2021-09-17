@@ -20,6 +20,8 @@ public:
 	glm::mat4x4& GetModelMatrix();
 
 	Model Duplicate(bool instanced = false) const;
+	// make sure dst is at least the size of InstanceData struct
+	void CopyInInstanceData(void* dst) const;
 
 	void SetModelMatrix(ModelMatrix&& matrix);
 	void setPipelineIndex(int index) { pipelineIndex = index; }

@@ -1,4 +1,5 @@
 //TODO: rename member variables to m_VariableName
+//TODO: make physical and logical device accessible everywhere
 
 #pragma once
 #define STB_IMAGE_IMPLEMENTATION

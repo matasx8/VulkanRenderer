@@ -25,9 +25,7 @@ struct Vertex
 
 struct InstanceData
 {
-	glm::vec3 pos;
-	glm::vec3 rot;
-	float scale;
+	glm::mat4x4 model;
 };
 
 struct Device {
