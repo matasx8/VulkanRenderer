@@ -26,6 +26,8 @@ void main()
 	
 	vec3 ambient = ambientStrength * lightColor;
 	
+
+	
 	vec3 norm = normalize(fragNorm);
 	
 	float diff = max(dot(norm, lightDir), 0.0);

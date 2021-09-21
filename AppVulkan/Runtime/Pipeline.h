@@ -63,7 +63,7 @@ private:
     void createShaderModule(VkShaderModule& shaderModule, const std::vector<char>& code) const;
     void createVertexInputBindingDescription(VkVertexInputBindingDescription& bindingDescription) const;
     void createVertexInputInstancedBindingDescription(VkVertexInputBindingDescription& bindingDescription) const;
-    void createVertexInputAttributeDescription(VkVertexInputAttributeDescription& attributeDescription, uint32_t location, VkFormat format, uint32_t offset) const;
+    void createVertexInputAttributeDescription(VkVertexInputAttributeDescription& attributeDescription, uint32_t binding, uint32_t location, VkFormat format, uint32_t offset) const;
     void createPipelineVertexInputStateCreateInfo(VkPipelineVertexInputStateCreateInfo& vertexInputCreateInfo, VkVertexInputBindingDescription* bindingDescriptions, VkVertexInputAttributeDescription* attributeDescriptions) const;
     void createPipelineInputAssemblyStateCreateInfo(VkPipelineInputAssemblyStateCreateInfo& inputAssembly) const;
     void createViewport(VkViewport& viewport, float width, float height) const;
@@ -75,7 +75,7 @@ private:
     void createPipelineColorBlendStateCreateInfo(VkPipelineColorBlendStateCreateInfo& colorBlendingCreateInfo, VkPipelineColorBlendAttachmentState& colorState) const;
     void createPushConstantRange();
     void createDepthStencilCreateInfo(VkPipelineDepthStencilStateCreateInfo& depthStencilCreateInfo);
-    void createPipelineLayout(VkDescriptorSetLayout* descriptorSetLayouts, uint32_t dSetLayoutCount);
+    void createPipelineLayout(VkDescriptorSetLayout* descriptorSetLayouts, uint32_t dSetLayoutCount, size_t pushSize);
     
     VkPipeline pipeline;
     VkPipelineLayout pipelineLayout;

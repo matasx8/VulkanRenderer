@@ -9,11 +9,11 @@ Model::Model()
 	m_Handle = s_AllTimeModelCount++;
 }
 
-Model::Model(std::vector<Mesh>& newMeshList)
+Model::Model(std::vector<Mesh>& newMeshList, bool isInstanced)
 {
 	meshList = newMeshList;
 	m_IsDuplicate = false;
-	m_IsInstanced = false;
+	m_IsInstanced = isInstanced;
 	m_Handle = s_AllTimeModelCount++;
 }
 
@@ -45,7 +45,7 @@ Model Model::Duplicate(bool instanced) const
 {
 	Model tmp = Model(*this);
 	tmp.m_Handle = s_AllTimeModelCount++;
-	tmp.m_IsDuplicate = true;
+	tmp.m_IsDuplicate =true;
 	tmp.m_IsInstanced = instanced;
 	return tmp;
 }
@@ -54,6 +54,7 @@ void Model::CopyInInstanceData(void* dst) const
 {
 	InstanceData data;
 	data.model = m_ModelMatrix;
+	auto s = sizeof(InstanceData);
 	memcpy(dst, &data, sizeof(InstanceData));
 }
 

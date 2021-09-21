@@ -40,7 +40,7 @@ public:
 	void updateScene(size_t index);
 	// Duplicates Model specified by handle
 	// If duplication failed, returns the same hadle to indicate failure
-	ModelHandle DuplicateModel(ModelHandle handle);
+	ModelHandle DuplicateModel(ModelHandle handle, bool instanced = false);
 
 
 	void onFrameEnded();

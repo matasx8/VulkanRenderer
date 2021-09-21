@@ -62,7 +62,8 @@ ModelHandle Scene::AddModel(std::string fileName, Material material, VkRenderPas
     std::vector<Mesh> modelMeshes = Model::LoadNode(physicalDevice, logicalDevice, graphicsQueue, graphicsCommandPool,
         scene->mRootNode, scene, matToTex);
 
-    Model meshModel = Model(modelMeshes);
+    Model meshModel = Model(modelMeshes, material.IsInstanced());
+    
 
     uint32_t texturesFrom = (oldTexturesSize != Textures.size()) ? oldTexturesSize : 0;
     if (Textures[0].descriptorSet == 0) texturesFrom = 0;
@@ -101,7 +102,7 @@ Model Scene::GetModelAndDuplicate(ModelHandle handle)
 {
     for (auto& model : Models)
         if (model.GetModelHandle() == handle)
-            return model.Duplicate();
+            return model.Duplicate(true);
     Model notFound = Model();
     return notFound;
 }
@@ -197,10 +198,11 @@ void Scene::updateScene(size_t index)
         pipe.update(index);
 }
 
-ModelHandle Scene::DuplicateModel(ModelHandle handle)
+ModelHandle Scene::DuplicateModel(ModelHandle handle, bool instanced)
 {
     // Note: can optimize this and GetModel with the fact that Models are sorted by pipelineindex always
     Model model = GetModelAndDuplicate(handle);
+    
     // figure out what to do if it's not here
     uint32_t indexOfNewModel = insertModel(model);
     return Models[indexOfNewModel].GetModelHandle();

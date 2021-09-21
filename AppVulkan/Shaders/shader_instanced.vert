@@ -3,7 +3,7 @@
 layout (location = 0) in vec3 pos;
 layout (location = 1) in vec3 norm;
 layout (location = 2) in vec2 tex;
-layout (location = 3, binding = 1) in mat4 instance_transform;
+layout (location = 3) in mat4 instance_transform;
  
 layout(set = 0, binding = 0) uniform UboViewProjection{
 	mat4 projection;
@@ -35,12 +35,12 @@ layout(location = 5) out vec3 camPos;
 	
 void main()
 {
-	gl_Position = uboViewProjection.projection * uboViewProjection.view * instance_transform; * vec4(pos, 1.0)
+	gl_Position = uboViewProjection.projection * uboViewProjection.view * instance_transform * vec4(pos, 1.0);
 	
-	fragPos = vec3(pushModel.model * vec4(pos, 1.0));
+	fragPos = vec3(instance_transform * vec4(pos, 1.0));
 	fragTex = tex;
 	fragNorm = norm;
-	fragNorm = mat3(transpose(inverse(pushModel.model))) * norm;
+	fragNorm = mat3(transpose(inverse(instance_transform))) * norm;
 	directionalLightSpacePos = uboLights.position.xyz;
 	directionalLightColour = uboLights.colour.xyz;
 	camPos = camera.pos.xyz;

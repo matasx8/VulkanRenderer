@@ -16,6 +16,7 @@ public:
 	void Reset();
 
 	size_t GetCurrentSize() const { return m_CurrentSize; }
+	size_t GetElementCount() const { return m_ElementCount; }
 	VkBuffer GetInstanceData();
 
 	~InstanceDataBuffer();

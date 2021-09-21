@@ -16,7 +16,7 @@ int main()
 	{
 		return EXIT_FAILURE;
 	}
-
+	glfwSwapInterval(1);
 
 	GameScript::OnStart(&vulkanRenderer);
 

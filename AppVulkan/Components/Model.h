@@ -11,7 +11,7 @@ class Model
 {
 public:
 	Model();
-	Model(std::vector<Mesh>& newMeshList);//find out if i can pass by ref
+	Model(std::vector<Mesh>& newMeshList, bool isInstanced = false);//find out if i can pass by ref
 
 	size_t getMeshCount();
 	Mesh* getMesh(size_t index);

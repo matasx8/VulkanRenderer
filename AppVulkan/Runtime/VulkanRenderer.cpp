@@ -15,12 +15,15 @@ int VulkanRenderer::init(std::string wName, const int width, const int height)
 
     try
     {
+        EnableCrashDumps();
         compileShaders();
         createInstance();
+       // EnableCrashDumps();
         createSurface();
         setupDebugMessenger();
         getPhysicalDevice();
         createLogicalDevice();
+        //EnableCrashDumps();
         createSwapChain();
         createColorResources();
         createDepthBufferImage();
@@ -581,6 +584,8 @@ void VulkanRenderer::createLight()
 
 void VulkanRenderer::createInitialScene()
 {
+    shaderMan.WaitForCompile();
+
     currentScene = Scene(graphicsQueue, graphicsCommandPool, mainDevice.physicalDevice, mainDevice.logicalDevice,swapChainImages.size(), swapChainExtent, msaaSamples, &m_DescriptorPool);
 
     currentScene.addLight();
@@ -626,6 +631,12 @@ void VulkanRenderer::CreateInstancingBuffers()
     }
 }
 
+void VulkanRenderer::EnableCrashDumps()
+{
+    tracker.Initialize();
+}
+
+
 void VulkanRenderer::compileShaders()
 {
     shaderMan.CompileShadersAsync();
@@ -658,15 +669,15 @@ void VulkanRenderer::DrawInstanced(int index, uint32_t currentImage)
         // vkCmdPushConstants(commandBuffer[currentImage], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, size, pushDataBuffer);    
     }
 
+    VkDeviceSize offsets[] = { 0 }; //offsets into buffers being bound
+    VkBuffer instanceBuffers[] = { m_InstancingBuffers[currentImage].GetInstanceData() };
+    vkCmdBindVertexBuffers(commandBuffer[currentImage], 1, 1, instanceBuffers, offsets);
     // try to bind instance buffer once
     for (size_t i = 0; i < Models[index].getMeshCount(); i++)
     {
         VkBuffer vertexBuffers[] = { Models[index].getMesh(i)->getVertexBuffer() };
-        VkBuffer instanceBuffers[] = { m_InstancingBuffers[currentImage].GetInstanceData() };
-        VkDeviceSize offsets[] = { 0 }; //offsets into buffers being bound
+        
         vkCmdBindVertexBuffers(commandBuffer[currentImage], 0, 1, vertexBuffers, offsets);
-        vkCmdBindVertexBuffers(commandBuffer[currentImage], 1, 1, instanceBuffers, offsets);
-
         vkCmdBindIndexBuffer(commandBuffer[currentImage], Models[index].getMesh(i)->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
         auto descriptorSet = gfxPipeline.getDescriptorSet(currentImage);
@@ -677,8 +688,8 @@ void VulkanRenderer::DrawInstanced(int index, uint32_t currentImage)
         // bind descriptor sets
         vkCmdBindDescriptorSets(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, gfxPipeline.getPipelineLayout(),
             0, static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr);// will only apply offset to descriptors that are dynamic
-
-        vkCmdDrawIndexed(commandBuffer[currentImage], Models[index].getMesh(0)->getIndexCount(), m_InstancingBuffers[currentImage].GetCurrentSize(), 0, 0, 0);
+        //vkCmdSetCheckpointNV(commandBuffer[currentImage], "draw instanced");
+        vkCmdDrawIndexed(commandBuffer[currentImage], Models[index].getMesh(i)->getIndexCount(), m_InstancingBuffers[currentImage].GetElementCount(), 0, 0, 0);
     }
     m_InstancingBuffers[currentImage].Reset();
 }
@@ -725,17 +736,19 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
     bool instanced = false;
     void* instanceDataBuffer = alloca(sizeof(InstanceData));
 
-    for(size_t i = 0; i < Models.size(); i++) // have a dummy model at the end of this container for easier algorithm?
+    for(size_t i = 0; i < Models.size(); i++)
     {
         Model& model = Models[i];
         bool isInstanced = model.IsInstanced();
         if (isInstanced && !instanced) // means we just started instancing
         {
             m_InstancingBuffers[currentImage].Reset();
+            instanced = true;
         }
         else if (!isInstanced && instanced)// means instancing ended
         {
             DrawInstanced(i - 1, currentImage); // loop over this range and finish instanced meshes
+            instanced = false;
         }
 
         int currentPipelineIndex = model.getPipelineIndex();
@@ -756,8 +769,14 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
             m_InstancingBuffers[currentImage].InsertBuffer(instanceDataBuffer, sizeof(InstanceData));
             continue;
         }
-        recordingDefaultPath(currentPipelineIndex, model, currentImage);
+        else
+        {
+            recordingDefaultPath(currentPipelineIndex, model, currentImage);
+        }
     }
+    if (instanced) // leftover draw
+        DrawInstanced(Models.size() - 1, currentImage);
+
     vkCmdEndRenderPass(commandBuffer[currentImage]);
 
     //stop recording to command buffer
@@ -837,13 +856,20 @@ void VulkanRenderer::createLogicalDevice()
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
+    VkDeviceDiagnosticsConfigCreateInfoNV dci = {};
+    dci.sType = VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV;
+    dci.flags = VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_RESOURCE_TRACKING_BIT_NV |      // Enable tracking of resources.
+        VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_AUTOMATIC_CHECKPOINTS_BIT_NV |  // Capture call stacks for all draw calls, compute dispatches, and resource copies.
+        VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_SHADER_DEBUG_INFO_BIT_NV;
+
     //information to create logical device
     VkDeviceCreateInfo deviceCreateInfo = {};
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()); //number of queue create infos
     deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
     deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
-    deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();//dunno why are we setting these, it should be default
+    deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
+    deviceCreateInfo.pNext = &dci;
 
     VkPhysicalDeviceFeatures devicefeatures = {};
     devicefeatures.samplerAnisotropy = VK_TRUE;//just because its set, doesnt mean we support it - have to check
@@ -1212,7 +1238,7 @@ SwapChainDetails VulkanRenderer::getSwapChainDetails(VkPhysicalDevice device)
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanRenderer::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 {
-    if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+    if (messageSeverity >= 256) {
         // Message is important enough to show
         std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
     }

@@ -2,7 +2,7 @@
 #include <stdexcept>
 
 Pipeline::Pipeline(Device device, Camera* camera, size_t swapchainImageCount, DescriptorPool* descriptorPool)
-    :device(device), usedThisFrame(false), swapchainImageCount(swapchainImageCount), camera(camera), m_DescriptorPool(descriptorPool)
+    :device(device), usedThisFrame(false), swapchainImageCount(swapchainImageCount), pushConstantRange({}), camera(camera), m_DescriptorPool(descriptorPool)
 {
     if (camera == nullptr)
         throw std::runtime_error("Pointer to camera was null!");
@@ -12,7 +12,7 @@ Pipeline::Pipeline(Device device, Camera* camera, size_t swapchainImageCount, De
 
 Pipeline::Pipeline(Material material, Device device, Camera* camera, size_t swapchainImageCount, DescriptorPool* descriptorPool)
     : device(device), usedThisFrame(false), material(material),
-    swapchainImageCount(swapchainImageCount), camera(camera), m_DescriptorPool(descriptorPool)
+    swapchainImageCount(swapchainImageCount), pushConstantRange({}), camera(camera), m_DescriptorPool(descriptorPool)
 {
     if (camera == nullptr)
         throw std::runtime_error("Pointer to camera was null!");
@@ -31,6 +31,7 @@ void Pipeline::createPipeline(VkExtent2D extent, VkRenderPass renderPass)
     std::vector<VkVertexInputBindingDescription> bindingDescriptions(material.IsInstanced() ? 2 : 1);
     VkVertexInputBindingDescription bindingDescription = {};
     createVertexInputBindingDescription(bindingDescription);
+    bindingDescriptions[0] = bindingDescription;
     if (material.IsInstanced())
     {
         VkVertexInputBindingDescription instancedBindingDescription = {};
@@ -38,16 +39,16 @@ void Pipeline::createPipeline(VkExtent2D extent, VkRenderPass renderPass)
         bindingDescriptions[1] = instancedBindingDescription;
     }
 
-    std::vector<VkVertexInputAttributeDescription> attributeDescriptions(material.IsInstanced() ? 6 : 3);
-    createVertexInputAttributeDescription(attributeDescriptions[0], 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, pos));
-    createVertexInputAttributeDescription(attributeDescriptions[1], 1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, norm));
-    createVertexInputAttributeDescription(attributeDescriptions[2], 2, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, tex));
+    std::vector<VkVertexInputAttributeDescription> attributeDescriptions(material.IsInstanced() ? 7 : 3);
+    createVertexInputAttributeDescription(attributeDescriptions[0], 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, pos));
+    createVertexInputAttributeDescription(attributeDescriptions[1], 0, 1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, norm));
+    createVertexInputAttributeDescription(attributeDescriptions[2], 0, 2, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, tex));
     if (material.IsInstanced())
     {
-        createVertexInputAttributeDescription(attributeDescriptions[3], 3, VK_FORMAT_R32G32B32A32_SFLOAT, 0);
-        createVertexInputAttributeDescription(attributeDescriptions[4], 4, VK_FORMAT_R32G32B32A32_SFLOAT, 4);
-        createVertexInputAttributeDescription(attributeDescriptions[5], 5, VK_FORMAT_R32G32B32A32_SFLOAT, 8);
-        createVertexInputAttributeDescription(attributeDescriptions[5], 5, VK_FORMAT_R32G32B32A32_SFLOAT, 12);
+        createVertexInputAttributeDescription(attributeDescriptions[3], 1, 3, VK_FORMAT_R32G32B32A32_SFLOAT, 0);
+        createVertexInputAttributeDescription(attributeDescriptions[4], 1, 4, VK_FORMAT_R32G32B32A32_SFLOAT, 16);
+        createVertexInputAttributeDescription(attributeDescriptions[5], 1, 5, VK_FORMAT_R32G32B32A32_SFLOAT, 32);
+        createVertexInputAttributeDescription(attributeDescriptions[6], 1, 6, VK_FORMAT_R32G32B32A32_SFLOAT, 48);
     }
     
     VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo = {};
@@ -111,7 +112,7 @@ void Pipeline::createPipeline(VkExtent2D extent, VkRenderPass renderPass)
     if(shaderFlags & kUseModelMatrixForPushConstant)
         createPushConstantRange();
 
-    createPipelineLayout(descriptorSetLayouts.data(), descriptorSetLayouts.size());
+    createPipelineLayout(descriptorSetLayouts.data(), descriptorSetLayouts.size(), pushConstantRange.size);
 
     CreatePipeline(shaderStages, &vertexInputCreateInfo, &inputAssembly, &viewportStateCreateInfo,
         NULL, &rasterizerCreateInfo, &multisamplingCreateInfo, &colorBlendingCreateInfo, &depthStencilCreateInfo,
@@ -416,9 +417,9 @@ void Pipeline::createVertexInputInstancedBindingDescription(VkVertexInputBinding
     bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 }
 
-void Pipeline::createVertexInputAttributeDescription(VkVertexInputAttributeDescription& attributeDescription, uint32_t location, VkFormat format, uint32_t offset) const
+void Pipeline::createVertexInputAttributeDescription(VkVertexInputAttributeDescription& attributeDescription, uint32_t binding, uint32_t location, VkFormat format, uint32_t offset) const
 {
-    attributeDescription.binding = 0;
+    attributeDescription.binding = binding;
     attributeDescription.location = location;
     attributeDescription.format = format;
     attributeDescription.offset = offset;
@@ -429,7 +430,7 @@ void Pipeline::createPipelineVertexInputStateCreateInfo(VkPipelineVertexInputSta
     vertexInputCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputCreateInfo.vertexBindingDescriptionCount = material.IsInstanced() ? 2 : 1;
     vertexInputCreateInfo.pVertexBindingDescriptions = bindingDescriptions;
-    vertexInputCreateInfo.vertexAttributeDescriptionCount = material.IsInstanced() ? 6 : 3;
+    vertexInputCreateInfo.vertexAttributeDescriptionCount = material.IsInstanced() ? 7 : 3;
     vertexInputCreateInfo.pVertexAttributeDescriptions = attributeDescriptions;
     vertexInputCreateInfo.pNext = nullptr;
     vertexInputCreateInfo.flags = 0;
@@ -540,14 +541,14 @@ void Pipeline::createDepthStencilCreateInfo(VkPipelineDepthStencilStateCreateInf
   //  depthStencilCreateInfo.
 }
 
-void Pipeline::createPipelineLayout(VkDescriptorSetLayout* descriptorSetLayouts, uint32_t dSetLayoutCount)
+void Pipeline::createPipelineLayout(VkDescriptorSetLayout* descriptorSetLayouts, uint32_t dSetLayoutCount, size_t pushSize)
 {
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo;
     pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutCreateInfo.setLayoutCount = dSetLayoutCount;
     pipelineLayoutCreateInfo.pSetLayouts = descriptorSetLayouts;
-    pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
-    pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
+    pipelineLayoutCreateInfo.pushConstantRangeCount = pushSize ? 1 : 0;
+    pipelineLayoutCreateInfo.pPushConstantRanges = pushSize ? &pushConstantRange : nullptr;
     pipelineLayoutCreateInfo.pNext = nullptr;
     pipelineLayoutCreateInfo.flags = 0;
 

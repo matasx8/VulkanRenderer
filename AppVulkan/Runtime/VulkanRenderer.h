@@ -5,12 +5,17 @@
 #include <set>
 #include <algorithm>
 #include <array>
+#include <thread>
+#include <mutex>
+#include <stdio.h>
 
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <vulkan.h>
 #include <glm/gtc/matrix_transform.hpp>
+
+#include "NsightAftermathGpuCrashTracker.h"
 
 #include "Utilities.h"
 #include "Mesh.h"
@@ -93,6 +98,7 @@ private:
 	DescriptorPool m_DescriptorPool;
 	std::vector<InstanceDataBuffer> m_InstancingBuffers;
 
+	GpuCrashTracker tracker;
 
 	//synch
 	std::vector<VkSemaphore> imageAvailable;
@@ -119,7 +125,9 @@ private:
 	void createInitialScene();
 	void CreateDescriptorPool();
 	void CreateInstancingBuffers();
-	
+	void EnableCrashDumps();
+	void CreateMarkerFunc();
+
 	void compileShaders();
 
 	void UpdateDeltaTime();
@@ -130,7 +138,6 @@ private:
 
 	// record funcs
 	void recordCommands(uint32_t currentImage);
-	bool recordingInstancedPath(int currentPipelineIndex, Model& model, int currentImage, uint32_t instanceCount);
 	void recordingDefaultPath(int currentPipelineIndex, Model& model, int currentImage);
 
 	//getters

@@ -1,5 +1,6 @@
 #pragma once
 #include "GameScript.h"
+#include<windows.h>
 
 namespace GameScript
 {
@@ -21,7 +22,7 @@ namespace GameScript
 
 		Scene& currentScene = g_Engine->getActiveScene();
 
-		ShaderCreateInfo shaderInfo = { "Shaders/shader2_vert.spv", "Shaders/shader2_frag.spv" };
+		ShaderCreateInfo shaderInfo = { "Shaders/shader_instanced_vert.spv", "Shaders/shader_instanced_frag.spv" };
 		shaderInfo.uniformCount = 3;
 
 		std::vector<UniformData> UniformDatas(3);
@@ -41,12 +42,19 @@ namespace GameScript
 
 		shaderInfo.uniformData = std::move(UniformDatas);
 		shaderInfo.pushConstantSize = 0;
-		shaderInfo.shaderFlags = kUseModelMatrixForPushConstant;
+		shaderInfo.shaderFlags = kDefault;
+		shaderInfo.isInstanced = true;
 		Material material1 = Material(shaderInfo);
 		Scene& scene = g_Engine->getActiveScene();
 
+		g_ModelHandles.emplace_back(scene.AddModel("Models/12140_Skull_v3_l2.obj", material1));
+		/*g_ModelHandles.push_back(scene.DuplicateModel(1));/*
+		g_ModelHandles.push_back(scene.DuplicateModel(1));
+		g_ModelHandles.push_back(scene.DuplicateModel(1));
+		g_ModelHandles.push_back(scene.DuplicateModel(1));
+		g_ModelHandles.push_back(scene.DuplicateModel(1));
+		g_ModelHandles.push_back(scene.DuplicateModel(1));*/
 		/*g_ModelHandles.emplace_back(scene.AddModel("Models/Old House 2 3D Models.obj", material1));
-		g_ModelHandles.emplace_back(scene.AddModel("Models/Old House 2 3D Models.obj", material1));
 		g_ModelHandles.emplace_back(scene.AddModel("Models/Old House 2 3D Models.obj", material1));
 		g_ModelHandles.emplace_back(scene.AddModel("Models/Old House 2 3D Models.obj", material1));
 		g_ModelHandles.emplace_back(scene.AddModel("Models/Old House 2 3D Models.obj", material1));*/
@@ -57,6 +65,7 @@ namespace GameScript
 	{
 		Input();
 		UpdateModelsNew(g_Engine->GetDeltaTime());
+		//Sleep(10000);
 	}
 
 	void GameScript::OnEndOfFrame()
@@ -102,9 +111,9 @@ namespace GameScript
 		Scene& scene = g_Engine->getActiveScene();
 		bool* keys = g_Engine->window.getKeys();
 
-		if (g_ModelHandles.size() < 100 && keys[GLFW_KEY_P])
+		if (g_ModelHandles.size() < 1000 && keys[GLFW_KEY_P])
 		{
-			g_ModelHandles.push_back(scene.DuplicateModel(0));
+			g_ModelHandles.push_back(scene.DuplicateModel(1));
 		}
 	}
 }
