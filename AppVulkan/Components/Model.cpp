@@ -1,12 +1,22 @@
 #include "Model.h"
 
+static size_t s_AllTimeModelCount = 0;
+
 Model::Model()
 {
+	m_IsDuplicate = false;
+	m_IsHidden = false;
+	m_IsInstanced = false;
+	m_Handle = s_AllTimeModelCount++;
 }
 
-Model::Model(std::vector<Mesh> newMeshList)
+Model::Model(std::vector<Mesh>& newMeshList, bool isInstanced)
 {
 	meshList = newMeshList;
+	m_IsDuplicate = false;
+	m_IsHidden = false;
+	m_IsInstanced = isInstanced;
+	m_Handle = s_AllTimeModelCount++;
 }
 
 size_t Model::getMeshCount()
@@ -23,20 +33,46 @@ Mesh* Model::getMesh(size_t index)
 	return &meshList[index];
 }
 
-void Model::setModelMatrix(size_t index)
+size_t Model::GetModelHandle() const
 {
-	if (index >= 0)
-		modelMatrixIndex = index;
-	else
-		throw std::runtime_error("passed a negative index to setModelMatrix!");
+	return m_Handle;
+}
+
+ModelMatrix& Model::GetModelMatrix()
+{
+	return m_ModelMatrix;
+}
+
+Model Model::Duplicate(bool instanced) const
+{
+	Model tmp = Model(*this);
+	tmp.m_Handle = s_AllTimeModelCount++;
+	tmp.m_IsDuplicate =true;
+	tmp.m_IsInstanced = instanced;
+	return tmp;
+}
+
+void Model::CopyInInstanceData(void* dst) const
+{
+	InstanceData data;
+	data.model = m_ModelMatrix;
+	auto ss = sizeof(m_ModelMatrix);
+	auto s = sizeof(InstanceData);
+	memcpy(dst, &data, sizeof(InstanceData));
+}
+
+void Model::SetModelMatrix(const ModelMatrix& matrix)
+{
+	m_ModelMatrix = matrix;
 }
 
 void Model::destroyMeshModel()
 {
-	for (auto& mesh : meshList)
-	{
-		mesh.destroyBuffers();
-	}
+	if (!m_IsDuplicate)
+		for (auto& mesh : meshList)
+		{
+			mesh.destroyBuffers();
+		}
 }
 
 std::vector<std::string> Model::LoadMaterials(const aiScene* scene)

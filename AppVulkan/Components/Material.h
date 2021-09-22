@@ -18,8 +18,11 @@ public:
 	uint32_t getShaderFlags() const;
 	const void* getPushConstantDataBuffer() const;
 	const size_t getPushConstantSize() const;
+	uint32_t GetInstanceCount() const;
+
 	const bool hasPushConstant() const;
 	const bool hasFlag(ShaderCreateInfoFlags flag) const;
+	bool IsInstanced() const;
 
 
 
@@ -30,4 +33,5 @@ private:
 	Shader m_Shader;
 	std::vector<Texture> textures;
 
+	uint32_t m_InstanceCount;
 };

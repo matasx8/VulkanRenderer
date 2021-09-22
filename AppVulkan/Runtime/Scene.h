@@ -17,13 +17,17 @@ class Scene
 public:
 	Scene();
 	Scene(VkQueue graphicsQueue, VkCommandPool graphicsCommandPool, VkPhysicalDevice physicalDevice, VkDevice logicalDevice, size_t swapchainImageCount, VkExtent2D extent, VkSampleCountFlagBits msaaSamples, DescriptorPool* descriptorPool);
+	
 	// Add and load model to currently used scene
 	// Will create a new pipeline if needed
-	void addModel(std::string fileName, Material material, VkRenderPass renderPass);
+	// returns handle for the model added
+	ModelHandle AddModel(std::string fileName, Material material);
 	void addLight();
 
+	Model& GetModel(ModelHandle handle);
+	// The original Model must exist during runtime, the duplicates will be removed with the original
+	Model GetModelAndDuplicate(ModelHandle handle, bool instanced = false);
 	std::vector<Model>& getModels(); // TODO: probably dont pass by ref
-		std::vector<glm::mat4>* getModelMatrices() { return &ModelMatrices; }
 	Texture& getTexture(int index) { return Textures[index]; }
 	// Returns pipeline, if index not found will return default one(index 0) 
 	Pipeline getPipeline(int index) const;
@@ -34,6 +38,9 @@ public:
 
 	// Updates components (eg. Lights, Camera..)
 	void updateScene(size_t index);
+	// Duplicates Model specified by handle
+	// If duplication failed, returns the same hadle to indicate failure
+	ModelHandle DuplicateModel(ModelHandle handle, bool instanced = false);
 
 
 	void onFrameEnded();
@@ -45,16 +52,18 @@ public:
 	// -- temporary Input
 
 private:
+	
+	friend class VulkanRenderer;
+
 	ViewProjectionMatrix viewProjection;
 	std::vector<Model> Models;
-		// trying out dots
-		std::vector<glm::mat4> ModelMatrices;
+	// trying out dots
 	std::vector<Texture> Textures;
 	std::vector<Pipeline> Pipelines;
 	std::vector<Light> Lights;
 	Camera camera;
 
-
+	VkRenderPass tmp_RenderPass; // this will not be here soon
 	VkQueue graphicsQueue;
 	VkCommandPool graphicsCommandPool;
 	VkPhysicalDevice physicalDevice;
@@ -67,7 +76,11 @@ private:
 	void updateModelPipesFrom(int index);
 	void updateModelMatrixIndices(int index);
 
-	void insertModel(Model& model);
+	// Inserts model so Models remain sorted by pipeline
+	// returns index where the model was placed
+	uint32_t insertModel(Model& model);
+	// I've no idea why this needs renderPass but I will change this for sure later
+	ModelHandle AddModel(std::string fileName, Material material, VkRenderPass renderPass);
 
 	size_t getNewModelMatrixIndex();
 	// Uses material to find out if we need to create a new pipeline.

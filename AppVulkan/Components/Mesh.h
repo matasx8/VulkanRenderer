@@ -7,10 +7,6 @@
 
 #include "Utilities.h"
 
-struct ModelMatrix {
-	glm::mat4 model;
-};
-
 class Mesh
 {
 public:
@@ -18,8 +14,6 @@ public:
 	Mesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue transferQueue, VkCommandPool transferCommandPool,
 		std::vector<Vertex>* vertices, std::vector<uint32_t>* indices, int newTexId);
 
-	void setModel(glm::mat4 newModel);
-	ModelMatrix getModel();
 	int getTexId() { return texId; }
 
 	int getVertexCount();
@@ -31,7 +25,6 @@ public:
 	void destroyBuffers();
 
 private:
-	ModelMatrix model;
 
 	int texId;
 

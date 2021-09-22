@@ -10065,7 +10065,7 @@ typedef struct VkCheckpointDataNV {
 typedef void (VKAPI_PTR *PFN_vkCmdSetCheckpointNV)(VkCommandBuffer commandBuffer, const void* pCheckpointMarker);
 typedef void (VKAPI_PTR *PFN_vkGetQueueCheckpointDataNV)(VkQueue queue, uint32_t* pCheckpointDataCount, VkCheckpointDataNV* pCheckpointData);
 
-#ifndef VK_NO_PROTOTYPES
+//#ifndef VK_NO_PROTOTYPES
 VKAPI_ATTR void VKAPI_CALL vkCmdSetCheckpointNV(
     VkCommandBuffer                             commandBuffer,
     const void*                                 pCheckpointMarker);
@@ -10074,7 +10074,7 @@ VKAPI_ATTR void VKAPI_CALL vkGetQueueCheckpointDataNV(
     VkQueue                                     queue,
     uint32_t*                                   pCheckpointDataCount,
     VkCheckpointDataNV*                         pCheckpointData);
-#endif
+//#endif
 
 
 #define VK_INTEL_shader_integer_functions2 1

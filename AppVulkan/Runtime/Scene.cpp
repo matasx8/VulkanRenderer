@@ -24,8 +24,9 @@ Scene::Scene(VkQueue graphicsQueue, VkCommandPool graphicsCommandPool, VkPhysica
     viewProjection.projection[1][1] *= -1;//invert matrix
 }
 
-void Scene::addModel(std::string fileName, Material material, VkRenderPass renderPass)
+ModelHandle Scene::AddModel(std::string fileName, Material material, VkRenderPass renderPass)
 {
+    tmp_RenderPass = renderPass;
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals | aiProcess_JoinIdenticalVertices);
     if (!scene)
@@ -61,7 +62,8 @@ void Scene::addModel(std::string fileName, Material material, VkRenderPass rende
     std::vector<Mesh> modelMeshes = Model::LoadNode(physicalDevice, logicalDevice, graphicsQueue, graphicsCommandPool,
         scene->mRootNode, scene, matToTex);
 
-    Model meshModel = Model(modelMeshes);
+    Model meshModel = Model(modelMeshes, material.IsInstanced());
+    
 
     uint32_t texturesFrom = (oldTexturesSize != Textures.size()) ? oldTexturesSize : 0;
     if (Textures[0].descriptorSet == 0) texturesFrom = 0;
@@ -70,7 +72,13 @@ void Scene::addModel(std::string fileName, Material material, VkRenderPass rende
     // if yes, then create one and append to pipelines. Also insert into model vector
     // if no, find out which pipeline do we need to reuse.
     meshModel.setPipelineIndex(setupPipeline(material, Textures, texturesFrom, extent, renderPass));
-    insertModel(meshModel);
+    uint32_t indexOfNewModel = insertModel(meshModel);
+    return Models[indexOfNewModel].GetModelHandle();
+}
+
+ModelHandle Scene::AddModel(std::string fileName, Material material)
+{
+    return AddModel(fileName, material, tmp_RenderPass);
 }
 
 void Scene::addLight()
@@ -78,6 +86,26 @@ void Scene::addLight()
     Lights.emplace_back(glm::vec4(0.0f, 100.0f, 0.0f, 0.0f));
 }
 
+
+Model& Scene::GetModel(ModelHandle handle)
+{
+    // TODO: what do I do if the Model is not Found?
+    // potential solution have dummy error model, I already have a default model that gets loaded anyway
+    for (auto& model : Models)
+        if (model.GetModelHandle() == handle)
+            return model;
+    Model notFound = Model();
+    return notFound;
+}
+
+Model Scene::GetModelAndDuplicate(ModelHandle handle, bool instanced)
+{
+    for (auto& model : Models)
+        if (model.GetModelHandle() == handle)
+            return model.Duplicate(instanced);
+    Model notFound = Model();
+    return notFound;
+}
 
 std::vector<Model>& Scene::getModels()
 {
@@ -100,31 +128,26 @@ void Scene::updateModelMatrixIndices(int index)
     throw std::runtime_error("Not implemented yet!");
 }
 
-void Scene::insertModel(Model& model)
+uint32_t Scene::insertModel(Model& model)
 {
     if (Models.size() == 0 || Models.back().getPipelineIndex() <= model.getPipelineIndex())
     {
-        model.setModelMatrix(getNewModelMatrixIndex());
+        model.SetModelMatrix(ModelMatrix(1.0f));
         Models.push_back(model);
-        return;
+        return Models.size() - 1;
     }
     // TODO medium annoying: binary search
     // currently O(n^2) and nobody likes that :)
-    for (auto it = Models.begin(); it != Models.end();)
+    uint32_t index = 0;
+    for (auto it = Models.begin(); it != Models.end(); index++)
     {
         if ((*it).getPipelineIndex() >= model.getPipelineIndex())
         {
-            model.setModelMatrix(getNewModelMatrixIndex());
+            model.SetModelMatrix(ModelMatrix(1.0f));
             Models.insert(it, model);
-            return;
+            return index;
         }
     }
-}
-
-size_t Scene::getNewModelMatrixIndex()
-{
-    ModelMatrices.emplace_back(1.0f);
-    return ModelMatrices.size() - 1;
 }
 
 int Scene::setupPipeline(Material& material, std::vector<Texture>& Textures, uint32_t texturesFrom
@@ -134,7 +157,6 @@ int Scene::setupPipeline(Material& material, std::vector<Texture>& Textures, uin
     {
         if (Pipelines[i].isMaterialCompatible(material))
         {
-            // create texture descriptor sets.. Temporary implementation, please remake to dynamic buffers
             for (size_t j = texturesFrom; j < Textures.size(); j++)
             {
                 Textures[j].descriptorSet = Pipelines[i].createTextureDescriptorSet(Textures[j], logicalDevice);
@@ -174,6 +196,16 @@ void Scene::updateScene(size_t index)
 
     for (auto& pipe : Pipelines)
         pipe.update(index);
+}
+
+ModelHandle Scene::DuplicateModel(ModelHandle handle, bool instanced)
+{
+    // Note: can optimize this and GetModel with the fact that Models are sorted by pipelineindex always
+    Model model = GetModelAndDuplicate(handle, instanced);
+    
+    // figure out what to do if it's not here
+    uint32_t indexOfNewModel = insertModel(model);
+    return Models[indexOfNewModel].GetModelHandle();
 }
 
 void Scene::onFrameEnded()

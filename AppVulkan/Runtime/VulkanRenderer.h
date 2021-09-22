@@ -5,12 +5,17 @@
 #include <set>
 #include <algorithm>
 #include <array>
+#include <thread>
+#include <mutex>
+#include <stdio.h>
 
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <vulkan.h>
 #include <glm/gtc/matrix_transform.hpp>
+
+#include "NsightAftermathGpuCrashTracker.h"
 
 #include "Utilities.h"
 #include "Mesh.h"
@@ -24,11 +29,12 @@
 #include "Scene.h"
 #include "Image.h"
 #include "DescriptorPool.h"
+#include "InstanceDataBuffer.h"
 
 //#define DEBUG_LOGS;
 #define DEBUG
 
-class VulkanRenderer
+class VulkanRenderer // : NonCopyable
 {
 public:
 
@@ -36,12 +42,11 @@ public:
 
 	int init(std::string wName = "Default Window", const int width = 800, const int height = 600);
 
-	void addModel(std::string fileName, Material material);
-	std::vector<glm::mat4>* getModelsMatrices();
 	Scene& getActiveScene() { return currentScene; }
+	float GetDeltaTime() { return m_DeltaTime; }
 
 	void setupDebugMessenger();
-	void draw(float dt);
+	void draw();
 	void cleanup();
 	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
 	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
@@ -50,6 +55,8 @@ public:
 private:
 
 	int currentFrame = 0;
+	float m_DeltaTime;
+	float m_LastTime;
 
 	//-- SCENE ---
 	Scene currentScene;
@@ -61,7 +68,7 @@ private:
 #ifdef NDEBUG
 	const bool enableValidationLayers = false;
 #else
-	const bool enableValidationLayers = true;
+	bool enableValidationLayers = true;
 #endif
 
 	VkInstance instance;
@@ -89,6 +96,9 @@ private:
 	//pools
 	VkCommandPool graphicsCommandPool;
 	DescriptorPool m_DescriptorPool;
+	std::vector<InstanceDataBuffer> m_InstancingBuffers;
+
+	GpuCrashTracker tracker;
 
 	//synch
 	std::vector<VkSemaphore> imageAvailable;
@@ -114,11 +124,21 @@ private:
 	void createLight();
 	void createInitialScene();
 	void CreateDescriptorPool();
-	
+	void CreateInstancingBuffers();
+	void EnableCrashDumps();
+	void CreateMarkerFunc();
+
 	void compileShaders();
+
+	void UpdateDeltaTime();
+
+	void AddModel(std::string fileName, Material material);
+
+	void DrawInstanced(int instancedModelIndex, uint32_t currentImage);
 
 	// record funcs
 	void recordCommands(uint32_t currentImage);
+	void recordingDefaultPath(int currentPipelineIndex, Model& model, int currentImage);
 
 	//getters
 	void getPhysicalDevice();

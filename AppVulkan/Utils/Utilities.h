@@ -12,16 +12,22 @@ const int MAX_FRAME_DRAWS = 2;
 const int MAX_OBJECTS = 20;
 
 const std::vector<const char*> deviceExtensions = {
-	VK_KHR_SWAPCHAIN_EXTENSION_NAME
+	VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+	VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME,
+	VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME
 };
 
 //vertex data
 struct Vertex
 {
 	glm::vec3 pos;
-	glm::vec3 col; //vertex colour
 	glm::vec2 tex; // tex coords (u, v)
 	glm::vec3 norm;
+};
+
+struct InstanceData
+{
+	glm::mat4 model;
 };
 
 struct Device {

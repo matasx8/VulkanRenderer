@@ -1,7 +1,12 @@
 #include "VulkanRenderer.h"
 #include <iostream>
 
-VulkanRenderer::VulkanRenderer() {} // TODO: initialize variables
+VulkanRenderer::VulkanRenderer() 
+{
+    m_DeltaTime = 0;
+    m_LastTime = 0;
+    m_InstancingBuffers;
+} // TODO: initialize variables
 
 int VulkanRenderer::init(std::string wName, const int width, const int height)
 {
@@ -10,6 +15,7 @@ int VulkanRenderer::init(std::string wName, const int width, const int height)
 
     try
     {
+        EnableCrashDumps();
         compileShaders();
         createInstance();
         createSurface();
@@ -23,6 +29,7 @@ int VulkanRenderer::init(std::string wName, const int width, const int height)
         createCommandPool();
         createFramebuffers();
         createCommandBuffers();
+        CreateInstancingBuffers();
         // default model, pipeline, components
         CreateDescriptorPool();
         createInitialScene();
@@ -50,14 +57,13 @@ void VulkanRenderer::setupDebugMessenger()
     }
 }
 
-void VulkanRenderer::draw(float dt)
-{//!HERE
-    //update camera?
-    currentScene.cameraKeyControl(window.getKeys(), dt);
+void VulkanRenderer::draw()
+{
+    UpdateDeltaTime();
+
+    currentScene.cameraKeyControl(window.getKeys(), m_DeltaTime);
     currentScene.cameraMouseControl(window.getXChange(), window.getYchange());
 
-   // lights[0].debugInput(window.getKeys(), dt);
-    //lights[0].debugFollowCam(camera.getCameraPosition(), glm::vec3(0.0f, -20.0f, 0.0f));
     //wait for given fence to signal open from last draw before xontinuing
     vkWaitForFences(mainDevice.logicalDevice, 1, &drawFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
     //manually reset close fences
@@ -131,6 +137,11 @@ void VulkanRenderer::cleanup()
     }
 
     m_DescriptorPool.DestroyDescriptorPool();
+    
+    for (auto& buffer : m_InstancingBuffers)
+    {
+        buffer.Destroy();
+    }
 
     currentScene.CleanUp(mainDevice.logicalDevice);
     depthBufferImage.destroyImage(mainDevice.logicalDevice);
@@ -179,9 +190,9 @@ void VulkanRenderer::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugU
 void VulkanRenderer::createInstance()
 {
     //validation
-    if (enableValidationLayers && !checkValidationLayerSupport()) {
-        throw std::runtime_error("validation layers requested, but not available!");
-    }
+#ifndef NDEBUG
+    enableValidationLayers = enableValidationLayers ? checkValidationLayerSupport() : false;
+#endif
 
     //info about the application itself
     //most data here doesnt affect the program and is for the developer convenience
@@ -190,8 +201,8 @@ void VulkanRenderer::createInstance()
     appInfo.pApplicationName = "Vulkan App"; //custom name of the app
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);//CUSTOM VERSION OF THE APP
     appInfo.pEngineName = "No Engine";
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_0; //VULKAN VER
+    appInfo.engineVersion = VK_MAKE_VERSION(1, 2, 0);
+    appInfo.apiVersion = VK_API_VERSION_1_2; //VULKAN VER
 
     //creation information for a vkinstane
     VkInstanceCreateInfo createInfo = {};
@@ -208,12 +219,6 @@ void VulkanRenderer::createInstance()
 
     //get glfw extensions
     glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-    //std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-
-    //if (enableValidationLayers) {
-    //    extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    //}
 
     //add glfw extensions to list of extension
     for (size_t i = 0; i < glfwExtensionCount; i++)
@@ -576,6 +581,8 @@ void VulkanRenderer::createLight()
 
 void VulkanRenderer::createInitialScene()
 {
+    shaderMan.WaitForCompile();
+
     currentScene = Scene(graphicsQueue, graphicsCommandPool, mainDevice.physicalDevice, mainDevice.logicalDevice,swapChainImages.size(), swapChainExtent, msaaSamples, &m_DescriptorPool);
 
     currentScene.addLight();
@@ -602,8 +609,9 @@ void VulkanRenderer::createInitialScene()
     shaderInfo.uniformData = std::move(UniformDatas);
     shaderInfo.pushConstantSize = 0;
     shaderInfo.shaderFlags = kUseModelMatrixForPushConstant;
+    shaderInfo.isInstanced = false;
     Material initialMaterial = Material(shaderInfo);
-    currentScene.addModel("Models/12140_Skull_v3_L2.obj", initialMaterial, renderPass);
+    currentScene.AddModel("Models/12140_Skull_v3_L2.obj", initialMaterial, renderPass);
 }
 
 void VulkanRenderer::CreateDescriptorPool()
@@ -611,30 +619,78 @@ void VulkanRenderer::CreateDescriptorPool()
     m_DescriptorPool.CreateDescriptorPool(mainDevice.logicalDevice);
 }
 
+void VulkanRenderer::CreateInstancingBuffers()
+{
+    m_InstancingBuffers = std::vector<InstanceDataBuffer>(swapChainImages.size());
+    for (size_t i = 0; i < swapChainImages.size(); i++)
+    {
+        m_InstancingBuffers[i].Create(mainDevice);
+    }
+}
+
+void VulkanRenderer::EnableCrashDumps()
+{
+    tracker.Initialize();
+}
+
+
 void VulkanRenderer::compileShaders()
 {
     shaderMan.CompileShadersAsync();
 }
 
-void VulkanRenderer::addModel(std::string fileName, Material material)
+void VulkanRenderer::UpdateDeltaTime()
 {
-    currentScene.addModel(fileName, material, renderPass);
+    float now = glfwGetTime();
+    m_DeltaTime = now - m_LastTime;
+    m_LastTime = now;
 }
 
-std::vector<glm::mat4>* VulkanRenderer::getModelsMatrices()
+void VulkanRenderer::AddModel(std::string fileName, Material material)
 {
-    return currentScene.getModelMatrices();
+    currentScene.AddModel(fileName, material, renderPass);
 }
 
+void VulkanRenderer::DrawInstanced(int index, uint32_t currentImage)
+{
+    auto& Models = currentScene.getModels();
+    int currentPipelineIndex = static_cast<int>(Models[index].getPipelineIndex());
+    Pipeline gfxPipeline = currentScene.getPipeline(currentPipelineIndex);
+    int meshCount = Models[index].getMeshCount();
+
+    if (gfxPipeline.hasPushConstant())
+    {
+        uint32_t size = gfxPipeline.getPushConstantSize();
+        const void* pushDataBuffer = gfxPipeline.getPushConstantDataBuffer();
+        vkCmdPushConstants(commandBuffer[currentImage], gfxPipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, size, pushDataBuffer);    
+    }
+
+    VkDeviceSize offsets[] = { 0 }; //offsets into buffers being bound
+    VkBuffer instanceBuffers[] = { m_InstancingBuffers[currentImage].GetInstanceData() };
+    vkCmdBindVertexBuffers(commandBuffer[currentImage], 1, 1, instanceBuffers, offsets);
+    // try to bind instance buffer once
+    for (size_t i = 0; i < Models[index].getMeshCount(); i++)
+    {
+        VkBuffer vertexBuffers[] = { Models[index].getMesh(i)->getVertexBuffer() };
+        
+        vkCmdBindVertexBuffers(commandBuffer[currentImage], 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(commandBuffer[currentImage], Models[index].getMesh(i)->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
+        auto descriptorSet = gfxPipeline.getDescriptorSet(currentImage);
+        int texId = Models[index].getMesh(i)->getTexId();
+        auto textureDescriptorSet = currentScene.getTextureDescriptorSet(texId);
+        std::array<VkDescriptorSet, 2> descriptorSetGroup = { descriptorSet, textureDescriptorSet };
+
+        // bind descriptor sets
+        vkCmdBindDescriptorSets(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, gfxPipeline.getPipelineLayout(),
+            0, static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr);// will only apply offset to descriptors that are dynamic
+        vkCmdDrawIndexed(commandBuffer[currentImage], Models[index].getMesh(i)->getIndexCount(), m_InstancingBuffers[currentImage].GetElementCount(), 0, 0, 0);
+    }
+    m_InstancingBuffers[currentImage].Reset();
+}
 
 void VulkanRenderer::recordCommands(uint32_t currentImage)
 {
-    // new plan:
-    // 1. begin render pass
-    // 2. get Models
-    // 3. for each model
-    //      3.1. Models are sorted by gfx pipeline. If we need new pipeline, switch
-    //      3.2. record commands for the model
     // TODO: https://developer.nvidia.com/vulkan-shader-resource-binding
     // TODO: Client-worker??
     VkCommandBufferBeginInfo bufferBeginInfo = {};
@@ -653,8 +709,8 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
     renderPassBeginInfo.pClearValues = clearValues.data(); // list of clear values
     renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 
-    renderPassBeginInfo.framebuffer = swapchainFramebuffers[currentImage];//potential area for optimisations
-    // start reording commands to cmb
+    renderPassBeginInfo.framebuffer = swapchainFramebuffers[currentImage];
+
     VkResult result = vkBeginCommandBuffer(commandBuffer[currentImage], &bufferBeginInfo);
     if (result != VK_SUCCESS)
     {
@@ -663,12 +719,30 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
 
     vkCmdBeginRenderPass(commandBuffer[currentImage], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    std::vector<Model> Models = currentScene.getModels();
-    std::vector<glm::mat4>* ModelMatrices = currentScene.getModelMatrices();
+    std::vector<Model>& Models = currentScene.getModels();
     int lastPipelineIndex = -1;
+
+    bool instanced = false;
+    void* instanceDataBuffer = alloca(sizeof(InstanceData));
+
     for(size_t i = 0; i < Models.size(); i++)
     {
-        Model model = Models[i];
+        Model& model = Models[i];
+        if (model.IsHidden())
+            continue;
+
+        bool isInstanced = model.IsInstanced();
+        if (isInstanced && !instanced) // means we just started instancing
+        {
+            m_InstancingBuffers[currentImage].Reset();
+            instanced = true;
+        }
+        else if (!isInstanced && instanced)// means instancing ended
+        {
+            DrawInstanced(i - 1, currentImage); // loop over this range and finish instanced meshes
+            instanced = false;
+        }
+
         int currentPipelineIndex = model.getPipelineIndex();
         // pipeline indices should be sorted
         if (currentPipelineIndex > lastPipelineIndex)
@@ -681,12 +755,36 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
         else if (currentPipelineIndex < lastPipelineIndex)
             throw std::runtime_error("Current pipeline index was lesser than old one. This indicates Model vector was not sorted.");
 #endif
+        if (instanced)
+        {
+            model.CopyInInstanceData(instanceDataBuffer);
+            m_InstancingBuffers[currentImage].InsertBuffer(instanceDataBuffer, sizeof(InstanceData));
+            continue;
+        }
+        else
+        {
+            recordingDefaultPath(currentPipelineIndex, model, currentImage);
+        }
+    }
+    if (instanced) // leftover draw
+        DrawInstanced(Models.size() - 1, currentImage);
+
+    vkCmdEndRenderPass(commandBuffer[currentImage]);
+
+    //stop recording to command buffer
+    result = vkEndCommandBuffer(commandBuffer[currentImage]);
+    if (result != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to stop recording a Command Buffer");
+    }
+}
+
+void VulkanRenderer::recordingDefaultPath(int currentPipelineIndex, Model& model, int currentImage)
+{
         Pipeline gfxPipeline = currentScene.getPipeline(currentPipelineIndex);
         VkPipelineLayout pipelineLayout = gfxPipeline.getPipelineLayout();
 
-
-        size_t modelMatrixIndex = model.getModelMatrixIndex();
-        const auto& modelMatrix = (*ModelMatrices)[modelMatrixIndex];
+        const auto& modelMatrix = model.GetModelMatrix();
 
         // TODO: was used last frame?? if yes maybe we don't need to bind.. maybe we don't need to bind a lot of things also?
         if (gfxPipeline.hasPushConstant())
@@ -702,7 +800,7 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
                 uint32_t size = gfxPipeline.getPushConstantSize();
                 const void* pushDataBuffer = gfxPipeline.getPushConstantDataBuffer();
                 vkCmdPushConstants(commandBuffer[currentImage], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, size, pushDataBuffer);
-            }   
+            }
         }
 
         for (size_t k = 0; k < model.getMeshCount(); k++)
@@ -724,19 +822,8 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
             vkCmdBindDescriptorSets(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
                 0, static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr);// will only apply offset to descriptors that are dynamic
 
-            // why can't I group all the meshes into one if they use the same texture and all.. ?
             vkCmdDrawIndexed(commandBuffer[currentImage], model.getMesh(k)->getIndexCount(), 1, 0, 0, 0);
         }
-       // }
-    }
-    vkCmdEndRenderPass(commandBuffer[currentImage]);
-
-    //stop recording to command buffer
-    result = vkEndCommandBuffer(commandBuffer[currentImage]);
-    if (result != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to stop recording a Command Buffer");
-    }
 }
 
 void VulkanRenderer::createLogicalDevice()
@@ -761,13 +848,20 @@ void VulkanRenderer::createLogicalDevice()
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
+    VkDeviceDiagnosticsConfigCreateInfoNV dci = {};
+    dci.sType = VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV;
+    dci.flags = VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_RESOURCE_TRACKING_BIT_NV |      // Enable tracking of resources.
+        VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_AUTOMATIC_CHECKPOINTS_BIT_NV |  // Capture call stacks for all draw calls, compute dispatches, and resource copies.
+        VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_SHADER_DEBUG_INFO_BIT_NV;
+
     //information to create logical device
     VkDeviceCreateInfo deviceCreateInfo = {};
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()); //number of queue create infos
     deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
     deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
-    deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();//dunno why are we setting these, it should be default
+    deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
+    deviceCreateInfo.pNext = &dci;
 
     VkPhysicalDeviceFeatures devicefeatures = {};
     devicefeatures.samplerAnisotropy = VK_TRUE;//just because its set, doesnt mean we support it - have to check
@@ -1061,6 +1155,7 @@ bool VulkanRenderer::checkValidationLayerSupport()
         }
 
         if (!layerFound) {
+            Debug::LogMsg("Warning: No available validaiton layers found!\n");
             return false;
         }
     }
@@ -1136,7 +1231,7 @@ SwapChainDetails VulkanRenderer::getSwapChainDetails(VkPhysicalDevice device)
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanRenderer::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 {
-    if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+    if (messageSeverity >= 256) {
         // Message is important enough to show
         std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
     }
