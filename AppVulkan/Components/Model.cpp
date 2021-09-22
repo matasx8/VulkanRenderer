@@ -5,6 +5,7 @@ static size_t s_AllTimeModelCount = 0;
 Model::Model()
 {
 	m_IsDuplicate = false;
+	m_IsHidden = false;
 	m_IsInstanced = false;
 	m_Handle = s_AllTimeModelCount++;
 }
@@ -13,6 +14,7 @@ Model::Model(std::vector<Mesh>& newMeshList, bool isInstanced)
 {
 	meshList = newMeshList;
 	m_IsDuplicate = false;
+	m_IsHidden = false;
 	m_IsInstanced = isInstanced;
 	m_Handle = s_AllTimeModelCount++;
 }
@@ -54,13 +56,14 @@ void Model::CopyInInstanceData(void* dst) const
 {
 	InstanceData data;
 	data.model = m_ModelMatrix;
+	auto ss = sizeof(m_ModelMatrix);
 	auto s = sizeof(InstanceData);
 	memcpy(dst, &data, sizeof(InstanceData));
 }
 
-void Model::SetModelMatrix(ModelMatrix&& matrix)
+void Model::SetModelMatrix(const ModelMatrix& matrix)
 {
-	m_ModelMatrix = std::move(matrix);
+	m_ModelMatrix = matrix;
 }
 
 void Model::destroyMeshModel()

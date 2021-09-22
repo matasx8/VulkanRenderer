@@ -19,7 +19,7 @@ void InstanceDataBuffer::Create(Device device)
 {
 	m_Device = device;
 
-	m_Buffer = malloc(m_CurrentSize);
+	m_Buffer = malloc(m_CurrentCapacity);
 	if (m_Buffer == nullptr)
 		throw std::runtime_error("Failed to allocate memory for 'InstanceDataBuffer'");
 	m_BufferPointer = m_Buffer;
@@ -70,9 +70,11 @@ VkBuffer InstanceDataBuffer::GetInstanceData()
 	return m_VkBuffer;
 }
 
-InstanceDataBuffer::~InstanceDataBuffer()
+void InstanceDataBuffer::Destroy()
 {
 	free(m_Buffer);
+	vkDestroyBuffer(m_Device.logicalDevice, m_VkBuffer, nullptr);
+	vkFreeMemory(m_Device.logicalDevice, m_VkMemory, nullptr);
 }
 
 void InstanceDataBuffer::Grow()

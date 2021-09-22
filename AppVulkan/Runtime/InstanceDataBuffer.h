@@ -19,7 +19,7 @@ public:
 	size_t GetElementCount() const { return m_ElementCount; }
 	VkBuffer GetInstanceData();
 
-	~InstanceDataBuffer();
+	void Destroy();
 private:
 
 	void* m_Buffer;

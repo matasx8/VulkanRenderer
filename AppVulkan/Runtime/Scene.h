@@ -26,7 +26,7 @@ public:
 
 	Model& GetModel(ModelHandle handle);
 	// The original Model must exist during runtime, the duplicates will be removed with the original
-	Model GetModelAndDuplicate(ModelHandle handle);
+	Model GetModelAndDuplicate(ModelHandle handle, bool instanced = false);
 	std::vector<Model>& getModels(); // TODO: probably dont pass by ref
 	Texture& getTexture(int index) { return Textures[index]; }
 	// Returns pipeline, if index not found will return default one(index 0) 

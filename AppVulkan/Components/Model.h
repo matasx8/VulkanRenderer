@@ -18,13 +18,15 @@ public:
 	size_t getPipelineIndex() const { return pipelineIndex; }
 	size_t GetModelHandle() const;
 	glm::mat4x4& GetModelMatrix();
+	bool IsHidden() const { return m_IsHidden; }
 
 	Model Duplicate(bool instanced = false) const;
 	// make sure dst is at least the size of InstanceData struct
 	void CopyInInstanceData(void* dst) const;
 
-	void SetModelMatrix(ModelMatrix&& matrix);
+	void SetModelMatrix(const ModelMatrix& matrix);
 	void setPipelineIndex(int index) { pipelineIndex = index; }
+	void SetIsHidden(bool isHidden) { m_IsHidden = isHidden; }
 	// Increment pipelineIndex by one. Used when a pipeline has been thrown out.
 	void updatePipelineIndex() { pipelineIndex++; }
 
@@ -41,6 +43,7 @@ public:
 private:
 	
 	// Duplicates won't have their own memory and will adress to the memory of the original
+	bool m_IsHidden;
 	bool m_IsDuplicate;
 	bool m_IsInstanced;
 	ModelHandle m_Handle;

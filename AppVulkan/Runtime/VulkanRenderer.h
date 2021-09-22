@@ -68,7 +68,7 @@ private:
 #ifdef NDEBUG
 	const bool enableValidationLayers = false;
 #else
-	const bool enableValidationLayers = true;
+	bool enableValidationLayers = true;
 #endif
 
 	VkInstance instance;

@@ -66,7 +66,7 @@ struct ShaderCreateInfo
 	size_t pushConstantSize;
 	void* pushConstantDataBuffer;
 
-	// >textures.. tbc..<
+	// to save time, size of instance data will be a mat4 for now
 	bool isInstanced;
 
 	unsigned int shaderFlags;

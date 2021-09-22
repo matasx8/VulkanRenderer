@@ -27,7 +27,7 @@ struct Vertex
 
 struct InstanceData
 {
-	glm::mat4x4 model;
+	glm::mat4 model;
 };
 
 struct Device {

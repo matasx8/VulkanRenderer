@@ -18,12 +18,10 @@ int VulkanRenderer::init(std::string wName, const int width, const int height)
         EnableCrashDumps();
         compileShaders();
         createInstance();
-       // EnableCrashDumps();
         createSurface();
         setupDebugMessenger();
         getPhysicalDevice();
         createLogicalDevice();
-        //EnableCrashDumps();
         createSwapChain();
         createColorResources();
         createDepthBufferImage();
@@ -139,6 +137,11 @@ void VulkanRenderer::cleanup()
     }
 
     m_DescriptorPool.DestroyDescriptorPool();
+    
+    for (auto& buffer : m_InstancingBuffers)
+    {
+        buffer.Destroy();
+    }
 
     currentScene.CleanUp(mainDevice.logicalDevice);
     depthBufferImage.destroyImage(mainDevice.logicalDevice);
@@ -187,9 +190,9 @@ void VulkanRenderer::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugU
 void VulkanRenderer::createInstance()
 {
     //validation
-    if (enableValidationLayers && !checkValidationLayerSupport()) {
-        throw std::runtime_error("validation layers requested, but not available!");
-    }
+#ifndef NDEBUG
+    enableValidationLayers = enableValidationLayers ? checkValidationLayerSupport() : false;
+#endif
 
     //info about the application itself
     //most data here doesnt affect the program and is for the developer convenience
@@ -198,8 +201,8 @@ void VulkanRenderer::createInstance()
     appInfo.pApplicationName = "Vulkan App"; //custom name of the app
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);//CUSTOM VERSION OF THE APP
     appInfo.pEngineName = "No Engine";
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_0; //VULKAN VER
+    appInfo.engineVersion = VK_MAKE_VERSION(1, 2, 0);
+    appInfo.apiVersion = VK_API_VERSION_1_2; //VULKAN VER
 
     //creation information for a vkinstane
     VkInstanceCreateInfo createInfo = {};
@@ -216,12 +219,6 @@ void VulkanRenderer::createInstance()
 
     //get glfw extensions
     glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-    //std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-
-    //if (enableValidationLayers) {
-    //    extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    //}
 
     //add glfw extensions to list of extension
     for (size_t i = 0; i < glfwExtensionCount; i++)
@@ -661,12 +658,11 @@ void VulkanRenderer::DrawInstanced(int index, uint32_t currentImage)
     Pipeline gfxPipeline = currentScene.getPipeline(currentPipelineIndex);
     int meshCount = Models[index].getMeshCount();
 
-    if (false && gfxPipeline.hasPushConstant())
+    if (gfxPipeline.hasPushConstant())
     {
-        // TODO: add push constants
         uint32_t size = gfxPipeline.getPushConstantSize();
         const void* pushDataBuffer = gfxPipeline.getPushConstantDataBuffer();
-        // vkCmdPushConstants(commandBuffer[currentImage], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, size, pushDataBuffer);    
+        vkCmdPushConstants(commandBuffer[currentImage], gfxPipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, size, pushDataBuffer);    
     }
 
     VkDeviceSize offsets[] = { 0 }; //offsets into buffers being bound
@@ -688,7 +684,6 @@ void VulkanRenderer::DrawInstanced(int index, uint32_t currentImage)
         // bind descriptor sets
         vkCmdBindDescriptorSets(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, gfxPipeline.getPipelineLayout(),
             0, static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr);// will only apply offset to descriptors that are dynamic
-        //vkCmdSetCheckpointNV(commandBuffer[currentImage], "draw instanced");
         vkCmdDrawIndexed(commandBuffer[currentImage], Models[index].getMesh(i)->getIndexCount(), m_InstancingBuffers[currentImage].GetElementCount(), 0, 0, 0);
     }
     m_InstancingBuffers[currentImage].Reset();
@@ -696,12 +691,6 @@ void VulkanRenderer::DrawInstanced(int index, uint32_t currentImage)
 
 void VulkanRenderer::recordCommands(uint32_t currentImage)
 {
-    // new plan:
-    // 1. begin render pass
-    // 2. get Models
-    // 3. for each model
-    //      3.1. Models are sorted by gfx pipeline. If we need new pipeline, switch
-    //      3.2. record commands for the model
     // TODO: https://developer.nvidia.com/vulkan-shader-resource-binding
     // TODO: Client-worker??
     VkCommandBufferBeginInfo bufferBeginInfo = {};
@@ -720,8 +709,8 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
     renderPassBeginInfo.pClearValues = clearValues.data(); // list of clear values
     renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 
-    renderPassBeginInfo.framebuffer = swapchainFramebuffers[currentImage];//potential area for optimisations
-    // start reording commands to cmb
+    renderPassBeginInfo.framebuffer = swapchainFramebuffers[currentImage];
+
     VkResult result = vkBeginCommandBuffer(commandBuffer[currentImage], &bufferBeginInfo);
     if (result != VK_SUCCESS)
     {
@@ -739,6 +728,9 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
     for(size_t i = 0; i < Models.size(); i++)
     {
         Model& model = Models[i];
+        if (model.IsHidden())
+            continue;
+
         bool isInstanced = model.IsInstanced();
         if (isInstanced && !instanced) // means we just started instancing
         {
@@ -1163,6 +1155,7 @@ bool VulkanRenderer::checkValidationLayerSupport()
         }
 
         if (!layerFound) {
+            Debug::LogMsg("Warning: No available validaiton layers found!\n");
             return false;
         }
     }

@@ -2,6 +2,8 @@
 #include "GameScript.h"
 #include<windows.h>
 
+// Example of instanced and non-instanced drawing
+
 namespace GameScript
 {
 	void UpdateModelsNew(float dt);
@@ -10,6 +12,11 @@ namespace GameScript
 	VulkanRenderer* g_Engine;
 
 	float g_Angle = 0.0f;
+	//auto g_ExampleModel = "Models/Old House 2 3D Models.obj";
+	auto g_ExampleModel = "Models/12140_Skull_v3_L2.obj";
+	//auto g_ExampleModel = "Models/Group4.obj";
+	int g_InstanceCount = 300 - 1;
+	int g_KeyStateTracker = 0;
 
 	std::vector<ModelHandle> g_ModelHandles;
 
@@ -21,51 +28,80 @@ namespace GameScript
 			throw std::runtime_error("The Engine was passed as nullptr!");
 
 		Scene& currentScene = g_Engine->getActiveScene();
+		// instantiate 300 instanced models
+		{
+			ShaderCreateInfo shaderInfo = { "Shaders/shader_instanced_vert.spv", "Shaders/shader_instanced_frag.spv" };
+			//ShaderCreateInfo shaderInfo = { "Shaders/shader_vert.spv", "Shaders/shader_frag.spv" };
+			shaderInfo.uniformCount = 3;
 
-		ShaderCreateInfo shaderInfo = { "Shaders/shader_instanced_vert.spv", "Shaders/shader_instanced_frag.spv" };
-		shaderInfo.uniformCount = 3;
+			std::vector<UniformData> UniformDatas(3);
+			UniformDatas[0].name = "ViewProjection uniform";
+			UniformDatas[0].sizes = { sizeof(ViewProjectionMatrix) };
+			UniformDatas[0].dataBuffers = { currentScene.getViewProjectionPtr() };
 
-		std::vector<UniformData> UniformDatas(3);
-		UniformDatas[0].name = "ViewProjection uniform";
-		UniformDatas[0].sizes = { sizeof(ViewProjectionMatrix) };
-		UniformDatas[0].dataBuffers = { currentScene.getViewProjectionPtr() };
+			Light& light = currentScene.getLight(0);
+			UniformDatas[1].name = "Light uniform";
+			UniformDatas[1].sizes = { sizeof(glm::vec4), sizeof(glm::vec4) };
+			UniformDatas[1].dataBuffers = { &light.m_Position, &light.m_Colour };
 
-		Light& light = currentScene.getLight(0);
-		UniformDatas[1].name = "Light uniform";
-		UniformDatas[1].sizes = { sizeof(glm::vec4), sizeof(glm::vec4) };
-		UniformDatas[1].dataBuffers = { &light.m_Position, &light.m_Colour };
+			Camera& camera = currentScene.getCamera();
+			UniformDatas[2].name = "Camera";
+			UniformDatas[2].sizes = { sizeof(glm::vec4) };
+			UniformDatas[2].dataBuffers = { &camera.getCameraPosition() };
 
-		Camera& camera = currentScene.getCamera();
-		UniformDatas[2].name = "Camera";
-		UniformDatas[2].sizes = { sizeof(glm::vec4) };
-		UniformDatas[2].dataBuffers = { &camera.getCameraPosition() };
+			shaderInfo.uniformData = std::move(UniformDatas);
+			shaderInfo.pushConstantSize = 0;
+			shaderInfo.shaderFlags = 0;
+			// mark that this will be instanced 
+			shaderInfo.isInstanced = true;
 
-		shaderInfo.uniformData = std::move(UniformDatas);
-		shaderInfo.pushConstantSize = 0;
-		shaderInfo.shaderFlags = kDefault;
-		shaderInfo.isInstanced = true;
-		Material material1 = Material(shaderInfo);
-		Scene& scene = g_Engine->getActiveScene();
+			Material material1 = Material(shaderInfo);
 
-		g_ModelHandles.emplace_back(scene.AddModel("Models/12140_Skull_v3_l2.obj", material1));
-		/*g_ModelHandles.push_back(scene.DuplicateModel(1));/*
-		g_ModelHandles.push_back(scene.DuplicateModel(1));
-		g_ModelHandles.push_back(scene.DuplicateModel(1));
-		g_ModelHandles.push_back(scene.DuplicateModel(1));
-		g_ModelHandles.push_back(scene.DuplicateModel(1));
-		g_ModelHandles.push_back(scene.DuplicateModel(1));*/
-		/*g_ModelHandles.emplace_back(scene.AddModel("Models/Old House 2 3D Models.obj", material1));
-		g_ModelHandles.emplace_back(scene.AddModel("Models/Old House 2 3D Models.obj", material1));
-		g_ModelHandles.emplace_back(scene.AddModel("Models/Old House 2 3D Models.obj", material1));
-		g_ModelHandles.emplace_back(scene.AddModel("Models/Old House 2 3D Models.obj", material1));*/
-		//g_ModelHandles.emplace_back(scene.AddModel("Models/Group4.obj", material1));
+			g_ModelHandles.emplace_back(currentScene.AddModel(g_ExampleModel, material1));
+
+			for (int i = 0; i < g_InstanceCount; i++)
+				g_ModelHandles.push_back(currentScene.DuplicateModel(1, true));
+		}
+
+		{
+			ShaderCreateInfo shaderInfo = { "Shaders/shader_vert.spv", "Shaders/shader_frag.spv" };
+			shaderInfo.uniformCount = 3;
+
+			std::vector<UniformData> UniformDatas(3);
+			UniformDatas[0].name = "ViewProjection uniform";
+			UniformDatas[0].sizes = { sizeof(ViewProjectionMatrix) };
+			UniformDatas[0].dataBuffers = { currentScene.getViewProjectionPtr() };
+
+			Light& light = currentScene.getLight(0);
+			UniformDatas[1].name = "Light uniform";
+			UniformDatas[1].sizes = { sizeof(glm::vec4), sizeof(glm::vec4) };
+			UniformDatas[1].dataBuffers = { &light.m_Position, &light.m_Colour };
+
+			Camera& camera = currentScene.getCamera();
+			UniformDatas[2].name = "Camera";
+			UniformDatas[2].sizes = { sizeof(glm::vec4) };
+			UniformDatas[2].dataBuffers = { &camera.getCameraPosition() };
+
+			shaderInfo.uniformData = std::move(UniformDatas);
+			shaderInfo.pushConstantSize = 0;
+			shaderInfo.shaderFlags = kUseModelMatrixForPushConstant;
+			shaderInfo.isInstanced = false;
+
+			Material material1 = Material(shaderInfo);
+
+			g_ModelHandles.emplace_back(currentScene.AddModel(g_ExampleModel, material1));
+
+			for (int i = 0; i < g_InstanceCount; i++)
+				// duplicate without marking instanced
+				g_ModelHandles.push_back(currentScene.DuplicateModel(1, false));
+		}
+
 	}
 
 	void GameScript::OnUpdate()
 	{
 		Input();
 		UpdateModelsNew(g_Engine->GetDeltaTime());
-		//Sleep(10000);
 	}
 
 	void GameScript::OnEndOfFrame()
@@ -111,9 +147,35 @@ namespace GameScript
 		Scene& scene = g_Engine->getActiveScene();
 		bool* keys = g_Engine->window.getKeys();
 
-		if (g_ModelHandles.size() < 1000 && keys[GLFW_KEY_P])
+		int instanceCount = g_InstanceCount + 1;
+
+		if (keys[GLFW_KEY_1] && g_KeyStateTracker ^ GLFW_KEY_1) // show all
 		{
-			g_ModelHandles.push_back(scene.DuplicateModel(1));
+			auto& Models = scene.getModels();
+			scene.GetModel(1).SetIsHidden(true);
+			for (int i = 1; i < instanceCount * 2; i++)
+			{
+				Models[i].SetIsHidden(false);
+			}
+		}
+
+		if (keys[GLFW_KEY_2] && g_KeyStateTracker ^ GLFW_KEY_2) // hide non-instanced
+		{
+			auto& Models = scene.getModels();
+			scene.GetModel(1).SetIsHidden(true);
+			for (int i = instanceCount + 1; i <= instanceCount * 2; i++)
+			{
+				Models[i].SetIsHidden(true);
+			}
+		}
+		if (keys[GLFW_KEY_3] && g_KeyStateTracker ^ GLFW_KEY_3) // hide instanced
+		{
+			auto& Models = scene.getModels();
+			scene.GetModel(1).SetIsHidden(true);
+			for (int i = 0; i <= instanceCount; i++)
+			{
+				Models[i].SetIsHidden(true);
+			}
 		}
 	}
 }

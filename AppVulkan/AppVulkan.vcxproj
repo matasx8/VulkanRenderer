@@ -103,7 +103,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)External Libs/GLFW/lib-vc2019;$(SolutionDir)External Libs/ASSIMP/lib/Release;$(SolutionDir)External Libs/VULKAN/;$(SolutionDir)External Libs/AFTERMATH/lib/x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;assimp-vc140-mt.lib;GFSDK_Aftermath_Lib.x86.lib;GFSDK_Aftermath_Lib_UWP.x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;assimp-vc140-mt.lib;GFSDK_Aftermath_Lib.x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -123,7 +123,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)External Libs/GLFW/lib-vc2019;$(SolutionDir)External Libs/ASSIMP/lib/Release;$(SolutionDir)External Libs/VULKAN/;$(SolutionDir)External Libs/AFTERMATH/lib/x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;assimp-vc140-mt.lib;GFSDK_Aftermath_Lib.x86.lib;GFSDK_Aftermath_Lib_UWP.x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;assimp-vc140-mt.lib;GFSDK_Aftermath_Lib.x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -139,7 +139,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)External Libs/GLFW/lib-vc2019;$(SolutionDir)External Libs/ASSIMP/lib/Release;$(SolutionDir)External Libs/VULKAN/;$(SolutionDir)External Libs/AFTERMATH/lib/x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;assimp-vc140-mt.lib;GFSDK_Aftermath_Lib.x86.lib;GFSDK_Aftermath_Lib_UWP.x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;assimp-vc140-mt.lib;GFSDK_Aftermath_Lib.x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -159,7 +159,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)External Libs/GLFW/lib-vc2019;$(SolutionDir)External Libs/ASSIMP/lib/Release;$(SolutionDir)External Libs/VULKAN/;$(SolutionDir)External Libs/AFTERMATH/lib/x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;assimp-vc140-mt.lib;GFSDK_Aftermath_Lib.x86.lib;GFSDK_Aftermath_Lib_UWP.x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;assimp-vc140-mt.lib;GFSDK_Aftermath_Lib.x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
