@@ -1,7 +1,12 @@
 # VulkanRenderer
-I'm creating a 3D rendering engine with Vulkan. The purpose of this project is to learn about graphics programming. This code is a continuation of what I learned from Ben Cook's Vulkan course.
+I'm creating a 3D rendering engine with Vulkan. The purpose of this project is to learn about graphics programming.
+Do note that this is a continuation from what I learned in a Vulkan course, though a big portion of the code has been changed already :)
 
 # What has been implemented by me:
+- Implemented instancing by having a 2nd Vertex Binding that is per instance input rate.
+![Capture](https://user-images.githubusercontent.com/78436416/134345585-399f04f1-1be7-4e00-9872-4829dee95d12.PNG)
+
+- Implemented Nvidia Aftermath for GPU crash dumping.
 - Implemented a Descriptor Pool API that takes care of Descriptor Set allocation, improving previous solution of creating a pool for each new pipeline created.
 - Implemented custom shader addition. User has to specify uniform layout in the shader and my engine will take care of the rest. <br>
 - ![Capture](https://user-images.githubusercontent.com/78436416/130431273-e2b41013-f9e3-4c8d-bc36-4d1db7fdbdee.PNG)
