@@ -102,44 +102,8 @@ void InstanceDataBuffer::Grow()
 
 void InstanceDataBuffer::CreateVkBuffer()
 {
-	createBuffer(m_Device.physicalDevice, m_Device.logicalDevice, m_CurrentCapacity, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+	createBuffer(m_Device.physicalDevice, m_Device.logicalDevice, m_CurrentCapacity, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 		&m_VkBuffer, &m_VkMemory);
-
-	//createBuffer
-
-	//if (m_VkBuffer == VK_NULL_HANDLE || m_VkMemory == VK_NULL_HANDLE)
-	//	throw std::runtime_error("Failed to create VkBuffer for instance data");
-
-	////get size of buffer needed for verts
-	//VkDeviceSize bufferSize = 64;
-
-	////temporary buffer to stage vertex data before transfering to gpu
-	//VkBuffer stagingBuffer;
-	//VkDeviceMemory stagingBufferMemory;
-
-	////create buffer and allocate memory to it
-	//createBuffer(m_Device.physicalDevice, m_Device.logicalDevice, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-	//	VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-	//	&stagingBuffer, &stagingBufferMemory);
-
-	////map memory to vertex buffer
-	//auto a = glm::mat4(1.0f);
-	//void* data; //create a pointer to a point in memory
-	//vkMapMemory(m_Device.logicalDevice, stagingBufferMemory, 0, bufferSize, 0, &data); //map the vertex buffer memory to that point
-	//memcpy(data, &a, (size_t)bufferSize); // copy memory from vertices vector to the point
-	//vkUnmapMemory(m_Device.logicalDevice, stagingBufferMemory); //unmap the vertex buffer memory
-
-	////create buffer with TRANSFER_DST_BIT to mark as recipient of transfer data (also vertex_buffer)
-	////buffer memory is to be device_local_bit meaning memory is on the gpu and only accesible by it and not cpu
-	//createBuffer(m_Device.physicalDevice, m_Device.logicalDevice, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-	//	VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &m_VkBuffer, &m_VkMemory);
-
-	////copy staging buffer to vertex buffer on gpu
-	//copyBuffer(m_Device.logicalDevice, transferQueue, transferCommandPool, stagingBuffer, vertexBuffer, bufferSize);
-
-	//// clean up staging buffer parts
-	//vkDestroyBuffer(device, stagingBuffer, nullptr);
-	//vkFreeMemory(device, stagingBufferMemory, nullptr); //why is this not working?
 }
 
 void InstanceDataBuffer::DestroyVkBuffer()
