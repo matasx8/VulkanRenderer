@@ -8,6 +8,8 @@ Model::Model()
 	m_IsHidden = false;
 	m_IsInstanced = false;
 	m_Handle = s_AllTimeModelCount++;
+	m_InstanceCount = 1;
+	m_InstanceDataBuffer = nullptr;
 }
 
 Model::Model(std::vector<Mesh>& newMeshList, bool isInstanced)
@@ -17,6 +19,8 @@ Model::Model(std::vector<Mesh>& newMeshList, bool isInstanced)
 	m_IsHidden = false;
 	m_IsInstanced = isInstanced;
 	m_Handle = s_AllTimeModelCount++;
+	m_InstanceCount = 1;
+	m_InstanceDataBuffer = nullptr;
 }
 
 size_t Model::getMeshCount()
@@ -47,9 +51,24 @@ Model Model::Duplicate(bool instanced) const
 {
 	Model tmp = Model(*this);
 	tmp.m_Handle = s_AllTimeModelCount++;
-	tmp.m_IsDuplicate =true;
+	tmp.m_IsDuplicate = true;
 	tmp.m_IsInstanced = instanced;
 	return tmp;
+}
+
+void Model::AddInstances(int numInstances)
+{
+	if (m_IsInstanced && m_InstanceDataBuffer != nullptr)
+	{
+		m_InstanceDataBuffer->AddInstances(numInstances);
+	}
+	else
+	{
+		m_InstanceDataBuffer = new InstanceDataBuffer();
+		m_InstanceDataBuffer->Create(GetGraphicsDevice());
+		m_InstanceDataBuffer->AddInstances(numInstances);
+	}
+	m_InstanceCount += numInstances;
 }
 
 void Model::CopyInInstanceData(void* dst) const
@@ -60,6 +79,7 @@ void Model::CopyInInstanceData(void* dst) const
 	auto s = sizeof(InstanceData);
 	memcpy(dst, &data, sizeof(InstanceData));
 }
+
 
 void Model::SetModelMatrix(const ModelMatrix& matrix)
 {

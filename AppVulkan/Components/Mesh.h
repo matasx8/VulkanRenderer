@@ -19,7 +19,7 @@ public:
 	int getVertexCount();
 	VkBuffer getVertexBuffer();
 
-	int getIndexCount();
+	uint32_t getIndexCount();
 	VkBuffer getIndexBuffer();
 
 	void destroyBuffers();
@@ -32,7 +32,7 @@ private:
 	VkBuffer vertexBuffer;
 	VkDeviceMemory vertexBufferMemory;
 
-	int indexCount;
+	uint32_t indexCount;
 	VkBuffer indexBuffer;
 	VkDeviceMemory indexBufferMemory;
 

@@ -124,9 +124,7 @@ private:
 	void createLight();
 	void createInitialScene();
 	void CreateDescriptorPool();
-	void CreateInstancingBuffers();
 	void EnableCrashDumps();
-	void CreateMarkerFunc();
 
 	void compileShaders();
 

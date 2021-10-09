@@ -17,6 +17,7 @@ namespace GameScript
 	//auto g_ExampleModel = "Models/Group4.obj";
 	int g_InstanceCount = 1000 - 1;
 	int g_KeyStateTracker = 0;
+	ModelHandle g_InstancedModel;
 
 	std::vector<ModelHandle> g_ModelHandles;
 
@@ -31,7 +32,6 @@ namespace GameScript
 		// instantiate 300 instanced models
 		{
 			ShaderCreateInfo shaderInfo = { "Shaders/shader_instanced_vert.spv", "Shaders/shader_instanced_frag.spv" };
-			//ShaderCreateInfo shaderInfo = { "Shaders/shader_vert.spv", "Shaders/shader_frag.spv" };
 			shaderInfo.uniformCount = 3;
 
 			std::vector<UniformData> UniformDatas(3);
@@ -57,10 +57,10 @@ namespace GameScript
 
 			Material material1 = Material(shaderInfo);
 
-			g_ModelHandles.emplace_back(currentScene.AddModel(g_ExampleModel, material1));
-
-			for (int i = 0; i < g_InstanceCount; i++)
-				g_ModelHandles.push_back(currentScene.DuplicateModel(1, true));
+			g_InstancedModel = currentScene.AddModel(g_ExampleModel, material1);
+			g_ModelHandles.emplace_back(g_InstancedModel);
+			// add a number of instances
+			currentScene.GetModel(g_InstancedModel).AddInstances(g_InstanceCount);
 		}
 
 		{
@@ -89,11 +89,12 @@ namespace GameScript
 
 			Material material1 = Material(shaderInfo);
 
-			g_ModelHandles.emplace_back(currentScene.AddModel(g_ExampleModel, material1));
+			auto handle = currentScene.AddModel(g_ExampleModel, material1);
+			g_ModelHandles.emplace_back(handle);
 
 			for (int i = 0; i < g_InstanceCount; i++)
 				// duplicate without marking instanced
-				g_ModelHandles.push_back(currentScene.DuplicateModel(g_InstanceCount + 2, false));
+				g_ModelHandles.push_back(currentScene.DuplicateModel(handle, false));
 		}
 
 	}
@@ -107,6 +108,23 @@ namespace GameScript
 	void GameScript::OnEndOfFrame()
 	{
 
+	}
+
+	void TransformFunction(InstanceData& element, float& offset, float& yoffset, int& counter, float& angle)
+	{
+		if (counter % 50 == 0)
+		{
+			yoffset += 5.0f;
+			offset = 0;
+		}
+
+		auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(50.0f + offset, 0.0f - yoffset, 0.0f));
+		matrix = glm::rotate(matrix, glm::radians(-angle), glm::vec3(0.0f, 1.0f, 0.0f));
+		matrix = glm::rotate(matrix, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		offset += 5.0f;
+		counter++;
+
+		element = matrix;
 	}
 
 	void UpdateModelsNew(float dt)
@@ -125,25 +143,29 @@ namespace GameScript
 		float yOffset = 0.0f;
 		for (auto modelHandle : g_ModelHandles)
 		{
-			if (modelHandle == g_InstanceCount + 2)
-			{
-				offset = 0;
-				yOffset = 0;
-			}
 			if (counter % 50 == 0)
 			{
-				counter = 0;
 				yOffset += 5.0f;
 				offset = 0;
 			}
 			Model& model = scene.GetModel(modelHandle);
+			if (model.IsInstanced())
+				continue;
+			if (model.IsHidden())
+				break;
+
 			auto& modelMatrix = model.GetModelMatrix();
 			modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(50.0f + offset, 0.0f - yOffset, 0.0f));
 			modelMatrix = glm::rotate(modelMatrix, glm::radians(-g_Angle), glm::vec3(0.0f, 1.0f, 0.0f));
 			modelMatrix = glm::rotate(modelMatrix, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
 			offset += 5.0f;
 			counter++;
 		}
+
+		Model& model = scene.GetModel(g_InstancedModel);
+		if(!model.IsHidden())
+			model.ApplyFunc(TransformFunction, offset, yOffset, counter, g_Angle);
 		g_Angle += 10.0f * dt;
 	}
 
@@ -152,26 +174,22 @@ namespace GameScript
 		Scene& scene = g_Engine->getActiveScene();
 		bool* keys = g_Engine->window.getKeys();
 
-		int instanceCount = g_InstanceCount + 1;
+		auto& models = scene.getModels();
+		int instanceCount = scene.getModels().size();
 
 		if (keys[GLFW_KEY_1] && g_KeyStateTracker ^ GLFW_KEY_1) // show all
 		{
-			auto& Models = scene.getModels();
 			scene.GetModel(0).SetIsHidden(true);
-			for (int i = 1; i < instanceCount * 2; i++)
+			for (int i = 1; i < instanceCount; i++)
 			{
-				Models[i].SetIsHidden(false);
+				models[i].SetIsHidden(false);
 			}
 		}
 
 		if (keys[GLFW_KEY_2] && g_KeyStateTracker ^ GLFW_KEY_2) // non instanced
 		{
 			auto& Models = scene.getModels();
-			scene.GetModel(0).SetIsHidden(true);
-			for (int i = instanceCount + 1; i <= instanceCount * 2; i++)
-			{
-				Models[i].SetIsHidden(true);
-			}
+			scene.GetModel(g_InstancedModel).SetIsHidden(true);
 		}
 		if (keys[GLFW_KEY_3] && g_KeyStateTracker ^ GLFW_KEY_3) // instanced
 		{
@@ -179,6 +197,8 @@ namespace GameScript
 			scene.GetModel(0).SetIsHidden(true);
 			for (int i = 0; i < instanceCount; i++)
 			{
+				if (models[i].IsInstanced())
+					continue;
 				Models[i].SetIsHidden(true);
 			}
 		}

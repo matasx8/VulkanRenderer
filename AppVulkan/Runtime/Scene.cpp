@@ -94,8 +94,8 @@ Model& Scene::GetModel(ModelHandle handle)
     for (auto& model : Models)
         if (model.GetModelHandle() == handle)
             return model;
-    Model notFound = Model();
-    return notFound;
+    Model dummy = Model();// make compile error go away
+    return dummy;
 }
 
 Model Scene::GetModelAndDuplicate(ModelHandle handle, bool instanced)
@@ -105,6 +105,12 @@ Model Scene::GetModelAndDuplicate(ModelHandle handle, bool instanced)
             return model.Duplicate(instanced);
     Model notFound = Model();
     return notFound;
+}
+
+void Scene::DuplicateModelInstanced(ModelHandle handle, int numInstances)
+{
+    auto& model = GetModel(handle);
+    model.AddInstances(numInstances);
 }
 
 std::vector<Model>& Scene::getModels()
@@ -144,8 +150,8 @@ uint32_t Scene::insertModel(Model& model)
         if ((*it).getPipelineIndex() >= model.getPipelineIndex())
         {
             model.SetModelMatrix(ModelMatrix(1.0f));
-            Models.insert(it, model);
-            return index;
+            Models.insert(++it, model);
+            return index + 1;
         }
     }
 }
@@ -180,7 +186,7 @@ int Scene::setupPipeline(Material& material, std::vector<Texture>& Textures, uin
 
 
 
-Pipeline Scene::getPipeline(int index) const
+Pipeline& Scene::getPipeline(int index)
 {
     if (index >= Pipelines.size())
         return Pipelines[0];
@@ -200,6 +206,7 @@ void Scene::updateScene(size_t index)
 
 ModelHandle Scene::DuplicateModel(ModelHandle handle, bool instanced)
 {
+
     // Note: can optimize this and GetModel with the fact that Models are sorted by pipelineindex always
     Model model = GetModelAndDuplicate(handle, instanced);
     
@@ -214,7 +221,7 @@ void Scene::onFrameEnded()
     for (auto it = Pipelines.begin(); it != Pipelines.end(); it++)
     {
         i++;
-        if ((*it).wasUsedThisFrame())
+        if (!(*it).wasUsedThisFrame())
         {
             Debug::LogMsg("a pipeline was thrown out because it has not been used\0");
             Pipelines.erase(it);

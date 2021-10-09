@@ -29,7 +29,6 @@ int VulkanRenderer::init(std::string wName, const int width, const int height)
         createCommandPool();
         createFramebuffers();
         createCommandBuffers();
-        CreateInstancingBuffers();
         // default model, pipeline, components
         CreateDescriptorPool();
         createInitialScene();
@@ -619,15 +618,6 @@ void VulkanRenderer::CreateDescriptorPool()
     m_DescriptorPool.CreateDescriptorPool(mainDevice.logicalDevice);
 }
 
-void VulkanRenderer::CreateInstancingBuffers()
-{
-    m_InstancingBuffers = std::vector<InstanceDataBuffer>(swapChainImages.size());
-    for (size_t i = 0; i < swapChainImages.size(); i++)
-    {
-        m_InstancingBuffers[i].Create(mainDevice);
-    }
-}
-
 void VulkanRenderer::EnableCrashDumps()
 {
     tracker.Initialize();
@@ -655,7 +645,7 @@ void VulkanRenderer::DrawInstanced(int index, uint32_t currentImage)
 {
     auto& Models = currentScene.getModels();
     int currentPipelineIndex = static_cast<int>(Models[index].getPipelineIndex());
-    Pipeline gfxPipeline = currentScene.getPipeline(currentPipelineIndex);
+    Pipeline& gfxPipeline = currentScene.getPipeline(currentPipelineIndex);
     int meshCount = Models[index].getMeshCount();
 
     if (gfxPipeline.hasPushConstant())
@@ -722,26 +712,12 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
     std::vector<Model>& Models = currentScene.getModels();
     int lastPipelineIndex = -1;
 
-    bool instanced = false;
-    void* instanceDataBuffer = alloca(sizeof(InstanceData));
-
     for(size_t i = 0; i < Models.size(); i++)
     {
         Model& model = Models[i];
         if (model.IsHidden())
             continue;
 
-        bool isInstanced = model.IsInstanced();
-        if (isInstanced && !instanced) // means we just started instancing
-        {
-            m_InstancingBuffers[currentImage].Reset();
-            instanced = true;
-        }
-        else if (!isInstanced && instanced)// means instancing ended
-        {
-            DrawInstanced(i - 1, currentImage); // loop over this range and finish instanced meshes
-            instanced = false;
-        }
 
         int currentPipelineIndex = model.getPipelineIndex();
         // pipeline indices should be sorted
@@ -755,19 +731,8 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
         else if (currentPipelineIndex < lastPipelineIndex)
             throw std::runtime_error("Current pipeline index was lesser than old one. This indicates Model vector was not sorted.");
 #endif
-        if (instanced)
-        {
-            model.CopyInInstanceData(instanceDataBuffer);
-            m_InstancingBuffers[currentImage].InsertBuffer(instanceDataBuffer, sizeof(InstanceData));
-            continue;
-        }
-        else
-        {
             recordingDefaultPath(currentPipelineIndex, model, currentImage);
-        }
     }
-    if (instanced) // leftover draw
-        DrawInstanced(Models.size() - 1, currentImage);
 
     vkCmdEndRenderPass(commandBuffer[currentImage]);
 
@@ -781,7 +746,7 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
 
 void VulkanRenderer::recordingDefaultPath(int currentPipelineIndex, Model& model, int currentImage)
 {
-        Pipeline gfxPipeline = currentScene.getPipeline(currentPipelineIndex);
+        Pipeline& gfxPipeline = currentScene.getPipeline(currentPipelineIndex);
         VkPipelineLayout pipelineLayout = gfxPipeline.getPipelineLayout();
 
         const auto& modelMatrix = model.GetModelMatrix();
@@ -803,6 +768,14 @@ void VulkanRenderer::recordingDefaultPath(int currentPipelineIndex, Model& model
             }
         }
 
+        // If model is instanced, bind instacing data
+        if (model.IsInstanced())
+        {
+            VkDeviceSize offsets[] = { 0 };
+            VkBuffer instanceBuffers[] = { model.GetInstanceData() };
+            vkCmdBindVertexBuffers(commandBuffer[currentImage], 1, 1, instanceBuffers, offsets);
+        }
+
         for (size_t k = 0; k < model.getMeshCount(); k++)
         {
             VkBuffer vertexBuffers[] = { model.getMesh(k)->getVertexBuffer() }; //buffers to bind
@@ -822,7 +795,7 @@ void VulkanRenderer::recordingDefaultPath(int currentPipelineIndex, Model& model
             vkCmdBindDescriptorSets(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
                 0, static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr);// will only apply offset to descriptors that are dynamic
 
-            vkCmdDrawIndexed(commandBuffer[currentImage], model.getMesh(k)->getIndexCount(), 1, 0, 0, 0);
+            vkCmdDrawIndexed(commandBuffer[currentImage], model.getMesh(k)->getIndexCount(), model.GetInstanceCount(), 0, 0, 0);
         }
 }
 
@@ -879,6 +852,9 @@ void VulkanRenderer::createLogicalDevice()
     //from given logical device of given queu fam, of given queue index, place refference in given vkqueue
     vkGetDeviceQueue(mainDevice.logicalDevice, indices.graphicsFamily, 0, &graphicsQueue);
     vkGetDeviceQueue(mainDevice.logicalDevice, indices.presentationFamily, 0, &presentationQueue);
+
+    // TODO: make the device accessible globally and actually safe
+    s_DevicePtr = mainDevice;
 }
 
 void VulkanRenderer::createSurface()
