@@ -14,6 +14,7 @@
 #include <GLFW/glfw3.h>
 #include <vulkan.h>
 #include <glm/gtc/matrix_transform.hpp>
+#include <thread-pool/thread_pool.hpp>
 
 #include "NsightAftermathGpuCrashTracker.h"
 
