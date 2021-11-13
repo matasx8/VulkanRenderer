@@ -21,6 +21,7 @@ public:
 	glm::mat4x4& GetModelMatrix();
 	int GetInstanceCount() const { return m_InstanceCount; }
 	VkBuffer GetInstanceData() const { return m_InstanceDataBuffer->GetInstanceData(); }
+	InstanceDataBuffer* GetInstanceDataBuffer() { return m_InstanceDataBuffer; }
 	bool IsHidden() const { return m_IsHidden; }
 
 	Model Duplicate(bool instanced = false) const;

@@ -99,7 +99,7 @@ Model& Scene::GetModel(ModelHandle handle)
 }
 
 Model Scene::GetModelAndDuplicate(ModelHandle handle, bool instanced)
-{
+{ //TODO: optimize this, because this is horrible perf
     for (auto& model : Models)
         if (model.GetModelHandle() == handle)
             return model.Duplicate(instanced);
