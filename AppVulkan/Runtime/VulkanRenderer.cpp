@@ -8,9 +8,9 @@ VulkanRenderer::VulkanRenderer()
     m_InstancingBuffers;
 } // TODO: initialize variables
 
-int VulkanRenderer::init(std::string wName, const int width, const int height)
+int VulkanRenderer::init(const RendererInitializationSettings& initSettings)
 {
-    if (window.Initialise(wName, width, height) == -1)
+    if (window.Initialise(initSettings.windowName, initSettings.windowWidth, initSettings.windowHeight) == -1)
         throw std::runtime_error("Failed to initialize window!\n");
 
     try
@@ -18,6 +18,7 @@ int VulkanRenderer::init(std::string wName, const int width, const int height)
         EnableCrashDumps();
         compileShaders();
         createInstance();
+        CreateThreadPool(initSettings.numThreadsInPool);
         createSurface();
         setupDebugMessenger();
         getPhysicalDevice();
@@ -166,6 +167,7 @@ void VulkanRenderer::cleanup()
     vkDestroyDevice(mainDevice.logicalDevice, nullptr);
     vkDestroyInstance(instance, nullptr);
 
+    delete m_ThreadPool;
 }
 
 VkResult VulkanRenderer::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
@@ -616,6 +618,11 @@ void VulkanRenderer::createInitialScene()
 void VulkanRenderer::CreateDescriptorPool()
 {
     m_DescriptorPool.CreateDescriptorPool(mainDevice.logicalDevice);
+}
+
+void VulkanRenderer::CreateThreadPool(uint32_t numThreads)
+{
+    m_ThreadPool = new thread_pool(numThreads);
 }
 
 void VulkanRenderer::EnableCrashDumps()

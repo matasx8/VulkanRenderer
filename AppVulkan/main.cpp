@@ -14,8 +14,10 @@ VulkanRenderer vulkanRenderer;
 
 int main()
 {
+	RendererInitializationSettings initSettings = {};
+	GameScript::OnInitialize(initSettings);
 
-	if (vulkanRenderer.init() == EXIT_FAILURE)
+	if (vulkanRenderer.init(initSettings) == EXIT_FAILURE)
 	{
 		return EXIT_FAILURE;
 	}

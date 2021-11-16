@@ -40,6 +40,22 @@ struct Device {
 	VkDevice logicalDevice;
 };
 
+struct RendererInitializationSettings
+{
+	std::string windowName;
+	uint32_t windowWidth;
+	uint32_t windowHeight;
+	// 0 will default to std::thread::hardware_concurrency()
+	uint32_t numThreadsInPool;
+
+	RendererInitializationSettings()
+		:windowName("Default Window"),
+		windowWidth(800),
+		windowHeight(600),
+		numThreadsInPool(0)
+		{}
+};
+
 inline Device s_DevicePtr = {};
 
 //indices (locations) of queue families if they exist

@@ -41,10 +41,11 @@ public:
 
 	VulkanRenderer();
 
-	int init(std::string wName = "Default Window", const int width = 800, const int height = 600);
+	int init(const RendererInitializationSettings& initSettings);
 
 	Scene& getActiveScene() { return currentScene; }
-	float GetDeltaTime() { return m_DeltaTime; }
+	float GetDeltaTime() const { return m_DeltaTime; }
+	thread_pool* const GetThreadPool() { return m_ThreadPool;}
 
 	void setupDebugMessenger();
 	void draw();
@@ -98,6 +99,7 @@ private:
 	VkCommandPool graphicsCommandPool;
 	DescriptorPool m_DescriptorPool;
 	std::vector<InstanceDataBuffer> m_InstancingBuffers;
+	thread_pool* m_ThreadPool;
 
 	GpuCrashTracker tracker;
 
@@ -125,6 +127,7 @@ private:
 	void createLight();
 	void createInitialScene();
 	void CreateDescriptorPool();
+	void CreateThreadPool(uint32_t numThreads);
 	void EnableCrashDumps();
 
 	void compileShaders();

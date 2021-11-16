@@ -66,7 +66,8 @@ void Model::AddInstances(int numInstances)
 	{
 		m_InstanceDataBuffer = new InstanceDataBuffer();
 		m_InstanceDataBuffer->Create(GetGraphicsDevice());
-		m_InstanceDataBuffer->AddInstances(numInstances);
+		m_InstanceDataBuffer->AddInstances(numInstances + 1);	// + 1 to account for original instance
+																// so numInstances + original
 	}
 	m_InstanceCount += numInstances;
 }
