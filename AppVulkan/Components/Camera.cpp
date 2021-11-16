@@ -62,6 +62,11 @@ void Camera::mouseControl(GLfloat xChange, GLfloat yChange)
 	update();
 }
 
+void Camera::LookAt(const glm::vec3 point)
+{
+	//m_Position = glm::lookAt(m_Position, point, m_Up);
+}
+
 void Camera::setMSAA(VkSampleCountFlagBits msaaSamples)
 {
 	this->m_MsaaSamples = msaaSamples > VK_SAMPLE_COUNT_8_BIT ? VK_SAMPLE_COUNT_8_BIT : msaaSamples;

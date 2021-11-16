@@ -11,6 +11,7 @@
 const int MAX_FRAME_DRAWS = 2;
 const int MAX_OBJECTS = 20;
 
+
 const std::vector<const char*> deviceExtensions = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 	VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME,
@@ -27,6 +28,10 @@ struct Vertex
 
 struct InstanceData
 {
+	InstanceData() : model(glm::mat4(1.0f)) {}
+	InstanceData(glm::mat4& matrix) : model(matrix) {};
+	InstanceData(glm::mat4&& matrix) : model(matrix) {};
+
 	glm::mat4 model;
 };
 
@@ -34,6 +39,24 @@ struct Device {
 	VkPhysicalDevice physicalDevice;
 	VkDevice logicalDevice;
 };
+
+struct RendererInitializationSettings
+{
+	std::string windowName;
+	uint32_t windowWidth;
+	uint32_t windowHeight;
+	// 0 will default to std::thread::hardware_concurrency()
+	uint32_t numThreadsInPool;
+
+	RendererInitializationSettings()
+		:windowName("Default Window"),
+		windowWidth(800),
+		windowHeight(600),
+		numThreadsInPool(0)
+		{}
+};
+
+inline Device s_DevicePtr = {};
 
 //indices (locations) of queue families if they exist
 struct QueueFamilyIndices
@@ -131,6 +154,7 @@ static void createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkDev
 	result = vkAllocateMemory(device, &memoryAllocInfo, nullptr, bufferMemory);
 	if (result != VK_SUCCESS)
 	{
+		assert(false);
 		throw std::runtime_error("Failed to allocate vertex buffer memory!");
 	}
 
@@ -272,3 +296,6 @@ static void transitionImageLayout(VkDevice device, VkQueue queue, VkCommandPool 
 
 	endAndSubmitCommandBuffer(device, commandPool, queue, commandBuffer);
 }
+
+// TODO: make the device accessible globally and actually safe
+static Device GetGraphicsDevice() { return s_DevicePtr; }

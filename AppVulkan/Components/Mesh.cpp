@@ -27,7 +27,7 @@ VkBuffer Mesh::getVertexBuffer()
     return vertexBuffer;
 }
 
-int Mesh::getIndexCount()
+uint32_t Mesh::getIndexCount()
 {
     return indexCount;
 }

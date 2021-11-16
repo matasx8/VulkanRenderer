@@ -27,10 +27,12 @@ public:
 	Model& GetModel(ModelHandle handle);
 	// The original Model must exist during runtime, the duplicates will be removed with the original
 	Model GetModelAndDuplicate(ModelHandle handle, bool instanced = false);
+	void DuplicateModelInstanced(ModelHandle handle, int numInstances);
+
 	std::vector<Model>& getModels(); // TODO: probably dont pass by ref
 	Texture& getTexture(int index) { return Textures[index]; }
 	// Returns pipeline, if index not found will return default one(index 0) 
-	Pipeline getPipeline(int index) const;
+	Pipeline& getPipeline(int index);
 	VkDescriptorSet getTextureDescriptorSet(size_t index) const { return Textures[index].descriptorSet; }
 	void* getViewProjectionPtr() const { return (void*)(&viewProjection); }
 	Light& getLight(size_t index) { return Lights[index]; }

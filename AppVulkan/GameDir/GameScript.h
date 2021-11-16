@@ -9,6 +9,8 @@ namespace GameScript
 
 	extern VulkanRenderer* g_Engine;
 
+	void OnInitialize(RendererInitializationSettings& initSettings);
+
 	// This function is called before the first frame
 	void OnStart(VulkanRenderer* engine);
 

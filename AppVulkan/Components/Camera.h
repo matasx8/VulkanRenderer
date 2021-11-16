@@ -23,6 +23,8 @@ public:
 	glm::vec3 getCameraDirection() const;
 	VkSampleCountFlagBits getMSAA() const { return m_MsaaSamples; }
 
+	void LookAt(const glm::vec3 point);
+
 	void setMSAA(VkSampleCountFlagBits msaaSamples);
 
 	glm::mat4 calculateViewMatrix();
