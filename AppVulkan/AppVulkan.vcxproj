@@ -170,6 +170,7 @@
     <ClCompile Include="Components\Image.cpp" />
     <ClCompile Include="Components\Shader.cpp" />
     <ClCompile Include="GameDir\GameScript.cpp" />
+    <ClCompile Include="Runtime\RenderPass.cpp" />
     <ClCompile Include="Runtime\InstanceDataBuffer.cpp" />
     <ClCompile Include="Runtime\DescriptorPool.cpp" />
     <ClCompile Include="main.cpp" />
@@ -195,6 +196,7 @@
     <ClInclude Include="Components\Material.h" />
     <ClInclude Include="Components\Shader.h" />
     <ClInclude Include="GameDir\GameScript.h" />
+    <ClInclude Include="Runtime\RenderPass.h" />
     <ClInclude Include="Runtime\InstanceDataBuffer.h" />
     <ClInclude Include="Runtime\DescriptorPool.h" />
     <ClInclude Include="Runtime\Pipeline.h" />

@@ -359,7 +359,7 @@ void VulkanRenderer::createRenderPass()
     colourAttachment.format = swapChainImageFormat; // format to use for attachment
     colourAttachment.samples = msaaSamples; // number of samples to write or msaa
     colourAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    colourAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colourAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     colourAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colourAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
@@ -412,30 +412,13 @@ void VulkanRenderer::createRenderPass()
     subpass.pDepthStencilAttachment = &depthAttachmentReference;
     subpass.pResolveAttachments = &colorAttachmentResolveReference; 
 
-    // need to determine when layout transitions occur using subpass dependencies
-    std::array<VkSubpassDependency, 2> subpassDependencies;
-
-    //conversion from vkimagelayoutundefined to vk image layout color attachment..
-    //TRANSITION must happen after..
-    subpassDependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-    subpassDependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-    subpassDependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-    //but must happen before
-    subpassDependencies[0].dstSubpass = 0;
-    subpassDependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    subpassDependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    subpassDependencies[0].dependencyFlags = 0;
-
-    //subpass to presentation
-    //TRANSITION must happen after..
-    subpassDependencies[1].srcSubpass = 0;
-    subpassDependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    subpassDependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    //but must happen before
-    subpassDependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
-    subpassDependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-    subpassDependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-    subpassDependencies[1].dependencyFlags = 0;
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
     std::array<VkAttachmentDescription, 3> renderPassAttachments = { colourAttachment, depthAttachment, colorAttachmentResolve };
 
@@ -445,8 +428,8 @@ void VulkanRenderer::createRenderPass()
     renderPassCreateInfo.pAttachments = renderPassAttachments.data();
     renderPassCreateInfo.subpassCount = 1;
     renderPassCreateInfo.pSubpasses = &subpass;
-    renderPassCreateInfo.dependencyCount = static_cast<uint32_t>(subpassDependencies.size());
-    renderPassCreateInfo.pDependencies = subpassDependencies.data();
+    renderPassCreateInfo.dependencyCount = 1;
+    renderPassCreateInfo.pDependencies = &dependency;
 
     VkResult result = vkCreateRenderPass(mainDevice.logicalDevice, &renderPassCreateInfo, nullptr, &renderPass);
     if (result != VK_SUCCESS)
@@ -688,8 +671,6 @@ void VulkanRenderer::DrawInstanced(int index, uint32_t currentImage)
 
 void VulkanRenderer::recordCommands(uint32_t currentImage)
 {
-    // TODO: https://developer.nvidia.com/vulkan-shader-resource-binding
-    // TODO: Client-worker??
     VkCommandBufferBeginInfo bufferBeginInfo = {};
     bufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 

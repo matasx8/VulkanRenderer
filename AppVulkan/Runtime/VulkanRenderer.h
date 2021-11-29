@@ -18,6 +18,7 @@
 
 #include "NsightAftermathGpuCrashTracker.h"
 
+#include "RenderPass.h"
 #include "Utilities.h"
 #include "Mesh.h"
 #include "Model.h"
@@ -46,6 +47,7 @@ public:
 	Scene& getActiveScene() { return currentScene; }
 	float GetDeltaTime() const { return m_DeltaTime; }
 	thread_pool* const GetThreadPool() { return m_ThreadPool;}
+	void AddCustomRenderPass(RenderPassDesc& desc);
 
 	void setupDebugMessenger();
 	void draw();
