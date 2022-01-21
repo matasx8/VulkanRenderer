@@ -202,6 +202,7 @@ void Scene::updateScene(size_t index)
 {
     //Lights[0].randomize();
     // do the transformations here or before calling this func
+    //camera.Rotate();
     viewProjection.view = camera.calculateViewMatrix();
 
     for (auto& pipe : Pipelines)

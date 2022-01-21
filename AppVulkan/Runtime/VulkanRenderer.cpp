@@ -64,8 +64,8 @@ void VulkanRenderer::draw()
 {
     UpdateDeltaTime();
 
-    //currentScene.cameraKeyControl(window.getKeys(), m_DeltaTime);
-    //currentScene.cameraMouseControl(window.getXChange(), window.getYchange());
+    currentScene.cameraKeyControl(window.getKeys(), m_DeltaTime);
+    currentScene.cameraMouseControl(window.getXChange(), window.getYchange());
 
     //wait for given fence to signal open from last draw before xontinuing
     vkWaitForFences(mainDevice.logicalDevice, 1, &drawFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
@@ -79,7 +79,7 @@ void VulkanRenderer::draw()
     recordCommands(imageIndex);
 
     // weird, I'm not sure why im doing this
-    //currentScene.updateScene(imageIndex);
+    currentScene.updateScene(imageIndex);
 
     // submit command bufferto queue for execution, making sure it waits for the image to be signalled as available before drawing
     //and signals when it has finished rendering
