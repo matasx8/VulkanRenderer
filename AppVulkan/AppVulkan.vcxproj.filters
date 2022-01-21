@@ -75,6 +75,9 @@
     <ClCompile Include="Runtime\RenderPass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Containers\RenderPassManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Runtime\VulkanRenderer.h">
@@ -147,6 +150,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Runtime\RenderPass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Containers\RenderPassManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

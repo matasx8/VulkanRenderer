@@ -9,8 +9,7 @@
 #include "Texture.h"
 #include "Material.h"
 #include "Pipeline.h"
-// Contains data of models and components of the scene
-// TODO: read scene data from a .MRscene file
+#include "Containers/RenderPassManager.h"
 
 class Scene
 {
@@ -73,6 +72,7 @@ private:
 	DescriptorPool* m_DescriptorPool;
 	VkExtent2D extent;
 	size_t swapchainImageCount;
+
 
 
 	void updateModelPipesFrom(int index);

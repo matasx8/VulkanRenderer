@@ -47,7 +47,6 @@ public:
 	Scene& getActiveScene() { return currentScene; }
 	float GetDeltaTime() const { return m_DeltaTime; }
 	thread_pool* const GetThreadPool() { return m_ThreadPool;}
-	void AddCustomRenderPass(RenderPassDesc& desc);
 
 	void setupDebugMessenger();
 	void draw();
@@ -55,6 +54,9 @@ public:
 	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
 	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 	Window window;
+
+	void TemporarySetup();
+	//Image tempImage;
 
 private:
 
@@ -72,7 +74,7 @@ private:
 #ifdef NDEBUG
 	const bool enableValidationLayers = false;
 #else
-	bool enableValidationLayers = true;
+	bool enableValidationLayers = false;
 #endif
 
 	VkInstance instance;
@@ -86,6 +88,8 @@ private:
 	std::vector<SwapChainImage> swapChainImages;
 	std::vector<VkFramebuffer> swapchainFramebuffers;
 	std::vector<VkCommandBuffer> commandBuffer;
+	  
+	RenderPassManager m_RenderPassManager;
 
 	Image depthBufferImage;
 	Image colorImage;
@@ -94,8 +98,6 @@ private:
 
 	//pipeline
 	std::vector<Pipeline> Pipelines;
-
-	VkRenderPass renderPass;
 
 	//pools
 	VkCommandPool graphicsCommandPool;
@@ -119,7 +121,8 @@ private:
 	void createSurface();
 	// a queue of images that are waiting to be presented to the screen
 	void createSwapChain();
-	void createRenderPass();
+	
+	//void createRenderPass();
 	void createDepthBufferImage();
 	void createColorResources();
 	void createFramebuffers();

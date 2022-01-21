@@ -2,6 +2,7 @@
 
 void RenderPass::CreateRenderPass(const RenderPassDesc& desc)
 {
+	// setup color attachments
 	std::vector<VkAttachmentDescription> colorDescriptions;
 	if (desc.colorFormat)
 	{
@@ -14,11 +15,13 @@ void RenderPass::CreateRenderPass(const RenderPassDesc& desc)
 			colorDescriptions[i].loadOp = static_cast<VkAttachmentLoadOp>(desc.colorLoadOp);
 			colorDescriptions[i].storeOp = static_cast<VkAttachmentStoreOp>(desc.colorStoreOp);
 			if(desc.msaaCount)
+				colorDescriptions[i].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+			else
 				colorDescriptions[i].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-			colorDescriptions[i].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		}
 	}
 
+	// setup depth attachments
 	VkAttachmentDescription depthAttachment = { };
 	if (desc.depthFormat)
 	{
@@ -29,7 +32,6 @@ void RenderPass::CreateRenderPass(const RenderPassDesc& desc)
 		depthAttachment.stencilLoadOp = static_cast<VkAttachmentLoadOp>(desc.depthLoadOp);
 		depthAttachment.stencilStoreOp = static_cast<VkAttachmentStoreOp>(desc.depthStoreOp);
 		depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-		// do i need to do same for depth?
 	}
 
 	VkAttachmentDescription colorAttachmentResolve{};
@@ -67,7 +69,10 @@ void RenderPass::CreateRenderPass(const RenderPassDesc& desc)
 	VkAttachmentReference colorAttachmentResolveReference;
 	if (desc.msaaCount)
 	{
-		colorAttachmentResolveReference.attachment = 2;
+		if(desc.depthFormat)
+			colorAttachmentResolveReference.attachment = desc.colorAttachmentCount + 1;
+		else
+			colorAttachmentResolveReference.attachment = desc.colorAttachmentCount;
 		colorAttachmentResolveReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	}
 
@@ -78,14 +83,38 @@ void RenderPass::CreateRenderPass(const RenderPassDesc& desc)
 	subpass.pDepthStencilAttachment = desc.depthFormat ? &depthAttachmentReference : nullptr;
 	subpass.pResolveAttachments = desc.msaaCount ? &colorAttachmentResolveReference : nullptr;
 	
-	// so far we have 1 subpass supported so leave this
-	VkSubpassDependency dependency{};
-	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-	dependency.dstSubpass = 0;
-	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependency.srcAccessMask = 0;
-	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	//// so far we have 1 subpass supported so leave this
+	//VkSubpassDependency dependency{};
+	//dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	//dependency.dstSubpass = 0;
+	//dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	//dependency.srcAccessMask = 0;
+	//dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	//dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		// need to determine when layout transitions occur using subpass dependencies
+	std::array<VkSubpassDependency, 2> subpassDependencies;
+
+	//conversion from vkimagelayoutundefined to vk image layout color attachment..
+	//TRANSITION must happen after..
+	subpassDependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+	subpassDependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	subpassDependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	//but must happen before
+	subpassDependencies[0].dstSubpass = 0;
+	subpassDependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	subpassDependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	subpassDependencies[0].dependencyFlags = 0;
+
+	//subpass to presentation
+	//TRANSITION must happen after..
+	subpassDependencies[1].srcSubpass = 0;
+	subpassDependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	subpassDependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	//but must happen before
+	subpassDependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+	subpassDependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	subpassDependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	subpassDependencies[1].dependencyFlags = 0;
 
 	// reuse the vector we have to store all descriptions
 	if(desc.depthFormat)
@@ -100,8 +129,8 @@ void RenderPass::CreateRenderPass(const RenderPassDesc& desc)
 	renderPassCreateInfo.pAttachments = colorDescriptions.data();
 	renderPassCreateInfo.subpassCount = 1;
 	renderPassCreateInfo.pSubpasses = &subpass;
-	renderPassCreateInfo.dependencyCount = 1;
-	renderPassCreateInfo.pDependencies = &dependency;
+	renderPassCreateInfo.dependencyCount = 2;
+	renderPassCreateInfo.pDependencies = subpassDependencies.data();
 
 	auto device = GetGraphicsDevice();
 	VkResult result = vkCreateRenderPass(device.logicalDevice, &renderPassCreateInfo, nullptr, &m_RenderPass);
@@ -109,9 +138,17 @@ void RenderPass::CreateRenderPass(const RenderPassDesc& desc)
 	{
 		throw std::runtime_error("Failed to create a Render Pass");
 	}
-	// since we wont be just drawing to the backbuffer make sure to figure out if the dependency is right
-	// should probably make pipeline container and make it a hash table
-	// since 1 mesh should be able to have its own material (not model)
-	// maybe keep meshes sorted and not models (don't know what do with instanced then..)
-	// anyway continue thinking..
+}
+
+void RenderPass::Destroy()
+{
+	auto device = GetGraphicsDevice();
+	vkDestroyRenderPass(device.logicalDevice, m_RenderPass, nullptr);
+}
+
+void RenderPass::DrawQuad(Material material)
+{
+	// should make a material manager and I should only record the index (or something like that) of the material
+	// will probably be have to have fast random access
+	mat = material;
 }

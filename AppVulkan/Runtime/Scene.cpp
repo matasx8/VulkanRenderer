@@ -17,6 +17,8 @@ Scene::Scene(VkQueue graphicsQueue, VkCommandPool graphicsCommandPool, VkPhysica
 
     camera.setMSAA(msaaSamples);
 
+   // m_RenderPassManager; construct maybe
+
     //TODO put in initilizer list
     viewProjection.projection = glm::perspective(glm::radians(45.0f), (float)extent.width / (float)extent.height, 0.1f, 1000.0f);
     viewProjection.view = glm::lookAt(glm::vec3(0.0f, 30.0f, 100.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -28,7 +30,9 @@ ModelHandle Scene::AddModel(std::string fileName, Material material, VkRenderPas
 {
     tmp_RenderPass = renderPass;
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals | aiProcess_JoinIdenticalVertices);
+    std::string withPrefix = "Models/";
+    withPrefix += fileName;
+    const aiScene* scene = importer.ReadFile(withPrefix, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals | aiProcess_JoinIdenticalVertices);
     if (!scene)
     {
         throw std::runtime_error("Failed to load model! (" + fileName + ")");
@@ -62,7 +66,7 @@ ModelHandle Scene::AddModel(std::string fileName, Material material, VkRenderPas
     std::vector<Mesh> modelMeshes = Model::LoadNode(physicalDevice, logicalDevice, graphicsQueue, graphicsCommandPool,
         scene->mRootNode, scene, matToTex);
 
-    Model meshModel = Model(modelMeshes, material.IsInstanced());
+    Model meshModel(modelMeshes, material.IsInstanced());
     
 
     uint32_t texturesFrom = (oldTexturesSize != Textures.size()) ? oldTexturesSize : 0;

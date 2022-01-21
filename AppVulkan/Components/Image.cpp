@@ -57,10 +57,6 @@ void Image::createImageView(VkFormat format, VkImageAspectFlags aspectFlags, VkD
     viewCreateInfo.image = m_Image; // image to create view for
     viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
     viewCreateInfo.format = format; //format of image data
-    viewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY; //allows remapping of rgba components to other rgba vlues
-    viewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-    viewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-    viewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
 
     //subresources allow the view to view only a part of an image
     viewCreateInfo.subresourceRange.aspectMask = aspectFlags; //which aspect of image to view (e.g. color_bit for viewing color)
