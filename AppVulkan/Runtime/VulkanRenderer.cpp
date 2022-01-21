@@ -19,7 +19,7 @@ int VulkanRenderer::init(const RendererInitializationSettings& initSettings)
         EnableCrashDumps();
         compileShaders();
         createInstance();
-        CreateThreadPool(initSettings.numThreadsInPool);
+        //CreateThreadPool(initSettings.numThreadsInPool);
         createSurface();
         setupDebugMessenger();
         getPhysicalDevice();
@@ -201,6 +201,12 @@ void VulkanRenderer::TemporarySetup()
     m_RenderPassManager.AddExampleRenderPass();
     createFramebuffers();
     createCommandBuffers();
+    m_ModelManager.LoadDefaultModels();
+
+    // I think I made model loading slightly better, now figure out how to assign it material
+    // then try rendering that model
+    // 
+
     // Add tmp model
     {
     ShaderCreateInfo shaderInfo = { "Shaders/shader_vert.spv", "Shaders/shader_frag.spv" };
@@ -589,6 +595,64 @@ void VulkanRenderer::UpdateDeltaTime()
 //{
 //    currentScene.AddModel(fileName, material, renderPass);
 //}
+
+Mesh LoadMesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue transferQueue, VkCommandPool transferCommandPool, aiMesh* mesh, const aiScene* scene)
+{
+    std::vector<Vertex> vertices;
+    std::vector<uint32_t> indices;
+
+    //resize vertex list to hold all vertices for mesh
+    vertices.resize(mesh->mNumVertices);
+
+    for (size_t i = 0; i < mesh->mNumVertices; i++)
+    {
+        // set position
+        vertices[i].pos = { mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
+
+        // set tex coords (if they exist)
+        if (mesh->mTextureCoords[0])
+        {
+            vertices[i].tex = { mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y };
+        }
+        else
+        {
+            vertices[i].tex = { 0.0f, 0.0f };
+        }
+
+        vertices[i].norm = { mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z };
+    }
+
+    // iterate over indices through faces and copy across
+    for (size_t i = 0; i < mesh->mNumFaces; i++)
+    {
+        // get a face
+        aiFace face = mesh->mFaces[i];
+
+        // go through face's indices and add to list
+        for (size_t j = 0; j < face.mNumIndices; j++)
+        {
+            indices.push_back(face.mIndices[j]);
+        }
+    }
+
+    //create new mesh with details and return it
+    Mesh newMesh = Mesh(newPhysicalDevice, newDevice, transferQueue, transferCommandPool, &vertices, &indices);
+
+    return newMesh;
+}
+
+void VulkanRenderer::LoadNode(std::vector<Mesh>& meshList, aiNode* node, const aiScene* scene)
+{
+    // go through each mesh at this node and create it, then add it to our meshlist
+    for (size_t i = 0; i < node->mNumMeshes; i++)
+    {
+        meshList.push_back(LoadMesh(mainDevice.physicalDevice, mainDevice.logicalDevice, graphicsQueue, graphicsCommandPool, scene->mMeshes[node->mMeshes[i]], scene));
+    }
+
+    // go through each node attached to this node and load it, then append their meshes to this node's mesh list
+    for (size_t i = 0; i < node->mNumChildren; i++)
+        LoadNode(meshList, node->mChildren[i], scene);
+}
 
 void VulkanRenderer::DrawInstanced(int index, uint32_t currentImage)
 {

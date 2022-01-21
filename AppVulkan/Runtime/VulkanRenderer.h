@@ -32,6 +32,8 @@
 #include "Image.h"
 #include "DescriptorPool.h"
 #include "InstanceDataBuffer.h"
+#include "Containers/ModelManager.h"
+#include "OSUtilities.h"
 
 //#define DEBUG_LOGS;
 #define DEBUG
@@ -55,10 +57,9 @@ public:
 	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 	Window window;
 
-	void TemporarySetup();
-	//Image tempImage;
-
 private:
+
+	friend class ModelManager;
 
 	int currentFrame = 0;
 	float m_DeltaTime;
@@ -135,11 +136,14 @@ private:
 	void CreateThreadPool(uint32_t numThreads);
 	void EnableCrashDumps();
 
+	void TemporarySetup();
+
 	void compileShaders();
 
 	void UpdateDeltaTime();
 
 	void AddModel(std::string fileName, Material material);
+	void LoadNode(std::vector<Mesh>& meshList, aiNode* node, const aiScene* scene);
 
 	void DrawInstanced(int instancedModelIndex, uint32_t currentImage);
 

@@ -2,11 +2,13 @@
 #include "Model.h"
 #include <mutex>;
 
+class VulkanRenderer;
+
 class ModelManager
 {
 public:
-	ModelManager();
-	ModelManager(bool isThreadedImport);
+	ModelManager(VulkanRenderer& gfxEngine);
+	ModelManager(VulkanRenderer& gfxEngine, bool isThreadedImport);
 
 	void LoadDefaultModels();
 
@@ -21,5 +23,7 @@ private:
 	std::vector<Model> m_Models;
 	// for now create threads on demand
 	bool m_ThreadedImport;
+
+	VulkanRenderer& m_GfxEngine;
 };
 

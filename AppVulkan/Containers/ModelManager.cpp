@@ -1,18 +1,16 @@
-#include "ModelManager.h"
-#include "OSUtilities.h"
-#include "Debug.h"
+#include "VulkanRenderer.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <thread-pool/thread_pool.hpp>
 
-ModelManager::ModelManager()
-	:m_Models(), m_ThreadedImport(true)
+ModelManager::ModelManager(VulkanRenderer& gfxEngine)
+    :m_Mutex(), m_Models(), m_ThreadedImport(true), m_GfxEngine(gfxEngine)
 {
 }
 
-ModelManager::ModelManager(bool isThreadedImport)
-	: m_Models(), m_ThreadedImport(isThreadedImport)
+ModelManager::ModelManager(VulkanRenderer& gfxEngine, bool isThreadedImport)
+	: m_Mutex(), m_Models(), m_ThreadedImport(isThreadedImport), m_GfxEngine(gfxEngine)
 {
 }
 
@@ -41,6 +39,10 @@ void ModelManager::LoadModelsThreaded(std::vector<std::string>* paths)
 
 void ModelManager::LoadModelsNonThreaded(std::vector<std::string>* paths)
 {
+    for (auto& path : *paths)
+    {
+        LoadModel(path);
+    }
 }
 
 void ModelManager::LoadModel(std::string& path)
@@ -52,14 +54,10 @@ void ModelManager::LoadModel(std::string& path)
         throw std::runtime_error("Failed to load model! (" + path + ")");
     }
 
-    //!HERE:
-    // current plan is to move models to model manager, this will be the container for our models
-    // will make stuff more loosely coupled and make development easier.
-    // make vulkanrenderer behave similarly like gfxdevice so we dont have to keep api logic in model class
-    // now just load the mesh, dont want to deal withmaterial loading.
-    std::vector<Mesh> modelMeshes = Model::LoadNode(physicalDevice, logicalDevice, graphicsQueue, graphicsCommandPool,
-        scene->mRootNode, scene, matToTex);
+    std::vector<Mesh> modelMeshes;
+    m_GfxEngine.LoadNode(modelMeshes, scene->mRootNode, scene);
 
-    Model meshModel(modelMeshes, material.IsInstanced());
+    Model meshModel(modelMeshes, false);
     std::unique_lock<std::mutex> lock(m_Mutex);
+    m_Models.push_back(meshModel);
 }
