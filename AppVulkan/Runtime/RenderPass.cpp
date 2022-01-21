@@ -83,38 +83,14 @@ void RenderPass::CreateRenderPass(const RenderPassDesc& desc)
 	subpass.pDepthStencilAttachment = desc.depthFormat ? &depthAttachmentReference : nullptr;
 	subpass.pResolveAttachments = desc.msaaCount ? &colorAttachmentResolveReference : nullptr;
 	
-	//// so far we have 1 subpass supported so leave this
-	//VkSubpassDependency dependency{};
-	//dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-	//dependency.dstSubpass = 0;
-	//dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	//dependency.srcAccessMask = 0;
-	//dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	//dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		// need to determine when layout transitions occur using subpass dependencies
-	std::array<VkSubpassDependency, 2> subpassDependencies;
-
-	//conversion from vkimagelayoutundefined to vk image layout color attachment..
-	//TRANSITION must happen after..
-	subpassDependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-	subpassDependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-	subpassDependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-	//but must happen before
-	subpassDependencies[0].dstSubpass = 0;
-	subpassDependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	subpassDependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	subpassDependencies[0].dependencyFlags = 0;
-
-	//subpass to presentation
-	//TRANSITION must happen after..
-	subpassDependencies[1].srcSubpass = 0;
-	subpassDependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	subpassDependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	//but must happen before
-	subpassDependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
-	subpassDependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-	subpassDependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-	subpassDependencies[1].dependencyFlags = 0;
+	// so far we have 1 subpass supported so leave this
+	VkSubpassDependency dependency{};
+	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependency.dstSubpass = 0;
+	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.srcAccessMask = 0;
+	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
 	// reuse the vector we have to store all descriptions
 	if(desc.depthFormat)
@@ -129,8 +105,8 @@ void RenderPass::CreateRenderPass(const RenderPassDesc& desc)
 	renderPassCreateInfo.pAttachments = colorDescriptions.data();
 	renderPassCreateInfo.subpassCount = 1;
 	renderPassCreateInfo.pSubpasses = &subpass;
-	renderPassCreateInfo.dependencyCount = 2;
-	renderPassCreateInfo.pDependencies = subpassDependencies.data();
+	renderPassCreateInfo.dependencyCount = 1;
+	renderPassCreateInfo.pDependencies = &dependency;
 
 	auto device = GetGraphicsDevice();
 	VkResult result = vkCreateRenderPass(device.logicalDevice, &renderPassCreateInfo, nullptr, &m_RenderPass);

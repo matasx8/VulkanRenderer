@@ -11,7 +11,7 @@ void RenderPassManager::AddRenderPass(RenderPassDesc& desc, RenderPass& renderPa
 
 void RenderPassManager::AddExampleRenderPass()
 {
-	ShaderCreateInfo shaderInfo = { "Shaders/fractal_vert.spv", "Shaders/fractal_frag.spv" };
+	ShaderCreateInfo shaderInfo = { "Shaders/shader.spv", "Shaders/shader.spv" };
 	shaderInfo.uniformCount = 0;
 	shaderInfo.pushConstantSize = 0;
 	shaderInfo.shaderFlags = 0;
@@ -26,10 +26,10 @@ void RenderPassManager::AddExampleRenderPass()
 		kTargetSwapchain,
 		1,
 		VK_FORMAT_B8G8R8A8_UNORM,
-		kLoadOpDontCare,
+		kLoadOpClear,
 		kStoreOpStore,					// what happens if its dont care on swapchain?
 		VK_FORMAT_D32_SFLOAT_S8_UINT,
-		kLoadOpDontCare,
+		kLoadOpClear,
 		kStoreOpStore
 	};
 
