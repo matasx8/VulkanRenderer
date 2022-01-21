@@ -26,6 +26,7 @@ namespace Debug
 	}
 
 	// Logs a message that is null terminated
+	// TODO: make it like printf;
 	static void LogMsg(const char* msg)
 	{
 		printf("[Debug Message] %s\n", msg);

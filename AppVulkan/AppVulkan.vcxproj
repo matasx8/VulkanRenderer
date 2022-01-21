@@ -171,6 +171,8 @@
     <ClCompile Include="Components\Shader.cpp" />
     <ClCompile Include="GameDir\GameScript.cpp" />
     <ClCompile Include="Containers\RenderPassManager.cpp" />
+    <ClCompile Include="Containers\ModelManager.cpp" />
+    <ClCompile Include="Utils\OSUtilities.cpp" />
     <ClCompile Include="Runtime\RenderPass.cpp" />
     <ClCompile Include="Runtime\InstanceDataBuffer.cpp" />
     <ClCompile Include="Runtime\DescriptorPool.cpp" />
@@ -198,6 +200,8 @@
     <ClInclude Include="Components\Shader.h" />
     <ClInclude Include="GameDir\GameScript.h" />
     <ClInclude Include="Containers\RenderPassManager.h" />
+    <ClInclude Include="Containers\ModelManager.h" />
+    <ClInclude Include="Utils\OSUtilities.h" />
     <ClInclude Include="Runtime\RenderPass.h" />
     <ClInclude Include="Runtime\InstanceDataBuffer.h" />
     <ClInclude Include="Runtime\DescriptorPool.h" />
