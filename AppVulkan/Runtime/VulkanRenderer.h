@@ -1,4 +1,8 @@
 // TODO: #define VK_check_result
+// TODO: improve aftermath (dump in seperate folder that is untracked by repo)
+// TODO: improve compiling by moving as many headers to cpp files
+// TODO: implement or find a better job system impl
+// TODO: if we don't find validation layers, don't use them
 #pragma once
 #include <stdexcept>
 #include <vector>
@@ -33,6 +37,7 @@
 #include "DescriptorPool.h"
 #include "InstanceDataBuffer.h"
 #include "Containers/ModelManager.h"
+#include "Containers/MaterialManager.h"
 #include "OSUtilities.h"
 
 //#define DEBUG_LOGS;
@@ -60,6 +65,7 @@ public:
 private:
 
 	friend class ModelManager;
+	friend class MaterialManager;
 
 	int currentFrame = 0;
 	float m_DeltaTime;
@@ -68,7 +74,7 @@ private:
 	//-- SCENE ---
 	Scene currentScene;
 
-	const std::vector<const char*> validationLayers = {//TODO: add more? - yes
+	const std::vector<const char*> validationLayers = {
 "VK_LAYER_KHRONOS_validation"
 	};
 

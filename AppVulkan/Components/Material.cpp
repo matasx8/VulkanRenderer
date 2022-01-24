@@ -1,13 +1,8 @@
 #include "Material.h"
 
-Material::Material()
+Material::Material(size_t id, ShaderCreateInfo& shaderInfo)
+	: m_ID(id), m_Shader(shaderInfo)
 {
-
-}
-
-Material::Material(ShaderCreateInfo& shaderInfo)
-{
-	m_Shader = Shader(shaderInfo);
 }
 
 const char* Material::getVertexShader() const

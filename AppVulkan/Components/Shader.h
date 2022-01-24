@@ -19,7 +19,6 @@ struct UniformData
 	std::vector<size_t> sizes;
 	// make sure that dataBuffers passed here are from NonCopyables
 	std::vector<void*> dataBuffers;
-	// this won't work, right?
 	std::string name;
 
 	size_t getTotalDataSize() const

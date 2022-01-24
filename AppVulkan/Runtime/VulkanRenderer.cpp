@@ -203,39 +203,8 @@ void VulkanRenderer::TemporarySetup()
     createFramebuffers();
     createCommandBuffers();
     m_ModelManager.LoadDefaultModels();
+    m_MaterialManager.InitializeDefaultMaterials();
 
-    // Loading models seems to work, next step is make a Material Manager or something
-    // we need to handle material creation and of course the low level gfx stuff that comes with it
-
-    // Add tmp model
-    {
-    ShaderCreateInfo shaderInfo = { "Shaders/shader_vert.spv", "Shaders/shader_frag.spv" };
-    shaderInfo.uniformCount = 3;
-
-    std::vector<UniformData> UniformDatas(3);
-    UniformDatas[0].name = "ViewProjection uniform";
-    UniformDatas[0].sizes = { sizeof(ViewProjectionMatrix) };
-    UniformDatas[0].dataBuffers = { currentScene.getViewProjectionPtr() };
-
-    Light& light = currentScene.getLight(0);
-    UniformDatas[1].name = "Light uniform";
-    UniformDatas[1].sizes = { sizeof(glm::vec4), sizeof(glm::vec4) };
-    UniformDatas[1].dataBuffers = { &light.m_Position, &light.m_Colour };
-
-    Camera& camera = currentScene.getCamera();
-    UniformDatas[2].name = "Camera";
-    UniformDatas[2].sizes = { sizeof(glm::vec4) };
-    UniformDatas[2].dataBuffers = { &camera.getCameraPosition() };
-
-    shaderInfo.uniformData = std::move(UniformDatas);
-    shaderInfo.pushConstantSize = 0;
-    shaderInfo.shaderFlags = kUseModelMatrixForPushConstant;
-    shaderInfo.isInstanced = false;
-
-    Material material1 = Material(shaderInfo);
-
-    //currentScene.AddModel("duck2.obj", material1, m_RenderPassManager.GetRenderPass());
-    } // Add tmp model
     
 }
 
@@ -527,42 +496,6 @@ void VulkanRenderer::createLight()
     currentScene.addLight();
 }
 
-void VulkanRenderer::createInitialScene()
-{
-    throw std::runtime_error("Not usable anymore");
-
-
-    currentScene = Scene(graphicsQueue, graphicsCommandPool, mainDevice.physicalDevice, mainDevice.logicalDevice,swapChainImages.size(), swapChainExtent, msaaSamples, &m_DescriptorPool);
-
-   // currentScene.addLight();
-
-    //initial model
-    ShaderCreateInfo shaderInfo = { "Shaders/shader_vert.spv", "Shaders/shader_frag.spv" };
-    shaderInfo.uniformCount = 3;
-
-    std::vector<UniformData> UniformDatas(3);
-        UniformDatas[0].name = "ViewProjection uniform";
-        UniformDatas[0].sizes = { sizeof(ViewProjectionMatrix) };
-        UniformDatas[0].dataBuffers = { currentScene.getViewProjectionPtr() };
-
-        Light& light = currentScene.getLight(0);
-        UniformDatas[1].name = "Light uniform";
-        UniformDatas[1].sizes = { sizeof(glm::vec4), sizeof(glm::vec4) };
-        UniformDatas[1].dataBuffers = { &light.m_Position, &light.m_Colour };
-
-        Camera& camera = currentScene.getCamera();
-        UniformDatas[2].name = "Camera";
-        UniformDatas[2].sizes = { sizeof(glm::vec4) };
-        UniformDatas[2].dataBuffers = { &camera.getCameraPosition() };
-
-    shaderInfo.uniformData = std::move(UniformDatas);
-    shaderInfo.pushConstantSize = 0;
-    shaderInfo.shaderFlags = kUseModelMatrixForPushConstant;
-    shaderInfo.isInstanced = false;
-    Material initialMaterial = Material(shaderInfo);
-    //currentScene.AddModel("Models/12140_Skull_v3_L2.obj", initialMaterial, renderPass);
-}
-
 void VulkanRenderer::CreateDescriptorPool()
 {
     m_DescriptorPool.CreateDescriptorPool(mainDevice.logicalDevice);
@@ -590,11 +523,6 @@ void VulkanRenderer::UpdateDeltaTime()
     m_DeltaTime = now - m_LastTime;
     m_LastTime = now;
 }
-
-//void VulkanRenderer::AddModel(std::string fileName, Material material)
-//{
-//    currentScene.AddModel(fileName, material, renderPass);
-//}
 
 Mesh LoadMesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue transferQueue, VkCommandPool transferCommandPool, aiMesh* mesh, const aiScene* scene)
 {
@@ -654,106 +582,6 @@ void VulkanRenderer::LoadNode(std::vector<Mesh>& meshList, aiNode* node, const a
         LoadNode(meshList, node->mChildren[i], scene);
 }
 
-void VulkanRenderer::DrawInstanced(int index, uint32_t currentImage)
-{
-    //auto& Models = currentScene.getModels();
-    //int currentPipelineIndex = static_cast<int>(Models[index].getPipelineIndex());
-    //Pipeline& gfxPipeline = currentScene.getPipeline(currentPipelineIndex);
-    //int meshCount = Models[index].getMeshCount();
-
-    //if (gfxPipeline.hasPushConstant())
-    //{
-    //    uint32_t size = gfxPipeline.getPushConstantSize();
-    //    const void* pushDataBuffer = gfxPipeline.getPushConstantDataBuffer();
-    //    vkCmdPushConstants(commandBuffer[currentImage], gfxPipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, size, pushDataBuffer);    
-    //}
-
-    //VkDeviceSize offsets[] = { 0 }; //offsets into buffers being bound
-    //VkBuffer instanceBuffers[] = { m_InstancingBuffers[currentImage].GetInstanceData() };
-    //vkCmdBindVertexBuffers(commandBuffer[currentImage], 1, 1, instanceBuffers, offsets);
-    //// try to bind instance buffer once
-    //for (size_t i = 0; i < Models[index].getMeshCount(); i++)
-    //{
-    //    VkBuffer vertexBuffers[] = { Models[index].getMesh(i)->getVertexBuffer() };
-    //    
-    //    vkCmdBindVertexBuffers(commandBuffer[currentImage], 0, 1, vertexBuffers, offsets);
-    //    vkCmdBindIndexBuffer(commandBuffer[currentImage], Models[index].getMesh(i)->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
-
-    //    auto descriptorSet = gfxPipeline.getDescriptorSet(currentImage);
-    //    int texId = Models[index].getMesh(i)->getTexId();
-    //    auto textureDescriptorSet = currentScene.getTextureDescriptorSet(texId);
-    //    std::array<VkDescriptorSet, 2> descriptorSetGroup = { descriptorSet, textureDescriptorSet };
-
-    //    // bind descriptor sets
-    //    vkCmdBindDescriptorSets(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, gfxPipeline.getPipelineLayout(),
-    //        0, static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr);// will only apply offset to descriptors that are dynamic
-    //    vkCmdDrawIndexed(commandBuffer[currentImage], Models[index].getMesh(i)->getIndexCount(), m_InstancingBuffers[currentImage].GetElementCount(), 0, 0, 0);
-    //}
-    //m_InstancingBuffers[currentImage].Reset();
-}
-
-void oldRecord(uint32_t currentImage)
-{/*
-    VkCommandBufferBeginInfo bufferBeginInfo = {};
-    bufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-    VkRenderPassBeginInfo renderPassBeginInfo = {};
-    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassBeginInfo.renderPass = renderPass;
-    renderPassBeginInfo.renderArea.offset = { 0, 0 }; //start point of render pass in pixels
-    renderPassBeginInfo.renderArea.extent = swapChainExtent; // size of region t run render pass
-
-    std::array<VkClearValue, 2> clearValues = {};
-    clearValues[0].color = { 0.5f, 0.65f, 0.4f, 1.0f };
-    clearValues[1].depthStencil.depth = 1.0f;
-    renderPassBeginInfo.pClearValues = clearValues.data(); // list of clear values
-    renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-
-    renderPassBeginInfo.framebuffer = swapchainFramebuffers[currentImage];
-
-    VkResult result = vkBeginCommandBuffer(commandBuffer[currentImage], &bufferBeginInfo);
-    if (result != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to start recording a Command Buffer");
-    }
-
-    vkCmdBeginRenderPass(commandBuffer[currentImage], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-    std::vector<Model>& Models = currentScene.getModels();
-    int lastPipelineIndex = -1;
-
-    for (size_t i = 0; i < Models.size(); i++)
-    {
-        Model& model = Models[i];
-        if (model.IsHidden())
-            continue;
-
-
-        int currentPipelineIndex = model.getPipelineIndex();
-        // pipeline indices should be sorted
-        if (currentPipelineIndex > lastPipelineIndex)
-        {
-            VkPipeline newPipeline = currentScene.getPipeline(currentPipelineIndex).getPipeline();
-            vkCmdBindPipeline(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, newPipeline);
-            lastPipelineIndex = currentPipelineIndex;
-        }
-#ifdef DEBUG
-        else if (currentPipelineIndex < lastPipelineIndex)
-            throw std::runtime_error("Current pipeline index was lesser than old one. This indicates Model vector was not sorted.");
-#endif
-        recordingDefaultPath(currentPipelineIndex, model, currentImage);
-    }
-
-    vkCmdEndRenderPass(commandBuffer[currentImage]);
-
-    //stop recording to command buffer
-    result = vkEndCommandBuffer(commandBuffer[currentImage]);
-    if (result != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to stop recording a Command Buffer");
-    }*/
-}
-
 void VulkanRenderer::recordCommands(uint32_t currentImage)
 {
     VkCommandBufferBeginInfo bufferBeginInfo = {};
@@ -781,6 +609,15 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
 
     vkCmdBeginRenderPass(commandBuffer[currentImage], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
+
+    // for(iterator it = m_ModelManager.start(); it != end; it++)
+    //{
+    // if(mesh.canntRender())
+    // return;
+    // m_MaterialManager.BindMaterial(mesh.getMaterialID())
+    // bindVBO()
+    // draw
+    // end
 //    std::vector<Model>& Models = currentScene.getModels();
 //    int lastPipelineIndex = -1;
 //
