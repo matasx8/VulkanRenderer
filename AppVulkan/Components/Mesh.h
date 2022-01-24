@@ -2,9 +2,7 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-
 #include <vector>
-
 #include "Utilities.h"
 
 class Mesh
@@ -31,6 +29,8 @@ private:
 	uint32_t indexCount;
 	VkBuffer indexBuffer;
 	VkDeviceMemory indexBufferMemory;
+
+	uint32_t m_MaterialId;
 	
 	void createVertexBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkQueue transferQueue, VkCommandPool transferCommandPool, std::vector<Vertex>* vertices);
 	void createIndexBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkQueue transferQueue, VkCommandPool transferCommandPool, std::vector<uint32_t>* indices);

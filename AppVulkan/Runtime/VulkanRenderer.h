@@ -91,6 +91,7 @@ private:
 	std::vector<VkCommandBuffer> commandBuffer;
 	  
 	RenderPassManager m_RenderPassManager;
+	ModelManager m_ModelManager;
 
 	Image depthBufferImage;
 	Image colorImage;

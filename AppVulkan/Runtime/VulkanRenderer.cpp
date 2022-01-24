@@ -2,12 +2,13 @@
 #include <iostream>
 
 VulkanRenderer::VulkanRenderer() 
+    : m_ModelManager(*this, true)
 {
     m_DeltaTime = 0;
     m_LastTime = 0;
     m_InstancingBuffers;
     m_RenderPassManager;
-} // TODO: initialize variables
+}
 
 int VulkanRenderer::init(const RendererInitializationSettings& initSettings)
 {
@@ -203,9 +204,8 @@ void VulkanRenderer::TemporarySetup()
     createCommandBuffers();
     m_ModelManager.LoadDefaultModels();
 
-    // I think I made model loading slightly better, now figure out how to assign it material
-    // then try rendering that model
-    // 
+    // Loading models seems to work, next step is make a Material Manager or something
+    // we need to handle material creation and of course the low level gfx stuff that comes with it
 
     // Add tmp model
     {
@@ -234,7 +234,7 @@ void VulkanRenderer::TemporarySetup()
 
     Material material1 = Material(shaderInfo);
 
-    currentScene.AddModel("duck2.obj", material1, m_RenderPassManager.GetRenderPass());
+    //currentScene.AddModel("duck2.obj", material1, m_RenderPassManager.GetRenderPass());
     } // Add tmp model
     
 }
@@ -656,40 +656,40 @@ void VulkanRenderer::LoadNode(std::vector<Mesh>& meshList, aiNode* node, const a
 
 void VulkanRenderer::DrawInstanced(int index, uint32_t currentImage)
 {
-    auto& Models = currentScene.getModels();
-    int currentPipelineIndex = static_cast<int>(Models[index].getPipelineIndex());
-    Pipeline& gfxPipeline = currentScene.getPipeline(currentPipelineIndex);
-    int meshCount = Models[index].getMeshCount();
+    //auto& Models = currentScene.getModels();
+    //int currentPipelineIndex = static_cast<int>(Models[index].getPipelineIndex());
+    //Pipeline& gfxPipeline = currentScene.getPipeline(currentPipelineIndex);
+    //int meshCount = Models[index].getMeshCount();
 
-    if (gfxPipeline.hasPushConstant())
-    {
-        uint32_t size = gfxPipeline.getPushConstantSize();
-        const void* pushDataBuffer = gfxPipeline.getPushConstantDataBuffer();
-        vkCmdPushConstants(commandBuffer[currentImage], gfxPipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, size, pushDataBuffer);    
-    }
+    //if (gfxPipeline.hasPushConstant())
+    //{
+    //    uint32_t size = gfxPipeline.getPushConstantSize();
+    //    const void* pushDataBuffer = gfxPipeline.getPushConstantDataBuffer();
+    //    vkCmdPushConstants(commandBuffer[currentImage], gfxPipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, size, pushDataBuffer);    
+    //}
 
-    VkDeviceSize offsets[] = { 0 }; //offsets into buffers being bound
-    VkBuffer instanceBuffers[] = { m_InstancingBuffers[currentImage].GetInstanceData() };
-    vkCmdBindVertexBuffers(commandBuffer[currentImage], 1, 1, instanceBuffers, offsets);
-    // try to bind instance buffer once
-    for (size_t i = 0; i < Models[index].getMeshCount(); i++)
-    {
-        VkBuffer vertexBuffers[] = { Models[index].getMesh(i)->getVertexBuffer() };
-        
-        vkCmdBindVertexBuffers(commandBuffer[currentImage], 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(commandBuffer[currentImage], Models[index].getMesh(i)->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+    //VkDeviceSize offsets[] = { 0 }; //offsets into buffers being bound
+    //VkBuffer instanceBuffers[] = { m_InstancingBuffers[currentImage].GetInstanceData() };
+    //vkCmdBindVertexBuffers(commandBuffer[currentImage], 1, 1, instanceBuffers, offsets);
+    //// try to bind instance buffer once
+    //for (size_t i = 0; i < Models[index].getMeshCount(); i++)
+    //{
+    //    VkBuffer vertexBuffers[] = { Models[index].getMesh(i)->getVertexBuffer() };
+    //    
+    //    vkCmdBindVertexBuffers(commandBuffer[currentImage], 0, 1, vertexBuffers, offsets);
+    //    vkCmdBindIndexBuffer(commandBuffer[currentImage], Models[index].getMesh(i)->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
-        auto descriptorSet = gfxPipeline.getDescriptorSet(currentImage);
-        int texId = Models[index].getMesh(i)->getTexId();
-        auto textureDescriptorSet = currentScene.getTextureDescriptorSet(texId);
-        std::array<VkDescriptorSet, 2> descriptorSetGroup = { descriptorSet, textureDescriptorSet };
+    //    auto descriptorSet = gfxPipeline.getDescriptorSet(currentImage);
+    //    int texId = Models[index].getMesh(i)->getTexId();
+    //    auto textureDescriptorSet = currentScene.getTextureDescriptorSet(texId);
+    //    std::array<VkDescriptorSet, 2> descriptorSetGroup = { descriptorSet, textureDescriptorSet };
 
-        // bind descriptor sets
-        vkCmdBindDescriptorSets(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, gfxPipeline.getPipelineLayout(),
-            0, static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr);// will only apply offset to descriptors that are dynamic
-        vkCmdDrawIndexed(commandBuffer[currentImage], Models[index].getMesh(i)->getIndexCount(), m_InstancingBuffers[currentImage].GetElementCount(), 0, 0, 0);
-    }
-    m_InstancingBuffers[currentImage].Reset();
+    //    // bind descriptor sets
+    //    vkCmdBindDescriptorSets(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, gfxPipeline.getPipelineLayout(),
+    //        0, static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr);// will only apply offset to descriptors that are dynamic
+    //    vkCmdDrawIndexed(commandBuffer[currentImage], Models[index].getMesh(i)->getIndexCount(), m_InstancingBuffers[currentImage].GetElementCount(), 0, 0, 0);
+    //}
+    //m_InstancingBuffers[currentImage].Reset();
 }
 
 void oldRecord(uint32_t currentImage)
@@ -781,30 +781,30 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
 
     vkCmdBeginRenderPass(commandBuffer[currentImage], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    std::vector<Model>& Models = currentScene.getModels();
-    int lastPipelineIndex = -1;
-
-    for(size_t i = 0; i < Models.size(); i++)
-    {
-        Model& model = Models[i];
-        if (model.IsHidden())
-            continue;
-
-
-        int currentPipelineIndex = model.getPipelineIndex();
-        // pipeline indices should be sorted
-        if (currentPipelineIndex > lastPipelineIndex)
-        {
-            VkPipeline newPipeline = currentScene.getPipeline(currentPipelineIndex).getPipeline();
-            vkCmdBindPipeline(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, newPipeline);
-            lastPipelineIndex = currentPipelineIndex;
-        }
-#ifdef DEBUG
-        else if (currentPipelineIndex < lastPipelineIndex)
-            throw std::runtime_error("Current pipeline index was lesser than old one. This indicates Model vector was not sorted.");
-#endif
-            recordingDefaultPath(currentPipelineIndex, model, currentImage);
-    }
+//    std::vector<Model>& Models = currentScene.getModels();
+//    int lastPipelineIndex = -1;
+//
+//    for(size_t i = 0; i < Models.size(); i++)
+//    {
+//        Model& model = Models[i];
+//        if (model.IsHidden())
+//            continue;
+//
+//
+//        int currentPipelineIndex = model.getPipelineIndex();
+//        // pipeline indices should be sorted
+//        if (currentPipelineIndex > lastPipelineIndex)
+//        {
+//            VkPipeline newPipeline = currentScene.getPipeline(currentPipelineIndex).getPipeline();
+//            vkCmdBindPipeline(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, newPipeline);
+//            lastPipelineIndex = currentPipelineIndex;
+//        }
+//#ifdef DEBUG
+//        else if (currentPipelineIndex < lastPipelineIndex)
+//            throw std::runtime_error("Current pipeline index was lesser than old one. This indicates Model vector was not sorted.");
+//#endif
+//            //recordingDefaultPath(currentPipelineIndex, model, currentImage);
+//    }
 
     vkCmdEndRenderPass(commandBuffer[currentImage]);
 
@@ -859,15 +859,15 @@ void VulkanRenderer::recordingDefaultPath(int currentPipelineIndex, Model& model
 
             // TODO: VVVVVVVVVVVVVVVVVVVVVVVVVVVVV bad
             auto descriptorSet = gfxPipeline.getDescriptorSet(currentImage);
-            int texId = model.getMesh(k)->getTexId();
-            auto textureDescriptorSet = currentScene.getTextureDescriptorSet(texId);
-            std::array<VkDescriptorSet, 2> descriptorSetGroup = { descriptorSet, textureDescriptorSet };
+            //int texId = model.getMesh(k)->getTexId();
+            //auto textureDescriptorSet = currentScene.getTextureDescriptorSet(texId);
+            //std::array<VkDescriptorSet, 2> descriptorSetGroup = { descriptorSet, textureDescriptorSet };
 
             // bind descriptor sets
-            vkCmdBindDescriptorSets(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-                0, static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr);// will only apply offset to descriptors that are dynamic
+            //vkCmdBindDescriptorSets(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
+               // 0, static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr);// will only apply offset to descriptors that are dynamic
 
-            vkCmdDrawIndexed(commandBuffer[currentImage], model.getMesh(k)->getIndexCount(), model.GetInstanceCount(), 0, 0, 0);
+            //vkCmdDrawIndexed(commandBuffer[currentImage], model.getMesh(k)->getIndexCount(), model.GetInstanceCount(), 0, 0, 0);
         }
 }
 

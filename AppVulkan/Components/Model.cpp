@@ -12,6 +12,20 @@ Model::Model()
 	m_InstanceDataBuffer = nullptr;
 }
 
+Model::Model(std::vector<Mesh>& newMeshList)
+	: m_IsHidden(false), m_IsDuplicate(false), m_IsInstanced(false), m_InstanceCount(0), m_InstanceDataBuffer(nullptr),
+	m_Handle(s_AllTimeModelCount++), meshList(), m_ModelMatrix(), pipelineIndex(0)
+{
+}
+
+#ifdef _DEBUG
+Model::Model(std::vector<Mesh>& newMeshList, const char* name)
+	: m_IsHidden(false), m_IsDuplicate(false), m_IsInstanced(false), m_InstanceCount(0), m_InstanceDataBuffer(nullptr),
+	m_Handle(s_AllTimeModelCount++), meshList(), m_ModelMatrix(), pipelineIndex(0), m_Name(name)
+{
+}
+#endif
+
 Model::Model(std::vector<Mesh>& newMeshList, bool isInstanced)
 {
 	meshList = newMeshList;

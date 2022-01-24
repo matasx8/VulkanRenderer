@@ -28,61 +28,63 @@ Scene::Scene(VkQueue graphicsQueue, VkCommandPool graphicsCommandPool, VkPhysica
 
 ModelHandle Scene::AddModel(std::string fileName, Material material, VkRenderPass renderPass)
 {
-    tmp_RenderPass = renderPass;
-    Assimp::Importer importer;
-    std::string withPrefix = "Models/";
-    withPrefix += fileName;
-    const aiScene* scene = importer.ReadFile(withPrefix, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals | aiProcess_JoinIdenticalVertices);
-    if (!scene)
-    {
-        throw std::runtime_error("Failed to load model! (" + fileName + ")");
-    }
+    throw std::runtime_error("Deprecated");
+    //tmp_RenderPass = renderPass;
+    //Assimp::Importer importer;
+    //std::string withPrefix = "Models/";
+    //withPrefix += fileName;
+    //const aiScene* scene = importer.ReadFile(withPrefix, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals | aiProcess_JoinIdenticalVertices);
+    //if (!scene)
+    //{
+    //    throw std::runtime_error("Failed to load model! (" + fileName + ")");
+    //}
 
-    //get vector of all materials with 1:1 ID placement
-    std::vector<std::string> textureNames = Model::LoadMaterials(scene);
+    ////get vector of all materials with 1:1 ID placement
+    //std::vector<std::string> textureNames = Model::LoadMaterials(scene);
 
-    // conversion from the materials list IDs to our Descriptor Arrays IDs
-    std::vector<int> matToTex(textureNames.size());
+    //// conversion from the materials list IDs to our Descriptor Arrays IDs
+    //std::vector<int> matToTex(textureNames.size());
 
-    auto oldTexturesSize = Textures.size();
+    //auto oldTexturesSize = Textures.size();
 
-    // loop over textureNames and create textures for them
-    for (size_t i = 0; i < textureNames.size(); i++)
-    {//if material had no texture, set 0 to indicate no texture, texture 0 will be reserved for a default texture
-        if (textureNames[i].empty())
-        {
-            matToTex[i] = 0;
-        }
-        else
-        {// otherwise, create texture and set value to index of new texture
-            Texture texture;
-            texture.createTexture(textureNames[i], graphicsQueue, graphicsCommandPool, physicalDevice, logicalDevice);
-            matToTex[i] = Textures.size();
-            Textures.push_back(texture);
-        }
-    }
+    //// loop over textureNames and create textures for them
+    //for (size_t i = 0; i < textureNames.size(); i++)
+    //{//if material had no texture, set 0 to indicate no texture, texture 0 will be reserved for a default texture
+    //    if (textureNames[i].empty())
+    //    {
+    //        matToTex[i] = 0;
+    //    }
+    //    else
+    //    {// otherwise, create texture and set value to index of new texture
+    //        Texture texture;
+    //        texture.createTexture(textureNames[i], graphicsQueue, graphicsCommandPool, physicalDevice, logicalDevice);
+    //        matToTex[i] = Textures.size();
+    //        Textures.push_back(texture);
+    //    }
+    //}
 
-    // load in all our meshes
-    std::vector<Mesh> modelMeshes = Model::LoadNode(physicalDevice, logicalDevice, graphicsQueue, graphicsCommandPool,
-        scene->mRootNode, scene, matToTex);
+    //// load in all our meshes
+    //std::vector<Mesh> modelMeshes = Model::LoadNode(physicalDevice, logicalDevice, graphicsQueue, graphicsCommandPool,
+    //    scene->mRootNode, scene, matToTex);
 
-    Model meshModel(modelMeshes, material.IsInstanced());
-    
+    //Model meshModel(modelMeshes, material.IsInstanced());
+    //
 
-    uint32_t texturesFrom = (oldTexturesSize != Textures.size()) ? oldTexturesSize : 0;
-    if (Textures[0].descriptorSet == 0) texturesFrom = 0;
+    //uint32_t texturesFrom = (oldTexturesSize != Textures.size()) ? oldTexturesSize : 0;
+    //if (Textures[0].descriptorSet == 0) texturesFrom = 0;
 
-    // use material to find out if we need to create a new pipeline
-    // if yes, then create one and append to pipelines. Also insert into model vector
-    // if no, find out which pipeline do we need to reuse.
-    meshModel.setPipelineIndex(setupPipeline(material, Textures, texturesFrom, extent, renderPass));
-    uint32_t indexOfNewModel = insertModel(meshModel);
-    return Models[indexOfNewModel].GetModelHandle();
+    //// use material to find out if we need to create a new pipeline
+    //// if yes, then create one and append to pipelines. Also insert into model vector
+    //// if no, find out which pipeline do we need to reuse.
+    //meshModel.setPipelineIndex(setupPipeline(material, Textures, texturesFrom, extent, renderPass));
+    //uint32_t indexOfNewModel = insertModel(meshModel);
+    //return Models[indexOfNewModel].GetModelHandle();
 }
 
 ModelHandle Scene::AddModel(std::string fileName, Material material)
 {
-    return AddModel(fileName, material, tmp_RenderPass);
+    throw std::runtime_error("Deprecated");
+    //return AddModel(fileName, material, tmp_RenderPass);
 }
 
 void Scene::addLight()
@@ -93,6 +95,7 @@ void Scene::addLight()
 
 Model& Scene::GetModel(ModelHandle handle)
 {
+    throw std::runtime_error("Deprecated");
     // TODO: what do I do if the Model is not Found?
     // potential solution have dummy error model, I already have a default model that gets loaded anyway
     for (auto& model : Models)
@@ -104,6 +107,7 @@ Model& Scene::GetModel(ModelHandle handle)
 
 Model Scene::GetModelAndDuplicate(ModelHandle handle, bool instanced)
 { //TODO: optimize this, because this is horrible perf
+    throw std::runtime_error("Deprecated");
     for (auto& model : Models)
         if (model.GetModelHandle() == handle)
             return model.Duplicate(instanced);
@@ -113,17 +117,20 @@ Model Scene::GetModelAndDuplicate(ModelHandle handle, bool instanced)
 
 void Scene::DuplicateModelInstanced(ModelHandle handle, int numInstances)
 {
+    throw std::runtime_error("Deprecated");
     auto& model = GetModel(handle);
     model.AddInstances(numInstances);
 }
 
 std::vector<Model>& Scene::getModels()
 {
+    throw std::runtime_error("Deprecated");
     return Models;
 }
 
 void Scene::updateModelPipesFrom(int index)
 {
+    throw std::runtime_error("Deprecated");
     for (auto& model : Models)
     {
         if (model.getPipelineIndex() >= index)
@@ -135,11 +142,13 @@ void Scene::updateModelPipesFrom(int index)
 
 void Scene::updateModelMatrixIndices(int index)
 {
+    throw std::runtime_error("Deprecated");
     throw std::runtime_error("Not implemented yet!");
 }
 
 uint32_t Scene::insertModel(Model& model)
 {
+    throw std::runtime_error("Deprecated");
     if (Models.size() == 0 || Models.back().getPipelineIndex() <= model.getPipelineIndex())
     {
         model.SetModelMatrix(ModelMatrix(1.0f));

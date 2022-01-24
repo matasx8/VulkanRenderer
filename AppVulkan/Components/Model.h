@@ -12,7 +12,11 @@ class Model
 {
 public:
 	Model();
-	Model(std::vector<Mesh>& newMeshList, bool isInstanced = false);//find out if i can pass by ref
+	Model(std::vector<Mesh>& newMeshList);
+#ifdef _DEBUG
+	Model(std::vector<Mesh>& newMeshList, const char* name);
+#endif
+	Model(std::vector<Mesh>& newMeshList, bool isInstanced = false);
 
 	size_t getMeshCount();
 	Mesh* getMesh(size_t index);
@@ -41,6 +45,7 @@ public:
 
 	void destroyMeshModel();
 // move to some model manager or somethig
+	// moved, now delete when confirmed working
 	static std::vector<std::string> LoadMaterials(const aiScene* scene);
 	static std::vector<Mesh> LoadNode(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue transferQueue, VkCommandPool transferCommandPool,
 		aiNode* node, const aiScene* scene, std::vector<int> matToTex);
@@ -61,6 +66,9 @@ private:
 	std::vector<Mesh> meshList;
 	ModelMatrix m_ModelMatrix;
 	size_t pipelineIndex;
+#ifdef _DEBUG
+	std::string m_Name;
+#endif
 };
 
 template<typename Tfunc, typename... Targs>

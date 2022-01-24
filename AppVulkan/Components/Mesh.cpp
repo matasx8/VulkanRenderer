@@ -1,10 +1,12 @@
 #include "Mesh.h"
 
 Mesh::Mesh()
+    : m_MaterialId(0)
 {
 }
 
 Mesh::Mesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue transferQueue, VkCommandPool transferCommandPool, std::vector<Vertex>* vertices, std::vector<uint32_t>* indices)
+    : m_MaterialId(0)
 {
     vertexCount = vertices->size();
     indexCount = indices->size();

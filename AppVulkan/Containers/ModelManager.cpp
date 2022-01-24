@@ -16,7 +16,9 @@ ModelManager::ModelManager(VulkanRenderer& gfxEngine, bool isThreadedImport)
 
 void ModelManager::LoadDefaultModels()
 {
-    auto paths = OS::GetAllFileNamesInDirectory("Models/DefaultModels");
+    timer tmr;
+    tmr.start();
+    auto paths = OS::GetAllFileNamesInDirectory("Models\\DefaultModels");
     if (paths == nullptr)
     {
         Debug::LogMsg("Failed to get any paths in Models/DefaultModels\n");
@@ -29,12 +31,24 @@ void ModelManager::LoadDefaultModels()
         LoadModelsNonThreaded(paths);
 
     delete paths;
+
+    tmr.stop();
+    Debug::LogMsg("Uploading DefaultModels took: ");
+    Debug::LogMsg(std::to_string(tmr.ms()).c_str());
+    Debug::LogMsg(" ms.\n");
 }
 
 void ModelManager::LoadModelsThreaded(std::vector<std::string>* paths)
 {
+    // if nr of models is low then it might be slower or have not much benefit over
+    // the single threaded impl.
+    // one of the reasons is because of the very simple implementation of this and low level of paralelization
+    auto loop = [this, paths](int st, int end) {
+        for (int i = st; i < end; i++)
+            LoadModel((*paths)[i]);
+    };
     thread_pool tp;
-    tp.parallelize_loop(0, paths->size(), LoadModel);
+    tp.parallelize_loop(0, paths->size(), loop);
 }
 
 void ModelManager::LoadModelsNonThreaded(std::vector<std::string>* paths)
@@ -55,9 +69,10 @@ void ModelManager::LoadModel(std::string& path)
     }
 
     std::vector<Mesh> modelMeshes;
+
+    std::unique_lock<std::mutex> lock(m_Mutex);
     m_GfxEngine.LoadNode(modelMeshes, scene->mRootNode, scene);
 
     Model meshModel(modelMeshes, false);
-    std::unique_lock<std::mutex> lock(m_Mutex);
     m_Models.push_back(meshModel);
 }

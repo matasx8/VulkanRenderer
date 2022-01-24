@@ -15,13 +15,14 @@ public:
 
 private:
 
+	// Loads models (Creates only IB and VB)
 	void LoadModelsThreaded(std::vector<std::string>* paths);
 	void LoadModelsNonThreaded(std::vector<std::string>* paths);
 	void LoadModel(std::string& path);
 
 	std::mutex m_Mutex;
 	std::vector<Model> m_Models;
-	// for now create threads on demand
+	// for now create thread pool on demand
 	bool m_ThreadedImport;
 
 	VulkanRenderer& m_GfxEngine;
