@@ -138,7 +138,6 @@ private:
 	void createCommandBuffers();
 	void createSynchronization();
 	void createLight();
-	void createInitialScene();
 	void CreateDescriptorPool();
 	void CreateThreadPool(uint32_t numThreads);
 	void EnableCrashDumps();
@@ -149,10 +148,7 @@ private:
 
 	void UpdateDeltaTime();
 
-	void AddModel(std::string fileName, Material material);
 	void LoadNode(std::vector<Mesh>& meshList, aiNode* node, const aiScene* scene);
-
-	void DrawInstanced(int instancedModelIndex, uint32_t currentImage);
 
 	// record funcs
 	void recordCommands(uint32_t currentImage);

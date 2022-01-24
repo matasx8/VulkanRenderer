@@ -5,6 +5,7 @@
 #include <assert.h>
 #include "NonCopyable.h"
 #include "glm/glm.hpp"
+#include "Texture.h"
 
 enum ShaderCreateInfoFlags
 {
@@ -56,8 +57,12 @@ struct ShaderCreateInfo
 	const char* vertexShader;
 	const char* fragmentShader;
 
-	size_t uniformCount;
-	std::vector<UniformData> uniformData;
+	std::vector<uint8_t> uniforms;
+	std::vector<TextureCreateInfo> textureCreateInfos;
+	// create a config that will allow to configure what kind of texture do we want
+	// clamp, format and etc.
+	// then finally use all these to create material and then pipeline
+
 
 	// push constants
 	// if 0, then no push constant

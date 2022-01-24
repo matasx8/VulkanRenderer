@@ -9,6 +9,11 @@ enum Texture2dFormat : uint8_t
 	TextureFormatD32S8 = VK_FORMAT_D32_SFLOAT_S8_UINT
 };
 
+struct TextureCreateInfo
+{
+
+};
+
 class Texture
 {
 public:
