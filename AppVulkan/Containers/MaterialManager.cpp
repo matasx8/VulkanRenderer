@@ -30,8 +30,48 @@ void MaterialManager::InitializeDefaultMaterials()
 	defaultShader.isInstanced = false;
 
 	// default material should be 0
-	assert(m_AllTimeMaterialCount == 0);
-	Material defaultMaterial(m_AllTimeMaterialCount, defaultShader);
+	//assert(m_AllTimeMaterialCount == 0);
+	//Material defaultMaterial(m_AllTimeMaterialCount, );
+	CreateMaterial(defaultShader);
+
+}
+
+stbi_uc* LoadTextureFile(const std::string& fileName, int* width, int* height, VkDeviceSize* imageSize)
+{
+	// TODO: expand this
+
+	// number of channels image uses
+	int channels;
+
+	//load pixel data for image
+	std::string fileLoc = "Textures/" + fileName;
+	stbi_uc* image = stbi_load(fileLoc.c_str(), width, height, &channels, STBI_rgb_alpha);
+
+	if (!image)
+	{
+		image = stbi_load(fileLoc.c_str(), width, height, &channels, STBI_rgb);
+		if (!image)
+			throw std::runtime_error("Failed to load a Texture file: " + fileName + "\n");
+	}
+
+	*imageSize = *width * *height * 4;
+	return image;
+}
+
+void MaterialManager::CreateMaterial(const ShaderCreateInfo& shaderCreateInfo)
+{
+	assert(shaderCreateInfo.textureCreateInfos.size());
+	for (int i = 0; i < shaderCreateInfo.textureCreateInfos.size(); i++)
+	{
+		// 'legacy' super not flexible creation, good enough for now.
+		int width, height;
+		VkDeviceSize imageSize;
+		stbi_uc* imageData = LoadTextureFile(shaderCreateInfo.textureCreateInfos[i].fileName, &width, &height, &imageSize);
+	
+		Image image = m_GfxEngine.UploadImage(width, height, imageSize, imageData);
+		
+		stbi_image_free(imageData);
+	}
 
 	m_AllTimeMaterialCount++;
 }

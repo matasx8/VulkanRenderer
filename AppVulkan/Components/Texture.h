@@ -11,26 +11,23 @@ enum Texture2dFormat : uint8_t
 
 struct TextureCreateInfo
 {
-
+	std::string fileName;
 };
 
 class Texture
 {
 public:
-	Texture() {};
-	void createTexture(std::string fileName, VkQueue graphicsQueue, VkCommandPool graphicsCommandPool, VkPhysicalDevice physicalDevice, VkDevice logicalDevice);
+	Texture();
 
-	Image& getImage(int index) { return Images[0]; }
+	void AddImage(Image& image);
 
-	VkDescriptorSet descriptorSet;
+	Image& getImage(int index) { return m_Image; }
+
+	//VkDescriptorSet descriptorSet;
 	
 	void DestroyTexture(VkDevice logicalDevice);
 
 private:
-	std::vector<Image> Images; // TODO: implement queue of images
-
-	int createTextureImage(std::string fileName, VkQueue graphicsQueue, VkCommandPool graphicsCommandPool, VkPhysicalDevice physicalDevice, VkDevice logicalDevice);
-
-	stbi_uc* loadTextureFile(std::string fileName, int* width, int* height, VkDeviceSize* imageSize);
+	Image m_Image;
 };
 

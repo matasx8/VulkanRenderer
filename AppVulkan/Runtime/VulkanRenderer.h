@@ -140,6 +140,7 @@ private:
 	void createLight();
 	void CreateDescriptorPool();
 	void CreateThreadPool(uint32_t numThreads);
+	Image UploadImage();
 	void EnableCrashDumps();
 
 	void TemporarySetup();

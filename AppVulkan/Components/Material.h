@@ -30,7 +30,7 @@ public:
 private:
 	uint32_t m_ID;
 	Shader m_Shader;
-	std::vector<Texture> textures;
+	std::vector<Texture> m_Textures;
 
 	uint32_t m_InstanceCount;
 };
