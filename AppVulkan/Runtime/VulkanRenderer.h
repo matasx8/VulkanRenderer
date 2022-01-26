@@ -141,9 +141,12 @@ private:
 	void CreateDescriptorPool();
 	void CreateThreadPool(uint32_t numThreads);
 	Image UploadImage(int width, int height, VkDeviceSize imageSize, stbi_uc* imageData);
-	VkDescriptorSet CreateTextureDescriptorSet(const Texture& texture);
+	VkDescriptorSet CreateTextureDescriptorSet(Texture& texture);
 	VkDescriptorSetLayout CreateTextureDescriptorSetLayout();
 	VkSampler CreateTextureSampler(const TextureCreateInfo& createInfo);
+	VkDescriptorSetLayout CreateDescriptorSetLayout(size_t UboCount); //TODO: have one function for dsetlayout
+	std::vector<VkDescriptorSet> CreateDescriptorSets(const size_t* dataSizes, std::vector<UniformBuffer>& UniformBuffers, VkDescriptorSetLayout descriptorSetLayout);
+	std::vector<UniformBuffer> CreateUniformBuffers(const std::vector<size_t>& dataSizes, size_t UboCount);
 
 	void EnableCrashDumps();
 

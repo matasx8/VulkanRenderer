@@ -619,6 +619,92 @@ VkSampler VulkanRenderer::CreateTextureSampler(const TextureCreateInfo& createIn
     }
 }
 
+VkDescriptorSetLayout VulkanRenderer::CreateDescriptorSetLayout(size_t UboCount)
+{
+    // here we show what uniforms we need.
+    std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings(UboCount);
+    for (size_t i = 0; i < UboCount; i++)
+    {
+        descriptorSetLayoutBindings[i].binding = i;
+        descriptorSetLayoutBindings[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorSetLayoutBindings[i].descriptorCount = 1;
+        descriptorSetLayoutBindings[i].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    }
+
+    // create descriptor set layout with given bidnings
+    VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+    layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutCreateInfo.bindingCount = static_cast<uint32_t>(descriptorSetLayoutBindings.size()); // number of binding infos
+    layoutCreateInfo.pBindings = descriptorSetLayoutBindings.data(); //array of binding infos
+
+    VkDescriptorSetLayout descriptorSetLayout;
+    VkResult result = vkCreateDescriptorSetLayout(mainDevice.logicalDevice, &layoutCreateInfo, nullptr, &descriptorSetLayout);
+    if (result != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create a descriptor set layout");
+    }
+}
+
+std::vector<VkDescriptorSet> VulkanRenderer::CreateDescriptorSets(const size_t* dataSizes, std::vector<UniformBuffer>& UniformBuffers, VkDescriptorSetLayout descriptorSetLayout)
+{
+    const size_t setSize = swapChainImages.size();
+    std::vector<VkDescriptorSet> descriptorSets(setSize);
+
+    std::vector<VkDescriptorSetLayout> setLayouts(setSize, descriptorSetLayout);
+
+    m_DescriptorPool.AllocateDescriptorSets(descriptorSets, setLayouts, kDescriptorTypeUniformBuffer);
+
+
+    std::vector<VkDescriptorBufferInfo> BufferInfos(setSize);
+    std::vector<VkWriteDescriptorSet> SetWrites(setSize * UniformBuffers.size());
+    size_t index = 0;
+    for (size_t i = 0; i < swapChainImages.size(); i++)
+    {
+        for (size_t j = 0; j < UniformBuffers.size(); j++)
+        {
+            auto bufferInfo = &BufferInfos[j];
+            // j - uniform buffers (eg. VP, Lights, Camera pos)
+            // i - swapchainImages
+            bufferInfo->buffer = UniformBuffers[j].buffer[i];
+            bufferInfo->range = dataSizes[j];
+
+            SetWrites[index].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            SetWrites[index].dstSet = descriptorSets[i]; // descriptor set to update (as many as swapchainImages)
+            SetWrites[index].dstBinding = j; // binding to update
+            SetWrites[index].dstArrayElement = 0; // index in array to update
+            SetWrites[index].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; // type of descriptor
+            SetWrites[index].descriptorCount = 1; // amount to update
+            SetWrites[index].pBufferInfo = bufferInfo; // info about buffer data to bind
+            index++;
+        }
+    }
+    vkUpdateDescriptorSets(mainDevice.logicalDevice, index, SetWrites.data(), 0, nullptr);
+}
+
+std::vector<UniformBuffer> VulkanRenderer::CreateUniformBuffers(const std::vector<size_t>& dataSizes, size_t UboCount)
+{
+    // 1. Need a UniformBuffer for each swapchain image
+    // 2. Need to create a buffer for each of them (eg. 3 buffers x 3 swapchain images) 
+    std::vector<UniformBuffer> UniformBuffers(UboCount);
+    for (auto& ubo : UniformBuffers)
+    {
+        // Uniform buffers and they contain buffers and device memory for each swapchain image
+        ubo.buffer.resize(swapChainImages.size());
+        ubo.buffer.resize(swapChainImages.size());
+        ubo.deviceMemory.resize(swapChainImages.size());
+        ubo.deviceMemory.resize(swapChainImages.size());
+    }
+
+    for (size_t i = 0; i < swapChainImages.size(); i++)
+    {
+        for (size_t j = 0; j < UboCount; j++)// TODO: create all three in a row?
+            createBuffer(mainDevice.physicalDevice, mainDevice.logicalDevice, dataSizes[j],
+                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                &UniformBuffers[j].buffer[i], &UniformBuffers[j].deviceMemory[i]);
+    }
+}
+
+
 void VulkanRenderer::EnableCrashDumps()
 {
     tracker.Initialize();

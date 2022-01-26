@@ -87,5 +87,13 @@ void MaterialManager::CreateMaterial(const ShaderCreateInfo& shaderCreateInfo)
 	}
 	material.SetTextures(textures);
 
+	// Create UBOs
+	m_GfxEngine.CreateDescriptorSetLayout(shaderCreateInfo.uniforms.size());
+	// Next step - instead of letting user make their own uniforms I introduced a an enum for a set of predefined
+	// uniforms. I need to implement this into uniform creation and then some kind of smart updating for uniforms.
+	// also could check if the layout of uniforms matches so we can reuse them and not create new ones.
+	// for creation we need only size, so at least that part will be easy.
+	m_GfxEngine.CreateUniformBuffers()
+
 	m_AllTimeMaterialCount++;
 }
