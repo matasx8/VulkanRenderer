@@ -679,6 +679,8 @@ std::vector<VkDescriptorSet> VulkanRenderer::CreateDescriptorSets(const size_t* 
         }
     }
     vkUpdateDescriptorSets(mainDevice.logicalDevice, index, SetWrites.data(), 0, nullptr);
+
+    return descriptorSets;
 }
 
 std::vector<UniformBuffer> VulkanRenderer::CreateUniformBuffers(const std::vector<size_t>& dataSizes, size_t UboCount)

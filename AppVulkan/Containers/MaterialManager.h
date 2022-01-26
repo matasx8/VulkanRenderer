@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 
 class VulkanRenderer;
 class Material;
@@ -9,6 +10,9 @@ public:
 	MaterialManager(VulkanRenderer& gfxEngine);
 
 	void InitializeDefaultMaterials();
+
+	size_t UniformTypeToSize(uint8_t type) const;
+	std::vector<size_t> UniformsTypesToSizes(const std::vector<uint8_t>& types) const;
 												
 												
 

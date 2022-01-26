@@ -4,6 +4,7 @@
 class Shader;
 class Texture;
 struct UniformData;
+struct UniformBuffer;
 enum ShaderCreateInfoFlags;
 
 class Material
@@ -20,8 +21,15 @@ public:
 	const void* getPushConstantDataBuffer() const;
 	const size_t getPushConstantSize() const;
 	uint32_t GetInstanceCount() const;
+	const std::vector<Texture>& GetTextures() const;
+	VkDescriptorSetLayout GetDescriptorSetLayout() const;
+	const std::vector<VkDescriptorSet>& GetDescriptorSets() const;
+	const std::vector<UniformBuffer>& GetUniformBuffer() const;
 
 	void SetTextures(std::vector<Texture>& textures);
+	void SetDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout);
+	void SetDescriptorSets(std::vector<VkDescriptorSet>& descriptorSets);
+	void SetUniformBuffers(std::vector<UniformBuffer>& uniformBuffers);
 
 	const bool hasPushConstant() const;
 	const bool hasFlag(ShaderCreateInfoFlags flag) const;
@@ -38,6 +46,9 @@ private:
 	uint32_t m_ID;
 	Shader m_Shader;
 	std::vector<Texture> m_Textures;
+	VkDescriptorSetLayout m_DescriptorSetLayout;
+	std::vector<VkDescriptorSet> m_DescriptorSets;
+	std::vector<UniformBuffer> m_UniformBuffers;
 
 	// probably not needed anymore
 	uint32_t m_InstanceCount;

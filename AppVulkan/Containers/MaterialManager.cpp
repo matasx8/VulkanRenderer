@@ -5,7 +5,8 @@ enum UniformType : uint8_t
 {
 	kUniformSun,
 	kUniformCameraPosition,
-	kUniformViewProjectionMatrix
+	kUniformViewProjectionMatrix,
+	kUniformTypeTotalCount
 };
 
 MaterialManager::MaterialManager(VulkanRenderer& gfxEngine)
@@ -35,6 +36,32 @@ void MaterialManager::InitializeDefaultMaterials()
 	//Material defaultMaterial(m_AllTimeMaterialCount, );
 	CreateMaterial(defaultShader);
 
+}
+
+size_t MaterialManager::UniformTypeToSize(uint8_t type) const
+{
+	switch (type)
+	{
+	case kUniformSun:
+		return sizeof(glm::vec4) * 2;
+	case kUniformCameraPosition:
+		return sizeof(glm::vec4);
+	case kUniformViewProjectionMatrix:
+		return sizeof(ViewProjectionMatrix);
+	default:
+		Debug::LogMsg("Invalid uniform type is being used");
+		return 0;
+	}
+}
+
+std::vector<size_t> MaterialManager::UniformsTypesToSizes(const std::vector<uint8_t>& types) const
+{
+	std::vector<size_t> sizes(types.size());
+	for (int i = 0; i < types.size(); i++)
+	{
+		sizes[i] = UniformTypeToSize(types[i]);
+	}
+	return sizes;
 }
 
 stbi_uc* LoadTextureFile(const std::string& fileName, int* width, int* height, VkDeviceSize* imageSize)
@@ -88,12 +115,18 @@ void MaterialManager::CreateMaterial(const ShaderCreateInfo& shaderCreateInfo)
 	material.SetTextures(textures);
 
 	// Create UBOs
-	m_GfxEngine.CreateDescriptorSetLayout(shaderCreateInfo.uniforms.size());
-	// Next step - instead of letting user make their own uniforms I introduced a an enum for a set of predefined
-	// uniforms. I need to implement this into uniform creation and then some kind of smart updating for uniforms.
-	// also could check if the layout of uniforms matches so we can reuse them and not create new ones.
-	// for creation we need only size, so at least that part will be easy.
-	m_GfxEngine.CreateUniformBuffers()
+	auto descriptorSetLayout = m_GfxEngine.CreateDescriptorSetLayout(shaderCreateInfo.uniforms.size());
+	auto sizes = UniformsTypesToSizes(shaderCreateInfo.uniforms);
+	auto UniformBuffers = m_GfxEngine.CreateUniformBuffers(sizes, shaderCreateInfo.uniforms.size());
+	auto descriptorSets = m_GfxEngine.CreateDescriptorSets(sizes.data(), UniformBuffers, descriptorSetLayout);
+
+	material.SetDescriptorSetLayout(descriptorSetLayout);
+	material.SetUniformBuffers(UniformBuffers);
+	material.SetDescriptorSets(descriptorSets);
+
+
+
+
 
 	m_AllTimeMaterialCount++;
 }

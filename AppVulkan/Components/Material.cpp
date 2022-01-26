@@ -52,8 +52,44 @@ uint32_t Material::GetInstanceCount() const
 	return m_InstanceCount;
 }
 
+const std::vector<Texture>& Material::GetTextures() const
+{
+	return m_Textures;
+}
+
+VkDescriptorSetLayout Material::GetDescriptorSetLayout() const
+{
+	return m_DescriptorSetLayout;
+}
+
+const std::vector<VkDescriptorSet>& Material::GetDescriptorSets() const
+{
+	return m_DescriptorSets;
+}
+
+const std::vector<UniformBuffer>& Material::GetUniformBuffer() const
+{
+	return m_UniformBuffers;
+}
+
 void Material::SetTextures(std::vector<Texture>& textures)
 {
+	m_Textures = textures;
+}
+
+void Material::SetDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout)
+{
+	m_DescriptorSetLayout = descriptorSetLayout;
+}
+
+void Material::SetDescriptorSets(std::vector<VkDescriptorSet>& descriptorSets)
+{
+	m_DescriptorSets = descriptorSets;
+}
+
+void Material::SetUniformBuffers(std::vector<UniformBuffer>& uniformBuffers)
+{
+	m_UniformBuffers = uniformBuffers;
 }
 
 const bool Material::hasPushConstant() const
