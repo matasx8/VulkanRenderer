@@ -140,7 +140,11 @@ private:
 	void createLight();
 	void CreateDescriptorPool();
 	void CreateThreadPool(uint32_t numThreads);
-	Image UploadImage();
+	Image UploadImage(int width, int height, VkDeviceSize imageSize, stbi_uc* imageData);
+	VkDescriptorSet CreateTextureDescriptorSet(const Texture& texture);
+	VkDescriptorSetLayout CreateTextureDescriptorSetLayout();
+	VkSampler CreateTextureSampler(const TextureCreateInfo& createInfo);
+
 	void EnableCrashDumps();
 
 	void TemporarySetup();

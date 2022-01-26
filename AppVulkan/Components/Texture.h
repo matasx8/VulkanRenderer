@@ -12,6 +12,8 @@ enum Texture2dFormat : uint8_t
 struct TextureCreateInfo
 {
 	std::string fileName;
+	VkFilter filtering;
+	VkSamplerAddressMode wrap;
 };
 
 class Texture
@@ -21,13 +23,21 @@ public:
 
 	void AddImage(Image& image);
 
-	Image& getImage(int index) { return m_Image; }
+	void SetDescriptorSet(VkDescriptorSet descriptorSet);
+	void SetDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout);
+	void SetSampler(VkSampler sampler);
 
-	//VkDescriptorSet descriptorSet;
+	VkDescriptorSet GetDescriptorSet() const;
+	VkDescriptorSetLayout GetDescriptorSetLayout() const;
+	VkSampler GetSampler() const;
+	Image& getImage() { return m_Image; }
 	
 	void DestroyTexture(VkDevice logicalDevice);
 
 private:
 	Image m_Image;
+	VkDescriptorSet m_DescriptorSet;
+	VkDescriptorSetLayout m_DescriptorSetLayout;
+	VkSampler m_Sampler;
 };
 

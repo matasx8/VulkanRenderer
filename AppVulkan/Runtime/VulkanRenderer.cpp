@@ -545,6 +545,80 @@ Image VulkanRenderer::UploadImage(int width, int height, VkDeviceSize imageSize,
     return texImage;
 }
 
+VkDescriptorSet VulkanRenderer::CreateTextureDescriptorSet(Texture& texture)
+{
+    VkSampler sampler = texture.GetSampler();
+    std::vector<VkDescriptorSet> descriptorSets(1);
+    std::vector<VkDescriptorSetLayout> setLayouts = { texture.GetDescriptorSetLayout() };
+
+    m_DescriptorPool.AllocateDescriptorSets(descriptorSets, setLayouts, kDescriptorTypeImageSampler);
+
+    VkDescriptorImageInfo imageInfo = {};
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageView = texture.getImage().getImageView();
+    imageInfo.sampler = sampler;
+
+    // descriptor write info
+    VkWriteDescriptorSet descriptorWrite = {};
+    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrite.dstSet = descriptorSets[0];
+    descriptorWrite.dstBinding = 0;
+    descriptorWrite.dstArrayElement = 0;
+    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorWrite.descriptorCount = 1;
+    descriptorWrite.pImageInfo = &imageInfo;
+    descriptorWrite.pNext = nullptr;
+
+    // update new descriptor set
+    vkUpdateDescriptorSets(mainDevice.logicalDevice, 1, &descriptorWrite, 0, nullptr);
+
+    return descriptorSets[0];
+}
+
+VkDescriptorSetLayout VulkanRenderer::CreateTextureDescriptorSetLayout()
+{
+    VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
+    samplerLayoutBinding.binding = 0;
+    samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    samplerLayoutBinding.descriptorCount = 1;
+    samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    VkDescriptorSetLayoutCreateInfo textureLayoutCreateInfo = {};
+    textureLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    textureLayoutCreateInfo.bindingCount = 1;
+    textureLayoutCreateInfo.pBindings = &samplerLayoutBinding;
+
+    VkDescriptorSetLayout layout;
+    VkResult result = vkCreateDescriptorSetLayout(mainDevice.logicalDevice, &textureLayoutCreateInfo, nullptr, &layout);
+    if (result != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create a descriptor set layout");
+    }
+}
+
+VkSampler VulkanRenderer::CreateTextureSampler(const TextureCreateInfo& createInfo)
+{
+    VkSamplerCreateInfo samplerCreateInfo = {};
+    samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerCreateInfo.magFilter = createInfo.filtering;
+    samplerCreateInfo.minFilter = VK_FILTER_LINEAR;
+    samplerCreateInfo.addressModeU = createInfo.wrap;
+    samplerCreateInfo.addressModeV = createInfo.wrap;
+    samplerCreateInfo.addressModeW = createInfo.wrap;
+    samplerCreateInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerCreateInfo.unnormalizedCoordinates = VK_FALSE; //whether coords should be normalized between 0 an 1
+    samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerCreateInfo.anisotropyEnable = VK_TRUE;
+    samplerCreateInfo.maxAnisotropy = 16;
+
+    VkSampler sampler;
+    VkResult result = vkCreateSampler(mainDevice.logicalDevice, &samplerCreateInfo, nullptr, &sampler);
+    if (result != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create texture sampler");
+    }
+}
+
 void VulkanRenderer::EnableCrashDumps()
 {
     tracker.Initialize();

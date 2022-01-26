@@ -1,4 +1,5 @@
 #include "VulkanRenderer.h"
+#include "Shader.h"
 
 enum UniformType : uint8_t
 {
@@ -61,6 +62,14 @@ stbi_uc* LoadTextureFile(const std::string& fileName, int* width, int* height, V
 void MaterialManager::CreateMaterial(const ShaderCreateInfo& shaderCreateInfo)
 {
 	assert(shaderCreateInfo.textureCreateInfos.size());
+	Material material(m_AllTimeMaterialCount);
+
+#ifdef _DEBUG
+	material.m_ShaderCreateInfo = shaderCreateInfo;
+#endif
+
+	// Create textures and etc.
+	std::vector<Texture> textures(shaderCreateInfo.textureCreateInfos.size());
 	for (int i = 0; i < shaderCreateInfo.textureCreateInfos.size(); i++)
 	{
 		// 'legacy' super not flexible creation, good enough for now.
@@ -69,9 +78,14 @@ void MaterialManager::CreateMaterial(const ShaderCreateInfo& shaderCreateInfo)
 		stbi_uc* imageData = LoadTextureFile(shaderCreateInfo.textureCreateInfos[i].fileName, &width, &height, &imageSize);
 	
 		Image image = m_GfxEngine.UploadImage(width, height, imageSize, imageData);
-		
 		stbi_image_free(imageData);
+
+		textures[i].AddImage(image);
+		textures[i].SetSampler(m_GfxEngine.CreateTextureSampler(shaderCreateInfo.textureCreateInfos[i]));
+		textures[i].SetDescriptorSetLayout(m_GfxEngine.CreateTextureDescriptorSetLayout());
+		textures[i].SetDescriptorSet(m_GfxEngine.CreateTextureDescriptorSet(textures[i]));
 	}
+	material.SetTextures(textures);
 
 	m_AllTimeMaterialCount++;
 }

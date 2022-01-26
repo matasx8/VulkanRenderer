@@ -5,10 +5,41 @@ Texture::Texture()
 {
 }
 
-void Texture::createTexture(std::string fileName, VkQueue graphicsQueue, VkCommandPool graphicsCommandPool, VkPhysicalDevice physicalDevice, VkDevice logicalDevice)
+void Texture::AddImage(Image& image)
 {
-    throw std::runtime_error("deprecated");
+    m_Image = image;
 }
+
+void Texture::SetDescriptorSet(VkDescriptorSet descriptorSet)
+{
+    m_DescriptorSet = descriptorSet;
+}
+
+void Texture::SetDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout)
+{
+    m_DescriptorSetLayout = descriptorSetLayout;
+}
+
+void Texture::SetSampler(VkSampler sampler)
+{
+    m_Sampler = sampler;
+}
+
+VkDescriptorSet Texture::GetDescriptorSet() const
+{
+    return m_DescriptorSet;
+}
+
+VkDescriptorSetLayout Texture::GetDescriptorSetLayout() const
+{
+    return m_DescriptorSetLayout;
+}
+
+VkSampler Texture::GetSampler() const
+{
+    return m_Sampler;
+}
+
 
 void Texture::DestroyTexture(VkDevice logicalDevice)
 {

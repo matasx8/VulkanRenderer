@@ -1,7 +1,9 @@
 #include "Material.h"
+#include "Texture.h"
+#include "Shader.h"
 
-Material::Material(size_t id, ShaderCreateInfo& shaderInfo)
-	: m_ID(id), m_Shader(shaderInfo)
+Material::Material(size_t id)
+	: m_ID(id)
 {
 }
 
@@ -48,6 +50,10 @@ const size_t Material::getPushConstantSize() const
 uint32_t Material::GetInstanceCount() const
 {
 	return m_InstanceCount;
+}
+
+void Material::SetTextures(std::vector<Texture>& textures)
+{
 }
 
 const bool Material::hasPushConstant() const
