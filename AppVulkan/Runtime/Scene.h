@@ -32,8 +32,8 @@ public:
 	Texture& getTexture(int index) { return Textures[index]; }
 	// Returns pipeline, if index not found will return default one(index 0) 
 	Pipeline& getPipeline(int index);
-	VkDescriptorSet getTextureDescriptorSet(size_t index) const { return Textures[index].descriptorSet; }
 	void* getViewProjectionPtr() const { return (void*)(&viewProjection); }
+	ViewProjectionMatrix& GetViewProjectionMatrix() { return viewProjection; }
 	Light& getLight(size_t index) { return Lights[index]; }
 	Camera& getCamera() { return camera; }
 

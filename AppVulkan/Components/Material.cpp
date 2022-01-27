@@ -19,7 +19,7 @@ const char* Material::getFragmentShader() const
 
 const std::vector<UniformData>& Material::getUniformData() const
 {
-	return m_Shader.m_ShaderInfo.uniformData;
+	//return m_Shader.m_ShaderInfo.uniformData;
 }
 
 const std::vector<size_t> Material::getDataSizes() const
@@ -29,7 +29,7 @@ const std::vector<size_t> Material::getDataSizes() const
 
 size_t Material::getUboCount() const
 {
-	return m_Shader.m_ShaderInfo.uniformCount;
+	return m_Shader.m_ShaderInfo.uniforms.size();
 }
 
 uint32_t Material::getShaderFlags() const
@@ -62,16 +62,6 @@ VkDescriptorSetLayout Material::GetDescriptorSetLayout() const
 	return m_DescriptorSetLayout;
 }
 
-const std::vector<VkDescriptorSet>& Material::GetDescriptorSets() const
-{
-	return m_DescriptorSets;
-}
-
-const std::vector<UniformBuffer>& Material::GetUniformBuffer() const
-{
-	return m_UniformBuffers;
-}
-
 void Material::SetTextures(std::vector<Texture>& textures)
 {
 	m_Textures = textures;
@@ -80,16 +70,6 @@ void Material::SetTextures(std::vector<Texture>& textures)
 void Material::SetDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout)
 {
 	m_DescriptorSetLayout = descriptorSetLayout;
-}
-
-void Material::SetDescriptorSets(std::vector<VkDescriptorSet>& descriptorSets)
-{
-	m_DescriptorSets = descriptorSets;
-}
-
-void Material::SetUniformBuffers(std::vector<UniformBuffer>& uniformBuffers)
-{
-	m_UniformBuffers = uniformBuffers;
 }
 
 const bool Material::hasPushConstant() const

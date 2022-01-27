@@ -71,7 +71,18 @@ struct QueueFamilyIndices
 	}
 };
 
-struct ViewProjectionMatrix {
+struct ViewProjectionMatrix : UniformProvider
+{
+	void ProvideUniformData(void* dst)
+	{
+		memcpy(dst, this, ProvideUniformdataSize());
+	}
+
+	size_t ProvideUniformdataSize()
+	{
+		return sizeof(*this);
+	}
+
 	glm::mat4 projection;
 	glm::mat4 view;
 };

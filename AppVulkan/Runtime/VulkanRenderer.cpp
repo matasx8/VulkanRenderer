@@ -74,13 +74,12 @@ void VulkanRenderer::draw()
     vkResetFences(mainDevice.logicalDevice, 1, &drawFences[currentFrame]);
 
     // get the next available image to draw to and set something to signal when were finished with the image
-    uint32_t imageIndex;
-    vkAcquireNextImageKHR(mainDevice.logicalDevice, swapchain, std::numeric_limits<uint64_t>::max(), imageAvailable[currentFrame], VK_NULL_HANDLE, &imageIndex);
+    vkAcquireNextImageKHR(mainDevice.logicalDevice, swapchain, std::numeric_limits<uint64_t>::max(), imageAvailable[currentFrame], VK_NULL_HANDLE, &m_SwapchainIndex);
 
-    recordCommands(imageIndex);
+    recordCommands(m_SwapchainIndex);
 
-    // weird, I'm not sure why im doing this
-    currentScene.updateScene(imageIndex);
+    currentScene.updateScene(m_SwapchainIndex);
+    m_MaterialManager.UpdateUniforms();
 
     // submit command bufferto queue for execution, making sure it waits for the image to be signalled as available before drawing
     //and signals when it has finished rendering
@@ -704,6 +703,14 @@ std::vector<UniformBuffer> VulkanRenderer::CreateUniformBuffers(const std::vecto
                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                 &UniformBuffers[j].buffer[i], &UniformBuffers[j].deviceMemory[i]);
     }
+}
+
+void VulkanRenderer::UpdateMappedMemory(VkDeviceMemory memory, size_t size, void* data)
+{
+    void* dataMap = nullptr;
+    vkMapMemory(mainDevice.logicalDevice, memory, 0, size, 0, &dataMap);
+    memcpy(dataMap, data, size);
+    vkUnmapMemory(mainDevice.logicalDevice, memory);
 }
 
 

@@ -23,13 +23,9 @@ public:
 	uint32_t GetInstanceCount() const;
 	const std::vector<Texture>& GetTextures() const;
 	VkDescriptorSetLayout GetDescriptorSetLayout() const;
-	const std::vector<VkDescriptorSet>& GetDescriptorSets() const;
-	const std::vector<UniformBuffer>& GetUniformBuffer() const;
 
 	void SetTextures(std::vector<Texture>& textures);
 	void SetDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout);
-	void SetDescriptorSets(std::vector<VkDescriptorSet>& descriptorSets);
-	void SetUniformBuffers(std::vector<UniformBuffer>& uniformBuffers);
 
 	const bool hasPushConstant() const;
 	const bool hasFlag(ShaderCreateInfoFlags flag) const;

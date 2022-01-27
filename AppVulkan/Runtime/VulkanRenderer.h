@@ -54,6 +54,9 @@ public:
 	Scene& getActiveScene() { return currentScene; }
 	float GetDeltaTime() const { return m_DeltaTime; }
 	thread_pool* const GetThreadPool() { return m_ThreadPool;}
+	uint32_t GetSwapchainIndex() const { return m_SwapchainIndex; }
+
+	void UpdateMappedMemory(VkDeviceMemory memory, size_t size, void* data);
 
 	void setupDebugMessenger();
 	void draw();
@@ -91,6 +94,7 @@ private:
 	VkQueue graphicsQueue;
 	VkQueue presentationQueue;
 	VkSurfaceKHR surface;
+	uint32_t m_SwapchainIndex;
 	VkSwapchainKHR swapchain;
 	std::vector<SwapChainImage> swapChainImages;
 	std::vector<VkFramebuffer> swapchainFramebuffers;
@@ -98,6 +102,7 @@ private:
 	  
 	RenderPassManager m_RenderPassManager;
 	ModelManager m_ModelManager;
+	MaterialManager m_MaterialManager;
 
 	Image depthBufferImage;
 	Image colorImage;

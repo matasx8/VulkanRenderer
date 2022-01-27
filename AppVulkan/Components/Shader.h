@@ -59,10 +59,6 @@ struct ShaderCreateInfo
 
 	std::vector<uint8_t> uniforms;
 	std::vector<TextureCreateInfo> textureCreateInfos;
-	// create a config that will allow to configure what kind of texture do we want
-	// clamp, format and etc.
-	// then finally use all these to create material and then pipeline
-
 
 	// push constants
 	// if 0, then no push constant
@@ -72,19 +68,8 @@ struct ShaderCreateInfo
 
 	// to save time, size of instance data will be a mat4 for now
 	bool isInstanced;
-
 	unsigned int shaderFlags;
 
-	const std::vector<size_t> getUniformDataTotalSizes() const
-	{
-		std::vector<size_t> dataSizes(uniformCount);
-		assert(uniformCount);
-		for (size_t i = 0; i < uniformCount; i++)
-		{
-			dataSizes[i] = uniformData[i].getTotalDataSize();
-		}
-		return dataSizes;
-	}
 };
 
 class Shader

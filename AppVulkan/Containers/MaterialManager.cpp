@@ -1,14 +1,6 @@
 #include "VulkanRenderer.h"
 #include "Shader.h"
 
-enum UniformType : uint8_t
-{
-	kUniformSun,
-	kUniformCameraPosition,
-	kUniformViewProjectionMatrix,
-	kUniformTypeTotalCount
-};
-
 MaterialManager::MaterialManager(VulkanRenderer& gfxEngine)
 	: m_GfxEngine(gfxEngine), m_AllTimeMaterialCount(0)
 {
@@ -117,16 +109,73 @@ void MaterialManager::CreateMaterial(const ShaderCreateInfo& shaderCreateInfo)
 	// Create UBOs
 	auto descriptorSetLayout = m_GfxEngine.CreateDescriptorSetLayout(shaderCreateInfo.uniforms.size());
 	auto sizes = UniformsTypesToSizes(shaderCreateInfo.uniforms);
+
+	// for now lets create these here. Should actually look at what type of uniforms are being asked, 
+	// then check if it exists and then create and cache it. Should exist only 1 uniform buffer and 1 descriptor set
+	// for each type of uniform buffer.
 	auto UniformBuffers = m_GfxEngine.CreateUniformBuffers(sizes, shaderCreateInfo.uniforms.size());
 	auto descriptorSets = m_GfxEngine.CreateDescriptorSets(sizes.data(), UniformBuffers, descriptorSetLayout);
 
+	// temporary! Make into what I commented above later!! --------------
+	for (auto i = 0; i < shaderCreateInfo.uniforms.size(); i++)
+	{
+		m_UniformCache[shaderCreateInfo.uniforms[i]] = UniformBuffers[i];
+		m_DescriptorSetCache[shaderCreateInfo.uniforms[i]] = descriptorSets[i];
+	}
+	// ------------------------------------------------------------------
+
 	material.SetDescriptorSetLayout(descriptorSetLayout);
-	material.SetUniformBuffers(UniformBuffers);
-	material.SetDescriptorSets(descriptorSets);
 
-
+	// create pipeline
 
 
 
 	m_AllTimeMaterialCount++;
+}
+
+void MaterialManager::KeepTrackOfDirtyUniforms(const std::vector<uint8_t>& types)
+{
+	for (int i = 0; i < types.size(); i++)
+	{
+		// we're creating a material with these uniforms. Means we will have to update them.
+		// increment so we know how many materials are using. When 0 means we're not using anymore
+		m_DirtyUniformTrackingCache[types[i]] += 1;
+	}
+}
+
+template<typename T>
+void UpdateUniform(T& uniformProvider, VulkanRenderer& engine, VkDeviceMemory memory)
+{
+	void* dataMap = nullptr;
+	const size_t size = uniformProvider.ProvideUniformDataSize();
+	void* data = alloca(size);
+	uniformProvider.ProvideUniformData(data);
+	assert(data);
+
+	// had to make this function public because of this
+	engine.UpdateMappedMemory(memory, size, data);
+}
+
+void MaterialManager::UpdateUniforms()
+{
+	for (auto i = 0; i < kUniformTypeTotalCount; i++)
+	{
+		if (m_DirtyUniformTrackingCache[i] == 0)
+			continue;	// nobody is using this, no need to update
+
+		const auto idx = m_GfxEngine.GetSwapchainIndex();
+
+		switch (i)
+		{
+		case kUniformSun:
+			UpdateUniform(m_GfxEngine.getActiveScene().getLight(0), m_GfxEngine, m_UniformCache[kUniformSun].deviceMemory[idx]);
+			break;
+		case kUniformCameraPosition:
+			UpdateUniform(m_GfxEngine.getActiveScene().getCamera(), m_GfxEngine, m_UniformCache[kUniformCameraPosition].deviceMemory[idx]);
+			break;
+		case kUniformViewProjectionMatrix:
+			UpdateUniform(m_GfxEngine.getActiveScene().GetViewProjectionMatrix(), m_GfxEngine, m_UniformCache[kUniformViewProjectionMatrix].deviceMemory[idx]);
+			break;
+		}
+	}
 }

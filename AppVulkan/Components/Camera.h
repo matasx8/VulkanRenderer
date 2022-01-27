@@ -1,7 +1,7 @@
 #pragma once
 #include "Representable.h"
-#include "vulkan.h"
 #include "NonCopyable.h"
+#include "UniformProvider.h"
 
 //#include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -19,13 +19,14 @@ public:
 	void keyControl(bool* keys, GLfloat deltaTime);
 	void mouseControl(GLfloat xChange, GLfloat yChange);
 
+	void ProvideUniformData(void* dst);
+	size_t ProvideUniformDataSize();
+
 	glm::vec3& getCameraPosition();
 	glm::vec3 getCameraDirection() const;
-	VkSampleCountFlagBits getMSAA() const { return m_MsaaSamples; }
 
 	void LookAt(const glm::vec3 point);
 
-	void setMSAA(VkSampleCountFlagBits msaaSamples);
 
 	glm::mat4 calculateViewMatrix();
 
@@ -45,8 +46,6 @@ private:
 
 	float m_MoveSpeed;
 	float m_TurnSpeed;
-
-	VkSampleCountFlagBits m_MsaaSamples;
 
 	void update();
 };
