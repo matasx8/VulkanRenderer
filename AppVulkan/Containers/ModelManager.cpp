@@ -76,3 +76,8 @@ void ModelManager::LoadModel(std::string& path)
     Model meshModel(modelMeshes, false);
     m_Models.push_back(meshModel);
 }
+
+Model& ModelManager::operator[](size_t idx)
+{
+    return m_Models[idx];
+}

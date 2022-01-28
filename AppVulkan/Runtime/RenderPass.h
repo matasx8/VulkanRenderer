@@ -67,26 +67,22 @@ struct RenderPassDescHasher
 class RenderPass
 {
 public:
+
+	RenderPass();
 	void CreateRenderPass(const RenderPassDesc& desc);
 
 	VkRenderPass GetVkRenderPass() const { return m_RenderPass; }
+	RenderPassDesc GetRenderPassDesc() const { return m_Desc; }
 
 	void Destroy();
-
-	// -- commands --
-	void DrawQuad(Material material);
 	
 private:
 
 	VkRenderPass m_RenderPass;
-	RenderPassDesc m_Desc; // if this is used as a key, then maybe we dont need to store it here
+	RenderPassDesc m_Desc;
 #ifdef _DEBUG
 	std::string m_Name;
 #endif
-
-	// temporary, just to get something working
-	Material mat;
-
 };
 
 enum RenderCommand

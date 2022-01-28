@@ -12,6 +12,9 @@ public:
 	Mesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue transferQueue, VkCommandPool transferCommandPool,
 		std::vector<Vertex>* vertices, std::vector<uint32_t>* indices);
 
+	void SetMaterialID(uint32_t id);
+	uint32_t GetMaterialID() const { return m_MaterialId; };
+
 	int getVertexCount();
 	VkBuffer getVertexBuffer();
 

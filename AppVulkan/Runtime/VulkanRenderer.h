@@ -40,6 +40,9 @@
 #include "Containers/MaterialManager.h"
 #include "OSUtilities.h"
 
+struct TextureCreateInfo;
+typedef unsigned char stbi_uc;
+
 //#define DEBUG_LOGS;
 #define DEBUG
 
@@ -152,6 +155,7 @@ private:
 	VkDescriptorSetLayout CreateDescriptorSetLayout(size_t UboCount); //TODO: have one function for dsetlayout
 	std::vector<VkDescriptorSet> CreateDescriptorSets(const size_t* dataSizes, std::vector<UniformBuffer>& UniformBuffers, VkDescriptorSetLayout descriptorSetLayout);
 	std::vector<UniformBuffer> CreateUniformBuffers(const std::vector<size_t>& dataSizes, size_t UboCount);
+	Pipeline CreatePipeline(const Material& material);
 
 	void EnableCrashDumps();
 

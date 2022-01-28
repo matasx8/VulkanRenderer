@@ -1,29 +1,13 @@
 #include "Pipeline.h"
+#include "RenderPass.h"
 #include <stdexcept>
 
-Pipeline::Pipeline(Device device, Camera* camera, size_t swapchainImageCount, DescriptorPool* descriptorPool)
-    :device(device), usedThisFrame(false), swapchainImageCount(swapchainImageCount), pushConstantRange({}), camera(camera), m_DescriptorPool(descriptorPool)
+Pipeline::Pipeline()
 {
-    if (camera == nullptr)
-        throw std::runtime_error("Pointer to camera was null!");
-    if(descriptorPool == nullptr)
-        throw std::runtime_error("Pointer to Descriptor Pool was null!");
 }
 
-Pipeline::Pipeline(Material material, Device device, Camera* camera, size_t swapchainImageCount, DescriptorPool* descriptorPool)
-    : device(device), usedThisFrame(false), material(material),
-    swapchainImageCount(swapchainImageCount), pushConstantRange({}), camera(camera), m_DescriptorPool(descriptorPool)
+void Pipeline::createPipeline(VkExtent2D extent, RenderPass renderPass, const Material& material)
 {
-    if (camera == nullptr)
-        throw std::runtime_error("Pointer to camera was null!");
-    if (descriptorPool == nullptr)
-        throw std::runtime_error("Pointer to Descriptor Pool was null!");
-}
-
-void Pipeline::createPipeline(VkExtent2D extent, VkRenderPass renderPass)
-{
-    //if(material is uninitialized)
-    // use default TODO
     VkPipelineShaderStageCreateInfo shaderStages[2];
     createPipelineShaderStageCreateInfo(shaderStages[0], material.getVertexShader(), VK_SHADER_STAGE_VERTEX_BIT);
     createPipelineShaderStageCreateInfo(shaderStages[1], material.getFragmentShader(), VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -52,7 +36,7 @@ void Pipeline::createPipeline(VkExtent2D extent, VkRenderPass renderPass)
     }
     
     VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo = {};
-    createPipelineVertexInputStateCreateInfo(vertexInputCreateInfo, bindingDescriptions.data(), attributeDescriptions.data());
+    createPipelineVertexInputStateCreateInfo(vertexInputCreateInfo, bindingDescriptions.data(), attributeDescriptions.data(), material.IsInstanced());
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
     createPipelineInputAssemblyStateCreateInfo(inputAssembly);
@@ -70,7 +54,7 @@ void Pipeline::createPipeline(VkExtent2D extent, VkRenderPass renderPass)
     createPipelineRasterizationStateCreateInfo(rasterizerCreateInfo);
 
     VkPipelineMultisampleStateCreateInfo multisamplingCreateInfo = {};
-    createMSAAStateCreateInfo(multisamplingCreateInfo, camera->getMSAA());
+    createMSAAStateCreateInfo(multisamplingCreateInfo, static_cast<VkSampleCountFlagBits>(renderPass.GetRenderPassDesc().msaaCount));
 
     VkPipelineColorBlendAttachmentState colorState = {};
     createPipelineColorBlendAttachmentState(colorState);
@@ -80,47 +64,20 @@ void Pipeline::createPipeline(VkExtent2D extent, VkRenderPass renderPass)
     VkPipelineDepthStencilStateCreateInfo depthStencilCreateInfo = {};
     createDepthStencilCreateInfo(depthStencilCreateInfo);
 
-    //TODO: cover flags
-    // layout shows the layout for the descriptor sets. If it can be reused, then we don't have to rebind
-    // descriptor sets for next pipeline.
-    // 1 descriptor set for 1 ubo
-    uint32_t shaderFlags = material.getShaderFlags();
-    if (material.getUboCount() > 0)
-    {
-        // TODO: make class for dslayout or something. So we can efficiently reuse them
-        // still making one layout for this pipeline
-        createDescriptorSetLayout(material.getUboCount());
-        // create buffers uboCount x swapchainImageCount
-        createUniformBuffers(material.getDataSizes(), material.getUboCount());
-
-        createDescriptorSets(material.getDataSizes().data());
-    }
-    else
-        assert(false);// not implemented yet
-
-    //TODO IMPORTANT
-        createTextureSampler(device.logicalDevice);
-        createTextureSamplerSetLayout(device.logicalDevice);
-        // the default one has 1 texture, will do for now
-        //Texture tex = material.textures[0];
-        // keep track of index
-        //createTextureDescriptor(tex, 0, device.logicalDevice);
-        // must pass descriptorsetlayout from scene wtf? this is definitely not good
-        //!HERE from shader create info..
-        std::array<VkDescriptorSetLayout, 2> descriptorSetLayouts = { descriptorSetLayout, getTextureDescriptorSetLayout() };
     //TODO: cover else branch
-    if(shaderFlags & kUseModelMatrixForPushConstant)
-        createPushConstantRange();
+   // if(shaderFlags & kUseModelMatrixForPushConstant)
+    createPushConstantRange();
 
-    createPipelineLayout(descriptorSetLayouts.data(), descriptorSetLayouts.size(), pushConstantRange.size);
+    auto descriptorSetLayout = material.GetDescriptorSetLayout();
+    createPipelineLayout(&descriptorSetLayout, 1, pushConstantRange.size);
 
     CreatePipeline(shaderStages, &vertexInputCreateInfo, &inputAssembly, &viewportStateCreateInfo,
         NULL, &rasterizerCreateInfo, &multisamplingCreateInfo, &colorBlendingCreateInfo, &depthStencilCreateInfo,
-        pipelineLayout, renderPass, 0, VK_NULL_HANDLE, -1,
-        VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT, device.logicalDevice); // TODO medium, pipeline cache or at least derivatives
+        pipelineLayout, renderPass.GetVkRenderPass(), 0, VK_NULL_HANDLE, -1,
+        VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT, s_DevicePtr.logicalDevice); // TODO pipeline cache or at least derivatives
 
-    vkDestroyShaderModule(device.logicalDevice, shaderStages[0].module, nullptr);
-    vkDestroyShaderModule(device.logicalDevice, shaderStages[1].module, nullptr);
+    vkDestroyShaderModule(s_DevicePtr.logicalDevice, shaderStages[0].module, nullptr);
+    vkDestroyShaderModule(s_DevicePtr.logicalDevice, shaderStages[1].module, nullptr);
 }
 
 void Pipeline::CreatePipeline(VkPipelineShaderStageCreateInfo* shaderStages, VkPipelineVertexInputStateCreateInfo* vertexInputCreateInfo,
@@ -161,128 +118,8 @@ void Pipeline::CreatePipeline(VkPipelineShaderStageCreateInfo* shaderStages, VkP
     }
 }
 
-void Pipeline::createDescriptorSetLayout(size_t UboCount)
-{
-    // here we show what uniforms we need.
-    std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings(UboCount);
-    for (size_t i = 0; i < UboCount; i++)
-    {
-        descriptorSetLayoutBindings[i].binding = i;
-        descriptorSetLayoutBindings[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorSetLayoutBindings[i].descriptorCount = 1;
-        descriptorSetLayoutBindings[i].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    }
-
-    // create descriptor set layout with given bidnings
-    VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-    layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutCreateInfo.bindingCount = static_cast<uint32_t>(descriptorSetLayoutBindings.size()); // number of binding infos
-    layoutCreateInfo.pBindings = descriptorSetLayoutBindings.data(); //array of binding infos
-
-    //create descriptor set layout
-    VkResult result = vkCreateDescriptorSetLayout(device.logicalDevice, &layoutCreateInfo, nullptr, &descriptorSetLayout);
-    if (result != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to create a descriptor set layout");
-    }
-}
-
-void Pipeline::createUniformBuffers(const std::vector<size_t>& dataSizes, size_t UboCount)
-{
-    // 1. Need a UniformBuffer for each swapchain image
-    // 2. Need to create a buffer for each of them (eg. 3 buffers x 3 swapchain images) 
-    UniformBuffers.resize(UboCount);
-    for (auto& ubo : UniformBuffers)
-    {
-        // Uniform buffers and they contain buffers and device memory for each swapchain image
-        ubo.buffer.resize(swapchainImageCount);
-        ubo.buffer.resize(swapchainImageCount);
-        ubo.deviceMemory.resize(swapchainImageCount);
-        ubo.deviceMemory.resize(swapchainImageCount);
-    }
-
-    for (size_t i = 0; i < swapchainImageCount; i++)
-    {
-        for (size_t j = 0; j < UboCount; j++)// TODO: create all three in a row?
-            createBuffer(device.physicalDevice, device.logicalDevice, dataSizes[j],
-                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                &UniformBuffers[j].buffer[i], &UniformBuffers[j].deviceMemory[i]);
-    }
-}
-
-void Pipeline::createDescriptorSets(const size_t* dataSizes)
-{
-    const size_t setSize = swapchainImageCount;
-    //resize descriptor set list so one for swapchain image
-    descriptorSets.resize(setSize);
-
-    std::vector<VkDescriptorSetLayout> setLayouts(setSize, descriptorSetLayout);
-    
-    m_DescriptorPool->AllocateDescriptorSets(descriptorSets, setLayouts, kDescriptorTypeUniformBuffer);
-    
-
-    std::vector<VkDescriptorBufferInfo> BufferInfos(setSize);
-    std::vector<VkWriteDescriptorSet> SetWrites(setSize * UniformBuffers.size());
-    size_t index = 0;
-    for (size_t i = 0; i < swapchainImageCount; i++)
-    {
-        for (size_t j = 0; j < UniformBuffers.size(); j++)
-        {
-            auto bufferInfo = &BufferInfos[j];
-            // j - uniform buffers (eg. VP, Lights, Camera pos)
-            // i - swapchainImages
-            bufferInfo->buffer = UniformBuffers[j].buffer[i];
-            bufferInfo->range = dataSizes[j];
-
-            SetWrites[index].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            SetWrites[index].dstSet = descriptorSets[i]; // descriptor set to update (as many as swapchainImages)
-            SetWrites[index].dstBinding = j; // binding to update
-            SetWrites[index].dstArrayElement = 0; // index in array to update
-            SetWrites[index].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; // type of descriptor
-            SetWrites[index].descriptorCount = 1; // amount to update
-            SetWrites[index].pBufferInfo = bufferInfo; // info about buffer data to bind
-            index++;
-        }
-    }
-    vkUpdateDescriptorSets(device.logicalDevice, index, SetWrites.data(), 0, nullptr);
-}
-
-void Pipeline::update(size_t index)
-{
-    auto uniformData = material.getUniformData();
-    assert(uniformData.size());
-    for (size_t i = 0; i < UniformBuffers.size(); i++)
-    {
-        void* dataMap = nullptr;
-        void* data = alloca(uniformData[i].getTotalDataSize());
-        size_t size = uniformData[i].getTotalDataSize();
-        uniformData[i].getPackedDataBuffer(data);
-        assert(data);
-
-        vkMapMemory(device.logicalDevice, UniformBuffers[i].deviceMemory[index], 0, size, 0, &dataMap);
-        memcpy(dataMap, data, size);
-        vkUnmapMemory(device.logicalDevice, UniformBuffers[i].deviceMemory[index]);
-    }
-}
-
-bool Pipeline::isMaterialCompatible(Material& mat) const
-{
-    return this->material == mat;
-}
-
 void Pipeline::CleanUp(VkDevice logicalDevice)
 {
-    vkDestroyDescriptorSetLayout(logicalDevice, samplerSetLayout, nullptr);
-    vkDestroySampler(logicalDevice, textureSampler, nullptr);
-
-    vkDestroyDescriptorSetLayout(logicalDevice, descriptorSetLayout, nullptr);
-
-    for (size_t i = 0; i < swapchainImageCount; i++)
-    {
-        UniformBuffers[i].freeBuffer(device.logicalDevice);
-    }
-
-    vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
     vkDestroyPipeline(logicalDevice, pipeline, nullptr);
 }
 
@@ -311,7 +148,7 @@ void Pipeline::createShaderModule(VkShaderModule& shaderModule, const std::vecto
     shaderModuleCreateInfo.pNext = nullptr;
     shaderModuleCreateInfo.flags = 0;
 
-    VkResult result = vkCreateShaderModule(device.logicalDevice, &shaderModuleCreateInfo, nullptr, &shaderModule);
+    VkResult result = vkCreateShaderModule(s_DevicePtr.logicalDevice, &shaderModuleCreateInfo, nullptr, &shaderModule);
     if (result != VK_SUCCESS)
     {
         throw std::runtime_error("Failed to create a shader module!");
@@ -340,12 +177,12 @@ void Pipeline::createVertexInputAttributeDescription(VkVertexInputAttributeDescr
     attributeDescription.offset = offset;
 }
 
-void Pipeline::createPipelineVertexInputStateCreateInfo(VkPipelineVertexInputStateCreateInfo& vertexInputCreateInfo, VkVertexInputBindingDescription* bindingDescriptions, VkVertexInputAttributeDescription* attributeDescriptions) const
+void Pipeline::createPipelineVertexInputStateCreateInfo(VkPipelineVertexInputStateCreateInfo& vertexInputCreateInfo, VkVertexInputBindingDescription* bindingDescriptions, VkVertexInputAttributeDescription* attributeDescriptions, bool isInstanced) const
 {
     vertexInputCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputCreateInfo.vertexBindingDescriptionCount = material.IsInstanced() ? 2 : 1;
+    vertexInputCreateInfo.vertexBindingDescriptionCount = isInstanced ? 2 : 1;
     vertexInputCreateInfo.pVertexBindingDescriptions = bindingDescriptions;
-    vertexInputCreateInfo.vertexAttributeDescriptionCount = material.IsInstanced() ? 7 : 3;
+    vertexInputCreateInfo.vertexAttributeDescriptionCount = isInstanced ? 7 : 3;
     vertexInputCreateInfo.pVertexAttributeDescriptions = attributeDescriptions;
     vertexInputCreateInfo.pNext = nullptr;
     vertexInputCreateInfo.flags = 0;
@@ -467,7 +304,7 @@ void Pipeline::createPipelineLayout(VkDescriptorSetLayout* descriptorSetLayouts,
     pipelineLayoutCreateInfo.pNext = nullptr;
     pipelineLayoutCreateInfo.flags = 0;
 
-    VkResult result = vkCreatePipelineLayout(device.logicalDevice, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout);
+    VkResult result = vkCreatePipelineLayout(s_DevicePtr.logicalDevice, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout);
     if (result != VK_SUCCESS)
     {
         throw std::runtime_error("Failed to create pipeline layout");

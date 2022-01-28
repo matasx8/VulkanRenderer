@@ -12,6 +12,9 @@ public:
 
 	void LoadDefaultModels();
 
+	inline size_t Size() { return m_Models.size(); };
+
+	Model& operator[](size_t idx);
 
 private:
 

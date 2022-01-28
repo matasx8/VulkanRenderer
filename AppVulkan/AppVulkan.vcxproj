@@ -203,6 +203,7 @@
     <ClInclude Include="Containers\RenderPassManager.h" />
     <ClInclude Include="Containers\ModelManager.h" />
     <ClInclude Include="Containers\MaterialManager.h" />
+    <ClInclude Include="Runtime\UniformProvider.h" />
     <ClInclude Include="Utils\OSUtilities.h" />
     <ClInclude Include="Runtime\RenderPass.h" />
     <ClInclude Include="Runtime\InstanceDataBuffer.h" />

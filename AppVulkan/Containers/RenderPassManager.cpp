@@ -1,4 +1,5 @@
 #include "RenderPassManager.h"
+#include "Shader.h"
 
 RenderPassManager::RenderPassManager()
 {
@@ -11,16 +12,8 @@ void RenderPassManager::AddRenderPass(RenderPassDesc& desc, RenderPass& renderPa
 
 void RenderPassManager::AddExampleRenderPass()
 {
-	ShaderCreateInfo shaderInfo = { "Shaders/shader.spv", "Shaders/shader.spv" };
-	shaderInfo.uniformCount = 0;
-	shaderInfo.pushConstantSize = 0;
-	shaderInfo.shaderFlags = 0;
-	shaderInfo.isInstanced = false;
-
-	Material quadMaterial = Material(shaderInfo);
-
 	RenderPassDesc DrawOpaques =
-	{
+	{ 
 		8,	// msaaCount
 		kRenderPassPlace_Opaques, // place
 		kTargetSwapchain,
@@ -41,13 +34,13 @@ void RenderPassManager::AddExampleRenderPass()
 	AddRenderPass(DrawOpaques, rp);
 }
 
-VkRenderPass RenderPassManager::GetRenderPass()
+RenderPass RenderPassManager::GetRenderPass()
 {
 	// fix this later
 	// seems like I have no way now to specify what renderpass I need.
 	// so temporarily do this to retrieve the one and only rp I need.
 	for (auto& a : m_RenderPassMap)
-		return a.second.GetVkRenderPass();
+		return a.second;
 }
 
 void RenderPassManager::CleanUp()

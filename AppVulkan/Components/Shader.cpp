@@ -4,9 +4,9 @@ Shader::Shader()
 {
 }
 
-Shader::Shader(ShaderCreateInfo& shaderInfo)
+Shader::Shader(const ShaderCreateInfo& shaderInfo)
 {
-	m_ShaderInfo = std::move(shaderInfo);
+	m_ShaderInfo = shaderInfo;
 }
 
 bool Shader::operator==(const Shader& shader) const

@@ -12,7 +12,7 @@ public:
 	void AddExampleRenderPass();
 
 	// temporary, dont use this actually
-	VkRenderPass GetRenderPass();
+	RenderPass GetRenderPass();
 
 	void CleanUp();
 private:

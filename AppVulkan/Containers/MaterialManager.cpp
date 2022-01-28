@@ -30,6 +30,11 @@ void MaterialManager::InitializeDefaultMaterials()
 
 }
 
+void MaterialManager::BindMaterial(uint32_t id)
+{
+	// here we go
+}
+
 size_t MaterialManager::UniformTypeToSize(uint8_t type) const
 {
 	switch (type)
@@ -83,9 +88,7 @@ void MaterialManager::CreateMaterial(const ShaderCreateInfo& shaderCreateInfo)
 	assert(shaderCreateInfo.textureCreateInfos.size());
 	Material material(m_AllTimeMaterialCount);
 
-#ifdef _DEBUG
-	material.m_ShaderCreateInfo = shaderCreateInfo;
-#endif
+	material.SetShader(shaderCreateInfo);
 
 	// Create textures and etc.
 	std::vector<Texture> textures(shaderCreateInfo.textureCreateInfos.size());
@@ -127,8 +130,9 @@ void MaterialManager::CreateMaterial(const ShaderCreateInfo& shaderCreateInfo)
 	material.SetDescriptorSetLayout(descriptorSetLayout);
 
 	// create pipeline
-
-
+	// pass in something that will indicate renderpass manager what renderpass to use
+	Pipeline pipeline = m_GfxEngine.CreatePipeline(material);
+	material.SetPipeline(pipeline);
 
 	m_AllTimeMaterialCount++;
 }
@@ -168,7 +172,7 @@ void MaterialManager::UpdateUniforms()
 		switch (i)
 		{
 		case kUniformSun:
-			UpdateUniform(m_GfxEngine.getActiveScene().getLight(0), m_GfxEngine, m_UniformCache[kUniformSun].deviceMemory[idx]);
+			UpdateUniform(m_GfxEngine.getActiveScene().getLight(), m_GfxEngine, m_UniformCache[kUniformSun].deviceMemory[idx]);
 			break;
 		case kUniformCameraPosition:
 			UpdateUniform(m_GfxEngine.getActiveScene().getCamera(), m_GfxEngine, m_UniformCache[kUniformCameraPosition].deviceMemory[idx]);

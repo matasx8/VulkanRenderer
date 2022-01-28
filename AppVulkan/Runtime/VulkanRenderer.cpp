@@ -1,8 +1,9 @@
 #include "VulkanRenderer.h"
+#include "Texture.h"
 #include <iostream>
 
 VulkanRenderer::VulkanRenderer() 
-    : m_ModelManager(*this, true)
+    : m_ModelManager(*this, true), m_MaterialManager(*this)
 {
     m_DeltaTime = 0;
     m_LastTime = 0;
@@ -93,7 +94,7 @@ void VulkanRenderer::draw()
     };
     submitInfo.pWaitDstStageMask = waitStages; // stages to check semaphores at
     submitInfo.commandBufferCount = 1; //number of command buffers to submit
-    submitInfo.pCommandBuffers = &commandBuffer[imageIndex];
+    submitInfo.pCommandBuffers = &commandBuffer[m_SwapchainIndex];
     submitInfo.signalSemaphoreCount = 1; // number of semaphores to signal
     submitInfo.pSignalSemaphores = &renderFinished[currentFrame]; //semaphores to signal when command buffer finishes -- finished rendering
 
@@ -109,7 +110,7 @@ void VulkanRenderer::draw()
     presentInfo.pWaitSemaphores = &renderFinished[currentFrame];
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = &swapchain; // swapchain to present images to
-    presentInfo.pImageIndices = &imageIndex; //index of images in swapchain to present
+    presentInfo.pImageIndices = &m_SwapchainIndex; //index of images in swapchain to present
 
     result = vkQueuePresentKHR(presentationQueue, &presentInfo);
     if (result != VK_SUCCESS)
@@ -194,7 +195,7 @@ void VulkanRenderer::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugU
 
 void VulkanRenderer::TemporarySetup()
 {
-    currentScene = Scene(graphicsQueue, graphicsCommandPool, mainDevice.physicalDevice, mainDevice.logicalDevice, swapChainImages.size(), swapChainExtent, VK_SAMPLE_COUNT_8_BIT, &m_DescriptorPool);
+    currentScene = Scene(swapChainExtent);
     createLight();
     
 
@@ -411,7 +412,7 @@ void VulkanRenderer::createFramebuffers()
 
         VkFramebufferCreateInfo framebufferCreateInfo = {};
         framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferCreateInfo.renderPass = m_RenderPassManager.GetRenderPass(); //render pass layout the framebuffer will be used with
+        framebufferCreateInfo.renderPass = m_RenderPassManager.GetRenderPass().GetVkRenderPass(); //render pass layout the framebuffer will be used with
         framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         framebufferCreateInfo.pAttachments = attachments.data(); //list of attachments (1:1 with render pass)
         framebufferCreateInfo.width = swapChainExtent.width; //framebuffer width
@@ -705,6 +706,17 @@ std::vector<UniformBuffer> VulkanRenderer::CreateUniformBuffers(const std::vecto
     }
 }
 
+Pipeline VulkanRenderer::CreatePipeline(const Material& material)
+{
+    // should get something and pick a renderpass or create one
+    // for now just get the one
+
+    Pipeline pipeline;
+    pipeline.createPipeline(swapChainExtent, m_RenderPassManager.GetRenderPass(), material);
+
+    return pipeline;
+}
+
 void VulkanRenderer::UpdateMappedMemory(VkDeviceMemory memory, size_t size, void* data)
 {
     void* dataMap = nullptr;
@@ -797,7 +809,7 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
 
     VkRenderPassBeginInfo renderPassBeginInfo = {};
     renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassBeginInfo.renderPass = m_RenderPassManager.GetRenderPass();
+    renderPassBeginInfo.renderPass = m_RenderPassManager.GetRenderPass().GetVkRenderPass();
     renderPassBeginInfo.renderArea.offset = { 0, 0 }; //start point of render pass in pixels
     renderPassBeginInfo.renderArea.extent = swapChainExtent; // size of region t run render pass
     
@@ -817,7 +829,19 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
 
     vkCmdBeginRenderPass(commandBuffer[currentImage], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
+    for (size_t i = 0; i < m_ModelManager.Size(); i++)
+    {
+        const auto& model = m_ModelManager[i];
+        for (size_t j = 0; j < model.GetMeshCount(); j++)
+        {
+            const auto& mesh = model.GetMesh(j);
 
+            // insert condition that checks if this mesh is compatible with this renderpass
+
+            // for now we only have default material and no way to set material to mesh.
+            m_MaterialManager.BindMaterial(mesh.GetMaterialID())
+        }
+    }
     // for(iterator it = m_ModelManager.start(); it != end; it++)
     //{
     // if(mesh.canntRender())

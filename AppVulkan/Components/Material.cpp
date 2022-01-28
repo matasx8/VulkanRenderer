@@ -17,16 +17,6 @@ const char* Material::getFragmentShader() const
 	return m_Shader.m_ShaderInfo.fragmentShader;
 }
 
-const std::vector<UniformData>& Material::getUniformData() const
-{
-	//return m_Shader.m_ShaderInfo.uniformData;
-}
-
-const std::vector<size_t> Material::getDataSizes() const
-{
-	return m_Shader.m_ShaderInfo.getUniformDataTotalSizes();
-}
-
 size_t Material::getUboCount() const
 {
 	return m_Shader.m_ShaderInfo.uniforms.size();
@@ -70,6 +60,16 @@ void Material::SetTextures(std::vector<Texture>& textures)
 void Material::SetDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout)
 {
 	m_DescriptorSetLayout = descriptorSetLayout;
+}
+
+void Material::SetShader(const ShaderCreateInfo& createInfo)
+{
+	m_Shader = Shader(createInfo);
+}
+
+void Material::SetPipeline(Pipeline pipeline)
+{
+	m_Pipeline = pipeline;
 }
 
 const bool Material::hasPushConstant() const

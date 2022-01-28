@@ -18,9 +18,8 @@ public:
 #endif
 	Model(std::vector<Mesh>& newMeshList, bool isInstanced = false);
 
-	size_t getMeshCount();
-	Mesh* getMesh(size_t index);
-	size_t getPipelineIndex() const { return pipelineIndex; }
+	size_t GetMeshCount() const;
+	const Mesh& GetMesh(size_t index) const;
 	size_t GetModelHandle() const;
 	glm::mat4x4& GetModelMatrix();
 	int GetInstanceCount() const { return m_InstanceCount; }
@@ -36,10 +35,8 @@ public:
 	void ApplyFunc(Tfunc func, Targs&... args);
 
 	void SetModelMatrix(const ModelMatrix& matrix);
-	void setPipelineIndex(int index) { pipelineIndex = index; }
 	void SetIsHidden(bool isHidden) { m_IsHidden = isHidden; }
-	// Increment pipelineIndex by one. Used when a pipeline has been thrown out.
-	void updatePipelineIndex() { pipelineIndex++; }
+
 
 	bool IsInstanced() const { return m_IsInstanced; }
 
@@ -65,7 +62,6 @@ private:
 	ModelHandle m_Handle;
 	std::vector<Mesh> meshList;
 	ModelMatrix m_ModelMatrix;
-	size_t pipelineIndex;
 #ifdef _DEBUG
 	std::string m_Name;
 #endif

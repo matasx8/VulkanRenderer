@@ -14,14 +14,14 @@ Model::Model()
 
 Model::Model(std::vector<Mesh>& newMeshList)
 	: m_IsHidden(false), m_IsDuplicate(false), m_IsInstanced(false), m_InstanceCount(0), m_InstanceDataBuffer(nullptr),
-	m_Handle(s_AllTimeModelCount++), meshList(), m_ModelMatrix(), pipelineIndex(0)
+	m_Handle(s_AllTimeModelCount++), meshList(), m_ModelMatrix()
 {
 }
 
 #ifdef _DEBUG
 Model::Model(std::vector<Mesh>& newMeshList, const char* name)
 	: m_IsHidden(false), m_IsDuplicate(false), m_IsInstanced(false), m_InstanceCount(0), m_InstanceDataBuffer(nullptr),
-	m_Handle(s_AllTimeModelCount++), meshList(), m_ModelMatrix(), pipelineIndex(0), m_Name(name)
+	m_Handle(s_AllTimeModelCount++), meshList(), m_ModelMatrix(), m_Name(name)
 {
 }
 #endif
@@ -37,18 +37,14 @@ Model::Model(std::vector<Mesh>& newMeshList, bool isInstanced)
 	m_InstanceDataBuffer = nullptr;
 }
 
-size_t Model::getMeshCount()
+size_t Model::GetMeshCount() const
 {
 	return meshList.size();
 }
 
-Mesh* Model::getMesh(size_t index)
+const Mesh& Model::GetMesh(size_t index) const
 {
-	if (index >= meshList.size())
-	{
-		throw std::runtime_error("attempted to access invalid mesh index");
-	}
-	return &meshList[index];
+	return meshList[index];
 }
 
 size_t Model::GetModelHandle() const

@@ -76,7 +76,7 @@ class Shader
 {
 public:
 	Shader();
-	Shader(ShaderCreateInfo& shaderInfo);
+	Shader(const ShaderCreateInfo& shaderInfo);
 
 	bool operator==(const Shader& shader) const;
 	

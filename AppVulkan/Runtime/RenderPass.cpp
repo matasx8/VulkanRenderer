@@ -1,5 +1,13 @@
 #include "RenderPass.h"
 
+RenderPass::RenderPass()
+	: m_RenderPass(), m_Desc()
+{
+#ifdef _DEBUG
+	m_Name = "Unknown";
+#endif
+}
+
 void RenderPass::CreateRenderPass(const RenderPassDesc& desc)
 {
 	// setup color attachments
@@ -120,11 +128,4 @@ void RenderPass::Destroy()
 {
 	auto device = GetGraphicsDevice();
 	vkDestroyRenderPass(device.logicalDevice, m_RenderPass, nullptr);
-}
-
-void RenderPass::DrawQuad(Material material)
-{
-	// should make a material manager and I should only record the index (or something like that) of the material
-	// will probably be have to have fast random access
-	mat = material;
 }

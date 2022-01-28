@@ -3,6 +3,7 @@
 
 class VulkanRenderer;
 class Material;
+struct ShaderCreateInfo;
 
 enum UniformType : uint8_t
 {
@@ -18,6 +19,7 @@ public:
 	MaterialManager(VulkanRenderer& gfxEngine);
 
 	void InitializeDefaultMaterials();
+	void BindMaterial(uint32_t id);
 
 	size_t UniformTypeToSize(uint8_t type) const;
 	std::vector<size_t> UniformsTypesToSizes(const std::vector<uint8_t>& types) const;

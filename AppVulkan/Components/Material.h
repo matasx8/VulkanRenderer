@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include "Pipeline.h"
 
 class Shader;
 class Texture;
@@ -14,8 +15,6 @@ public:
 
 	const char* getVertexShader() const;
 	const char* getFragmentShader() const;
-	const std::vector<UniformData>& getUniformData() const;
-	const std::vector<size_t> getDataSizes() const;
 	size_t getUboCount() const;
 	uint32_t getShaderFlags() const;
 	const void* getPushConstantDataBuffer() const;
@@ -26,6 +25,8 @@ public:
 
 	void SetTextures(std::vector<Texture>& textures);
 	void SetDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout);
+	void SetShader(const ShaderCreateInfo& createInfo);
+	void SetPipeline(Pipeline pipeline);
 
 	const bool hasPushConstant() const;
 	const bool hasFlag(ShaderCreateInfoFlags flag) const;
@@ -43,8 +44,7 @@ private:
 	Shader m_Shader;
 	std::vector<Texture> m_Textures;
 	VkDescriptorSetLayout m_DescriptorSetLayout;
-	std::vector<VkDescriptorSet> m_DescriptorSets;
-	std::vector<UniformBuffer> m_UniformBuffers;
+	Pipeline m_Pipeline;
 
 	// probably not needed anymore
 	uint32_t m_InstanceCount;
