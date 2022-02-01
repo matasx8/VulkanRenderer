@@ -7,7 +7,7 @@
 #include "glm/glm.hpp"
 #include "Texture.h"
 
-enum ShaderCreateInfoFlags
+enum ShaderCreateInfoFlags : size_t
 {
 	kDefault = 0,
 	kUseViewProjAsFirstUBO = 1,

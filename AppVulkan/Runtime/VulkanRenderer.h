@@ -87,7 +87,7 @@ private:
 #ifdef NDEBUG
 	const bool enableValidationLayers = false;
 #else
-	bool enableValidationLayers = false;
+	bool enableValidationLayers = true;
 #endif
 
 	VkInstance instance;
@@ -156,6 +156,12 @@ private:
 	std::vector<VkDescriptorSet> CreateDescriptorSets(const size_t* dataSizes, std::vector<UniformBuffer>& UniformBuffers, VkDescriptorSetLayout descriptorSetLayout);
 	std::vector<UniformBuffer> CreateUniformBuffers(const std::vector<size_t>& dataSizes, size_t UboCount);
 	Pipeline CreatePipeline(const Material& material);
+
+	void BindPipeline(VkPipeline pipeline);
+	void BindDescriptorSets(const VkDescriptorSet* descriptorSets, uint32_t count, VkPipelineLayout layout);
+	void PushConstants(const ModelMatrix& modelMatrix, VkPipelineLayout layout);
+	void BindMesh(const Mesh& mesh);
+	void DrawIndexed(uint32_t indexCount, uint32_t instanceCount);
 
 	void EnableCrashDumps();
 

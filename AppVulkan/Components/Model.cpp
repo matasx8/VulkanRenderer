@@ -10,18 +10,19 @@ Model::Model()
 	m_Handle = s_AllTimeModelCount++;
 	m_InstanceCount = 1;
 	m_InstanceDataBuffer = nullptr;
+	m_ModelMatrix = glm::mat4(1.0f);
 }
 
 Model::Model(std::vector<Mesh>& newMeshList)
 	: m_IsHidden(false), m_IsDuplicate(false), m_IsInstanced(false), m_InstanceCount(0), m_InstanceDataBuffer(nullptr),
-	m_Handle(s_AllTimeModelCount++), meshList(), m_ModelMatrix()
+	m_Handle(s_AllTimeModelCount++), meshList(), m_ModelMatrix(1.0f)
 {
 }
 
 #ifdef _DEBUG
 Model::Model(std::vector<Mesh>& newMeshList, const char* name)
 	: m_IsHidden(false), m_IsDuplicate(false), m_IsInstanced(false), m_InstanceCount(0), m_InstanceDataBuffer(nullptr),
-	m_Handle(s_AllTimeModelCount++), meshList(), m_ModelMatrix(), m_Name(name)
+	m_Handle(s_AllTimeModelCount++), meshList(), m_ModelMatrix(1.0f), m_Name(name)
 {
 }
 #endif
@@ -52,7 +53,7 @@ size_t Model::GetModelHandle() const
 	return m_Handle;
 }
 
-ModelMatrix& Model::GetModelMatrix()
+const glm::mat4x4& Model::GetModelMatrix() const
 {
 	return m_ModelMatrix;
 }

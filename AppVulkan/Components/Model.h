@@ -21,7 +21,7 @@ public:
 	size_t GetMeshCount() const;
 	const Mesh& GetMesh(size_t index) const;
 	size_t GetModelHandle() const;
-	glm::mat4x4& GetModelMatrix();
+	const glm::mat4x4& GetModelMatrix() const;
 	int GetInstanceCount() const { return m_InstanceCount; }
 	VkBuffer GetInstanceData() const { return m_InstanceDataBuffer->GetInstanceData(); }
 	InstanceDataBuffer* GetInstanceDataBuffer() { return m_InstanceDataBuffer; }

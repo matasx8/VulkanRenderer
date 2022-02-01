@@ -12,6 +12,8 @@ public:
 
 	void LoadDefaultModels();
 
+	void BindMesh(const Mesh& mesh);
+
 	inline size_t Size() { return m_Models.size(); };
 
 	Model& operator[](size_t idx);

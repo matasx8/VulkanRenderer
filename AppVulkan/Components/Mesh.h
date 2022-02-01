@@ -5,6 +5,15 @@
 #include <vector>
 #include "Utilities.h"
 
+struct ViewProjectionMatrix : UniformProvider
+{
+	void ProvideUniformData(void* dst) override;
+	size_t ProvideUniformDataSize() override;
+
+	glm::mat4 projection;
+	glm::mat4 view;
+};
+
 class Mesh
 {
 public:
@@ -15,11 +24,11 @@ public:
 	void SetMaterialID(uint32_t id);
 	uint32_t GetMaterialID() const { return m_MaterialId; };
 
-	int getVertexCount();
-	VkBuffer getVertexBuffer();
+	int GetVertexCount() const;
+	VkBuffer GetVertexBuffer() const;
 
-	uint32_t getIndexCount();
-	VkBuffer getIndexBuffer();
+	uint32_t GetIndexCount() const;
+	VkBuffer GetIndexBuffer() const;
 
 	void destroyBuffers();
 

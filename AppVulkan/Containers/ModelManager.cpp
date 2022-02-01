@@ -38,6 +38,11 @@ void ModelManager::LoadDefaultModels()
     Debug::LogMsg(" ms.\n");
 }
 
+void ModelManager::BindMesh(const Mesh& mesh)
+{
+    m_GfxEngine.BindMesh(mesh);
+}
+
 void ModelManager::LoadModelsThreaded(std::vector<std::string>* paths)
 {
     // if nr of models is low then it might be slower or have not much benefit over

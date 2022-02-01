@@ -20,22 +20,22 @@ void Mesh::SetMaterialID(uint32_t id)
 }
 
 
-int Mesh::getVertexCount()
+int Mesh::GetVertexCount() const
 {
     return vertexCount;
 }
 
-VkBuffer Mesh::getVertexBuffer()
+VkBuffer Mesh::GetVertexBuffer() const
 {
     return vertexBuffer;
 }
 
-uint32_t Mesh::getIndexCount()
+uint32_t Mesh::GetIndexCount() const
 {
     return indexCount;
 }
 
-VkBuffer Mesh::getIndexBuffer()
+VkBuffer Mesh::GetIndexBuffer() const
 {
     return indexBuffer;
 }
@@ -108,4 +108,14 @@ void Mesh::createIndexBuffer(VkPhysicalDevice physicalDevice, VkDevice device, V
 
     vkDestroyBuffer(device, stagingBuffer, nullptr);
     vkFreeMemory(device, stagingBufferMemory, nullptr);
+}
+
+void ViewProjectionMatrix::ProvideUniformData(void* dst)
+{
+    memcpy(dst, this, ProvideUniformDataSize());
+}
+
+size_t ViewProjectionMatrix::ProvideUniformDataSize()
+{
+    return sizeof(glm::mat4) + sizeof(glm::mat4);
 }

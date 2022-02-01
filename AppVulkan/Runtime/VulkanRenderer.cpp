@@ -79,9 +79,6 @@ void VulkanRenderer::draw()
 
     recordCommands(m_SwapchainIndex);
 
-    currentScene.updateScene(m_SwapchainIndex);
-    m_MaterialManager.UpdateUniforms();
-
     // submit command bufferto queue for execution, making sure it waits for the image to be signalled as available before drawing
     //and signals when it has finished rendering
     //queue submission info
@@ -117,6 +114,9 @@ void VulkanRenderer::draw()
     {
         throw std::runtime_error("Failed to present image");
     }
+
+    currentScene.updateScene(m_SwapchainIndex);
+    m_MaterialManager.UpdateUniforms();
 
     //get next frame
     currentFrame = (currentFrame + 1) % MAX_FRAME_DRAWS;
@@ -594,6 +594,7 @@ VkDescriptorSetLayout VulkanRenderer::CreateTextureDescriptorSetLayout()
     {
         throw std::runtime_error("Failed to create a descriptor set layout");
     }
+    return layout;
 }
 
 VkSampler VulkanRenderer::CreateTextureSampler(const TextureCreateInfo& createInfo)
@@ -601,7 +602,7 @@ VkSampler VulkanRenderer::CreateTextureSampler(const TextureCreateInfo& createIn
     VkSamplerCreateInfo samplerCreateInfo = {};
     samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     samplerCreateInfo.magFilter = createInfo.filtering;
-    samplerCreateInfo.minFilter = VK_FILTER_LINEAR;
+    samplerCreateInfo.minFilter = createInfo.filtering;
     samplerCreateInfo.addressModeU = createInfo.wrap;
     samplerCreateInfo.addressModeV = createInfo.wrap;
     samplerCreateInfo.addressModeW = createInfo.wrap;
@@ -617,6 +618,7 @@ VkSampler VulkanRenderer::CreateTextureSampler(const TextureCreateInfo& createIn
     {
         throw std::runtime_error("Failed to create texture sampler");
     }
+    return sampler;
 }
 
 VkDescriptorSetLayout VulkanRenderer::CreateDescriptorSetLayout(size_t UboCount)
@@ -643,6 +645,7 @@ VkDescriptorSetLayout VulkanRenderer::CreateDescriptorSetLayout(size_t UboCount)
     {
         throw std::runtime_error("Failed to create a descriptor set layout");
     }
+    return descriptorSetLayout;
 }
 
 std::vector<VkDescriptorSet> VulkanRenderer::CreateDescriptorSets(const size_t* dataSizes, std::vector<UniformBuffer>& UniformBuffers, VkDescriptorSetLayout descriptorSetLayout)
@@ -704,6 +707,8 @@ std::vector<UniformBuffer> VulkanRenderer::CreateUniformBuffers(const std::vecto
                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                 &UniformBuffers[j].buffer[i], &UniformBuffers[j].deviceMemory[i]);
     }
+
+    return UniformBuffers;
 }
 
 Pipeline VulkanRenderer::CreatePipeline(const Material& material)
@@ -715,6 +720,36 @@ Pipeline VulkanRenderer::CreatePipeline(const Material& material)
     pipeline.createPipeline(swapChainExtent, m_RenderPassManager.GetRenderPass(), material);
 
     return pipeline;
+}
+
+void VulkanRenderer::BindPipeline(VkPipeline pipeline)
+{
+    vkCmdBindPipeline(commandBuffer[m_SwapchainIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+}
+
+void VulkanRenderer::BindDescriptorSets(const VkDescriptorSet* descriptorSets, uint32_t count, VkPipelineLayout layout)
+{
+    vkCmdBindDescriptorSets(commandBuffer[m_SwapchainIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, count, descriptorSets, 0, nullptr);
+}
+
+void VulkanRenderer::PushConstants(const ModelMatrix& modelMatrix, VkPipelineLayout layout)
+{
+    uint32_t size = sizeof(modelMatrix);
+    const void* pushDataBuffer = &modelMatrix;
+    vkCmdPushConstants(commandBuffer[m_SwapchainIndex], layout, VK_SHADER_STAGE_VERTEX_BIT, 0, size, pushDataBuffer);
+}
+
+void VulkanRenderer::BindMesh(const Mesh& mesh)
+{
+    VkDeviceSize offsets[] = { 0 }; //offsets into buffers being bound
+    VkBuffer vertexBuffer = mesh.GetVertexBuffer();
+    vkCmdBindVertexBuffers(commandBuffer[m_SwapchainIndex], 0, 1, &vertexBuffer, offsets);
+    vkCmdBindIndexBuffer(commandBuffer[m_SwapchainIndex], mesh.GetIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+}
+
+void VulkanRenderer::DrawIndexed(uint32_t indexCount, uint32_t instanceCount)
+{
+    vkCmdDrawIndexed(commandBuffer[m_SwapchainIndex], indexCount, instanceCount, 0, 0, 0);
 }
 
 void VulkanRenderer::UpdateMappedMemory(VkDeviceMemory memory, size_t size, void* data)
@@ -832,48 +867,26 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
     for (size_t i = 0; i < m_ModelManager.Size(); i++)
     {
         const auto& model = m_ModelManager[i];
+        const auto& modelMatrix = model.GetModelMatrix();
+
         for (size_t j = 0; j < model.GetMeshCount(); j++)
         {
             const auto& mesh = model.GetMesh(j);
 
             // insert condition that checks if this mesh is compatible with this renderpass
 
+            // TODO: when I introduce dynamic uniform buffers, use those for model matrix.
+
             // for now we only have default material and no way to set material to mesh.
-            m_MaterialManager.BindMaterial(mesh.GetMaterialID())
+            m_MaterialManager.BindMaterial(currentImage, mesh.GetMaterialID());
+
+            m_MaterialManager.PushConstants(modelMatrix, mesh.GetMaterialID());
+
+            m_ModelManager.BindMesh(mesh);
+
+            DrawIndexed(mesh.GetIndexCount(), /*mesh.GetInstanceCount()*/ 1);
         }
     }
-    // for(iterator it = m_ModelManager.start(); it != end; it++)
-    //{
-    // if(mesh.canntRender())
-    // return;
-    // m_MaterialManager.BindMaterial(mesh.getMaterialID())
-    // bindVBO()
-    // draw
-    // end
-//    std::vector<Model>& Models = currentScene.getModels();
-//    int lastPipelineIndex = -1;
-//
-//    for(size_t i = 0; i < Models.size(); i++)
-//    {
-//        Model& model = Models[i];
-//        if (model.IsHidden())
-//            continue;
-//
-//
-//        int currentPipelineIndex = model.getPipelineIndex();
-//        // pipeline indices should be sorted
-//        if (currentPipelineIndex > lastPipelineIndex)
-//        {
-//            VkPipeline newPipeline = currentScene.getPipeline(currentPipelineIndex).getPipeline();
-//            vkCmdBindPipeline(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, newPipeline);
-//            lastPipelineIndex = currentPipelineIndex;
-//        }
-//#ifdef DEBUG
-//        else if (currentPipelineIndex < lastPipelineIndex)
-//            throw std::runtime_error("Current pipeline index was lesser than old one. This indicates Model vector was not sorted.");
-//#endif
-//            //recordingDefaultPath(currentPipelineIndex, model, currentImage);
-//    }
 
     vkCmdEndRenderPass(commandBuffer[currentImage]);
 
@@ -885,60 +898,7 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
     }
 }
 
-void VulkanRenderer::recordingDefaultPath(int currentPipelineIndex, Model& model, int currentImage)
-{
-        Pipeline& gfxPipeline = currentScene.getPipeline(currentPipelineIndex);
-        VkPipelineLayout pipelineLayout = gfxPipeline.getPipelineLayout();
 
-        const auto& modelMatrix = model.GetModelMatrix();
-
-        // TODO: was used last frame?? if yes maybe we don't need to bind.. maybe we don't need to bind a lot of things also?
-        if (gfxPipeline.hasPushConstant())
-        {
-            if (gfxPipeline.useModelMatrixForPushConstant())
-            {
-                uint32_t size = sizeof(modelMatrix);
-                const void* pushDataBuffer = &modelMatrix;
-                vkCmdPushConstants(commandBuffer[currentImage], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, size, pushDataBuffer);
-            }
-            else
-            {// shouldn't be able to have a size that exceeds gfx caps
-                uint32_t size = gfxPipeline.getPushConstantSize();
-                const void* pushDataBuffer = gfxPipeline.getPushConstantDataBuffer();
-                vkCmdPushConstants(commandBuffer[currentImage], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, size, pushDataBuffer);
-            }
-        }
-
-        // If model is instanced, bind instacing data
-        if (model.IsInstanced())
-        {
-            VkDeviceSize offsets[] = { 0 };
-            VkBuffer instanceBuffers[] = { model.GetInstanceData() };
-            vkCmdBindVertexBuffers(commandBuffer[currentImage], 1, 1, instanceBuffers, offsets);
-        }
-
-        for (size_t k = 0; k < model.getMeshCount(); k++)
-        {
-            VkBuffer vertexBuffers[] = { model.getMesh(k)->getVertexBuffer() }; //buffers to bind
-            VkDeviceSize offsets[] = { 0 }; //offsets into buffers being bound
-            vkCmdBindVertexBuffers(commandBuffer[currentImage], 0, 1, vertexBuffers, offsets);
-
-            vkCmdBindIndexBuffer(commandBuffer[currentImage], model.getMesh(k)->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
-
-
-            // TODO: VVVVVVVVVVVVVVVVVVVVVVVVVVVVV bad
-            auto descriptorSet = gfxPipeline.getDescriptorSet(currentImage);
-            //int texId = model.getMesh(k)->getTexId();
-            //auto textureDescriptorSet = currentScene.getTextureDescriptorSet(texId);
-            //std::array<VkDescriptorSet, 2> descriptorSetGroup = { descriptorSet, textureDescriptorSet };
-
-            // bind descriptor sets
-            //vkCmdBindDescriptorSets(commandBuffer[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-               // 0, static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr);// will only apply offset to descriptors that are dynamic
-
-            //vkCmdDrawIndexed(commandBuffer[currentImage], model.getMesh(k)->getIndexCount(), model.GetInstanceCount(), 0, 0, 0);
-        }
-}
 
 void VulkanRenderer::createLogicalDevice()
 {

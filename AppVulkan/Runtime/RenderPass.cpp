@@ -122,6 +122,8 @@ void RenderPass::CreateRenderPass(const RenderPassDesc& desc)
 	{
 		throw std::runtime_error("Failed to create a Render Pass");
 	}
+
+	m_Desc = desc;
 }
 
 void RenderPass::Destroy()

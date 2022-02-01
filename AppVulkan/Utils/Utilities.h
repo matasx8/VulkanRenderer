@@ -1,4 +1,5 @@
 #pragma once
+#include "UniformProvider.h"
 
 #include <fstream>
 #include <vector>
@@ -69,22 +70,6 @@ struct QueueFamilyIndices
 	{
 		return graphicsFamily >= 0 && presentationFamily >= 0;
 	}
-};
-
-struct ViewProjectionMatrix : UniformProvider
-{
-	void ProvideUniformData(void* dst)
-	{
-		memcpy(dst, this, ProvideUniformdataSize());
-	}
-
-	size_t ProvideUniformdataSize()
-	{
-		return sizeof(*this);
-	}
-
-	glm::mat4 projection;
-	glm::mat4 view;
 };
 
 struct SwapChainDetails

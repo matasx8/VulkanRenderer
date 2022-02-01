@@ -1,12 +1,13 @@
 #pragma once
 #include <vector>
 #include "Pipeline.h"
+#include "Shader.h"
+#include "Texture.h"
 
-class Shader;
-class Texture;
 struct UniformData;
 struct UniformBuffer;
-enum ShaderCreateInfoFlags;
+struct ShaderCreateInfo;
+enum ShaderCreateInfoFlags : size_t;
 
 class Material
 {
@@ -22,6 +23,8 @@ public:
 	uint32_t GetInstanceCount() const;
 	const std::vector<Texture>& GetTextures() const;
 	VkDescriptorSetLayout GetDescriptorSetLayout() const;
+	const Pipeline& GetPipeline() const;
+	const Shader& GetShader() const;
 
 	void SetTextures(std::vector<Texture>& textures);
 	void SetDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout);
@@ -36,9 +39,6 @@ public:
 
 	bool operator==(const Material& mat) const;
 
-#ifdef _DEBUG
-	ShaderCreateInfo m_ShaderCreateInfo;
-#endif
 private:
 	uint32_t m_ID;
 	Shader m_Shader;

@@ -2,12 +2,11 @@
 #include "vulkan.h"
 #include "Utilities.h"
 #include <vector>
-#include "Material.h"
-//#include "Camera.h"
 #include "Model.h"
-//#include "Light.h"
-//#include "DescriptorPool.h"
-//TODO: create default pipeline and make function for user that creates a pipeline using derivatives
+
+class RenderPass;
+class Material;
+
 struct UniformBuffer
 {
     std::vector<VkBuffer> buffer;
@@ -38,7 +37,7 @@ public:
         VkPipelineCreateFlags flags, VkDevice device);
 
 
-    VkPipeline getPipeline() { return pipeline; }
+    VkPipeline GetVkPipeline() const { return pipeline; }
     VkPipelineLayout getPipelineLayout() const { return pipelineLayout; }
     uint32_t getPushConstantSize() const { return sizeof(ModelMatrix); }
 

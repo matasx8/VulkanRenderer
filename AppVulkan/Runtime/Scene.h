@@ -7,9 +7,10 @@
 #include "Pipeline.h"
 #include "Containers/RenderPassManager.h"
 #include "Utilities.h"
+#include "Light.h"
+#include "Mesh.h"
+#include "Camera.h"
 
-class Camera;
-class Light;
 
 class Scene
 {
@@ -21,6 +22,9 @@ public:
 
 	void* getViewProjectionPtr() const { return (void*)(&viewProjection); }
 	ViewProjectionMatrix& GetViewProjectionMatrix() { return viewProjection; }
+
+	Light& GetLight() { return Lights[0]; }
+	Camera& GetCamera() { return camera; }
 
 
 	// Updates components (eg. Lights, Camera..)

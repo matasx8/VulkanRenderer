@@ -2,7 +2,7 @@
 #include "Shader.h"
 
 MaterialManager::MaterialManager(VulkanRenderer& gfxEngine)
-	: m_GfxEngine(gfxEngine), m_AllTimeMaterialCount(0)
+	: m_GfxEngine(gfxEngine), m_BoundMaterial(~0u), m_AllTimeMaterialCount(0)
 {
 
 }
@@ -23,16 +23,55 @@ void MaterialManager::InitializeDefaultMaterials()
 	defaultShader.shaderFlags = kUseModelMatrixForPushConstant;
 	defaultShader.isInstanced = false;
 
+	std::vector<TextureCreateInfo> textureInfos;
+	TextureCreateInfo tci;
+	tci.fileName = "plain.png";
+	tci.filtering = VK_FILTER_NEAREST;
+	tci.wrap = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	textureInfos.push_back(tci);
+	defaultShader.textureCreateInfos = textureInfos;
+
 	// default material should be 0
-	//assert(m_AllTimeMaterialCount == 0);
-	//Material defaultMaterial(m_AllTimeMaterialCount, );
 	CreateMaterial(defaultShader);
 
 }
 
-void MaterialManager::BindMaterial(uint32_t id)
+void MaterialManager::BindMaterial(size_t frameIndex, uint32_t id)
 {
-	// here we go
+	if (m_BoundMaterial == id)
+		return;
+
+	const Material& material = GetMaterial(id);
+	const Pipeline& pipeline = material.GetPipeline();
+
+	m_GfxEngine.BindPipeline(pipeline.GetVkPipeline());
+
+	const auto& textures = material.GetTextures();
+	const Shader& shader = material.GetShader();
+	std::vector<VkDescriptorSet> descriptorSets(2);
+	int i = 0;
+	//for (auto ubo : shader.m_ShaderInfo.uniforms)
+	// descriptor set for all uniforms used
+	// have to redo the cache
+	descriptorSets[i++] = m_DescriptorSetCache[frameIndex];
+
+	//for (auto& texture : textures)
+	// this wont work, need descriptor set for all textures to be used
+	descriptorSets[i++] = textures[0].GetDescriptorSet();
+
+
+	m_GfxEngine.BindDescriptorSets(descriptorSets.data(), descriptorSets.size(), pipeline.getPipelineLayout());
+}		
+
+void MaterialManager::ForceNextBind()
+{
+	m_BoundMaterial = ~0u;
+}
+
+void MaterialManager::PushConstants(const ModelMatrix& modelMatrix, uint32_t materialId)
+{
+	const VkPipelineLayout layout = GetMaterial(materialId).GetPipeline().getPipelineLayout();
+	m_GfxEngine.PushConstants(modelMatrix, layout);
 }
 
 size_t MaterialManager::UniformTypeToSize(uint8_t type) const
@@ -59,6 +98,21 @@ std::vector<size_t> MaterialManager::UniformsTypesToSizes(const std::vector<uint
 		sizes[i] = UniformTypeToSize(types[i]);
 	}
 	return sizes;
+}
+
+std::vector<VkDescriptorSet> MaterialManager::UniformTypesToDescriptorSets(const std::vector<uint8_t>& types) const
+{
+	std::vector<VkDescriptorSet> descriptorSets(types.size());
+	for (int i = 0; i < types.size(); i++)
+	{
+		descriptorSets[i] = m_DescriptorSetCache[types[i]];
+	}
+	return descriptorSets;
+}
+
+const Material& MaterialManager::GetMaterial(uint32_t idx) const
+{
+	return m_Materials[idx];
 }
 
 stbi_uc* LoadTextureFile(const std::string& fileName, int* width, int* height, VkDeviceSize* imageSize)
@@ -119,6 +173,8 @@ void MaterialManager::CreateMaterial(const ShaderCreateInfo& shaderCreateInfo)
 	auto UniformBuffers = m_GfxEngine.CreateUniformBuffers(sizes, shaderCreateInfo.uniforms.size());
 	auto descriptorSets = m_GfxEngine.CreateDescriptorSets(sizes.data(), UniformBuffers, descriptorSetLayout);
 
+	KeepTrackOfDirtyUniforms(shaderCreateInfo.uniforms);
+
 	// temporary! Make into what I commented above later!! --------------
 	for (auto i = 0; i < shaderCreateInfo.uniforms.size(); i++)
 	{
@@ -134,6 +190,8 @@ void MaterialManager::CreateMaterial(const ShaderCreateInfo& shaderCreateInfo)
 	Pipeline pipeline = m_GfxEngine.CreatePipeline(material);
 	material.SetPipeline(pipeline);
 
+	m_Materials.push_back(material);
+
 	m_AllTimeMaterialCount++;
 }
 
@@ -145,6 +203,11 @@ void MaterialManager::KeepTrackOfDirtyUniforms(const std::vector<uint8_t>& types
 		// increment so we know how many materials are using. When 0 means we're not using anymore
 		m_DirtyUniformTrackingCache[types[i]] += 1;
 	}
+}
+
+Material& MaterialManager::GetMaterial(uint32_t idx)
+{
+	return m_Materials[idx];
 }
 
 template<typename T>
@@ -172,10 +235,10 @@ void MaterialManager::UpdateUniforms()
 		switch (i)
 		{
 		case kUniformSun:
-			UpdateUniform(m_GfxEngine.getActiveScene().getLight(), m_GfxEngine, m_UniformCache[kUniformSun].deviceMemory[idx]);
+			UpdateUniform(m_GfxEngine.getActiveScene().GetLight(), m_GfxEngine, m_UniformCache[kUniformSun].deviceMemory[idx]);
 			break;
 		case kUniformCameraPosition:
-			UpdateUniform(m_GfxEngine.getActiveScene().getCamera(), m_GfxEngine, m_UniformCache[kUniformCameraPosition].deviceMemory[idx]);
+			UpdateUniform(m_GfxEngine.getActiveScene().GetCamera(), m_GfxEngine, m_UniformCache[kUniformCameraPosition].deviceMemory[idx]);
 			break;
 		case kUniformViewProjectionMatrix:
 			UpdateUniform(m_GfxEngine.getActiveScene().GetViewProjectionMatrix(), m_GfxEngine, m_UniformCache[kUniformViewProjectionMatrix].deviceMemory[idx]);

@@ -52,6 +52,16 @@ VkDescriptorSetLayout Material::GetDescriptorSetLayout() const
 	return m_DescriptorSetLayout;
 }
 
+const Pipeline& Material::GetPipeline() const
+{
+	return m_Pipeline;
+}
+
+const Shader& Material::GetShader() const
+{
+	return m_Shader;
+}
+
 void Material::SetTextures(std::vector<Texture>& textures)
 {
 	m_Textures = textures;
