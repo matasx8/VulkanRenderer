@@ -50,13 +50,10 @@ void MaterialManager::BindMaterial(size_t frameIndex, uint32_t id)
 	const Shader& shader = material.GetShader();
 	std::vector<VkDescriptorSet> descriptorSets(2);
 	int i = 0;
-	//for (auto ubo : shader.m_ShaderInfo.uniforms)
-	// descriptor set for all uniforms used
-	// have to redo the cache
-	descriptorSets[i++] = m_DescriptorSetCache[frameIndex];
 
-	//for (auto& texture : textures)
-	// this wont work, need descriptor set for all textures to be used
+	descriptorSets[i++] = material.GetDescriptorSet(frameIndex);
+
+	// dont store descriptor set in texture, store in material manager
 	descriptorSets[i++] = textures[0].GetDescriptorSet();
 
 
@@ -168,10 +165,11 @@ void MaterialManager::CreateMaterial(const ShaderCreateInfo& shaderCreateInfo)
 	auto sizes = UniformsTypesToSizes(shaderCreateInfo.uniforms);
 
 	// for now lets create these here. Should actually look at what type of uniforms are being asked, 
-	// then check if it exists and then create and cache it. Should exist only 1 uniform buffer and 1 descriptor set
+	// then check if it exists and then create and cache it. Should exist only 1 uniform buffer
 	// for each type of uniform buffer.
 	auto UniformBuffers = m_GfxEngine.CreateUniformBuffers(sizes, shaderCreateInfo.uniforms.size());
-	auto descriptorSets = m_GfxEngine.CreateDescriptorSets(sizes.data(), UniformBuffers, descriptorSetLayout);
+	auto DescriptorSets = m_GfxEngine.CreateDescriptorSets(sizes.data(), UniformBuffers, descriptorSetLayout);
+	material.SetDescriptorSets(DescriptorSets);
 
 	KeepTrackOfDirtyUniforms(shaderCreateInfo.uniforms);
 
@@ -179,7 +177,6 @@ void MaterialManager::CreateMaterial(const ShaderCreateInfo& shaderCreateInfo)
 	for (auto i = 0; i < shaderCreateInfo.uniforms.size(); i++)
 	{
 		m_UniformCache[shaderCreateInfo.uniforms[i]] = UniformBuffers[i];
-		m_DescriptorSetCache[shaderCreateInfo.uniforms[i]] = descriptorSets[i];
 	}
 	// ------------------------------------------------------------------
 

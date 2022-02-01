@@ -758,7 +758,6 @@ void VulkanRenderer::UpdateMappedMemory(VkDeviceMemory memory, size_t size, void
     vkUnmapMemory(mainDevice.logicalDevice, memory);
 }
 
-
 void VulkanRenderer::EnableCrashDumps()
 {
     tracker.Initialize();

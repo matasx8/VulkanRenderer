@@ -61,6 +61,11 @@ public:
 
 	void UpdateMappedMemory(VkDeviceMemory memory, size_t size, void* data);
 
+	template<typename F>
+	void UpdateModels(F& transformationFunction);
+	template<typename P, typename F>
+	void ForEachModelConditional(P& predicate, F& func);
+
 	void setupDebugMessenger();
 	void draw();
 	void cleanup();
@@ -203,3 +208,22 @@ private:
 	VkFormat chooseSupportedFormat(const std::vector<VkFormat>& formats, VkImageTiling tiling, VkFormatFeatureFlags);
 };
 
+template<typename F>
+inline void VulkanRenderer::UpdateModels(F& transformationFunction)
+{
+	for (int i = 0; i < m_ModelManager.Size(); i++)
+	{
+		transformationFunction(m_ModelManager[i], i);
+	}
+}
+
+template<typename P, typename F>
+inline void VulkanRenderer::ForEachModelConditional(P& predicate, F& func)
+{
+	const auto size = m_ModelManager.Size();
+	for (int i = 0; i < size; i++)
+	{
+		if(predicate(i))
+			func(&m_ModelManager, m_ModelManager[i], i);
+	}
+}

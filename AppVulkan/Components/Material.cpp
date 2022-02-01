@@ -52,6 +52,16 @@ VkDescriptorSetLayout Material::GetDescriptorSetLayout() const
 	return m_DescriptorSetLayout;
 }
 
+const std::vector<VkDescriptorSet>& Material::GetDescriptorSets() const
+{
+	return m_DescriptorSets;
+}
+
+VkDescriptorSet Material::GetDescriptorSet(int swapchainIndex) const
+{
+	return m_DescriptorSets[swapchainIndex];
+}
+
 const Pipeline& Material::GetPipeline() const
 {
 	return m_Pipeline;
@@ -70,6 +80,11 @@ void Material::SetTextures(std::vector<Texture>& textures)
 void Material::SetDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout)
 {
 	m_DescriptorSetLayout = descriptorSetLayout;
+}
+
+void Material::SetDescriptorSets(std::vector<VkDescriptorSet>& descriptorSets)
+{
+	m_DescriptorSets = descriptorSets;
 }
 
 void Material::SetShader(const ShaderCreateInfo& createInfo)

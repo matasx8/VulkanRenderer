@@ -12,6 +12,7 @@ class Model
 {
 public:
 	Model();
+	//Model(const Model& copyFrom);
 	Model(std::vector<Mesh>& newMeshList);
 #ifdef _DEBUG
 	Model(std::vector<Mesh>& newMeshList, const char* name);
@@ -33,6 +34,8 @@ public:
 	void CopyInInstanceData(void* dst) const;
 	template<typename Tfunc, typename... Targs>
 	void ApplyFunc(Tfunc func, Targs&... args);
+
+	void MoveLocal(const glm::vec3& vector);
 
 	void SetModelMatrix(const ModelMatrix& matrix);
 	void SetIsHidden(bool isHidden) { m_IsHidden = isHidden; }
@@ -63,7 +66,7 @@ private:
 	std::vector<Mesh> meshList;
 	ModelMatrix m_ModelMatrix;
 #ifdef _DEBUG
-	std::string m_Name;
+	//std::string m_Name;
 #endif
 };
 

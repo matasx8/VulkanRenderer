@@ -12,6 +12,8 @@ public:
 
 	void LoadDefaultModels();
 
+	void Duplicate(const Model& model, bool isInstanced);
+
 	void BindMesh(const Mesh& mesh);
 
 	inline size_t Size() { return m_Models.size(); };

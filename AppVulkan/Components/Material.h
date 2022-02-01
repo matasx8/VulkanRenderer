@@ -23,11 +23,14 @@ public:
 	uint32_t GetInstanceCount() const;
 	const std::vector<Texture>& GetTextures() const;
 	VkDescriptorSetLayout GetDescriptorSetLayout() const;
+	const std::vector<VkDescriptorSet>& GetDescriptorSets() const;
+	VkDescriptorSet GetDescriptorSet(int swapchainIndex) const;
 	const Pipeline& GetPipeline() const;
 	const Shader& GetShader() const;
 
 	void SetTextures(std::vector<Texture>& textures);
 	void SetDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout);
+	void SetDescriptorSets(std::vector<VkDescriptorSet>& descriptorSets);
 	void SetShader(const ShaderCreateInfo& createInfo);
 	void SetPipeline(Pipeline pipeline);
 
@@ -44,6 +47,7 @@ private:
 	Shader m_Shader;
 	std::vector<Texture> m_Textures;
 	VkDescriptorSetLayout m_DescriptorSetLayout;
+	std::vector<VkDescriptorSet> m_DescriptorSets;
 	Pipeline m_Pipeline;
 
 	// probably not needed anymore
