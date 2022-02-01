@@ -113,7 +113,6 @@ glm::vec3 Camera::getCameraDirection() const
 
 void Camera::update()
 {
-	//m_Position = glm::vec3(0.0f, 0.0f, 20.0f);
 	//m_Front.x = cos(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));
 	//m_Front.y = sin(glm::radians(m_Pitch));
 	//m_Front.z = sin(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));

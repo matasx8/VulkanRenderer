@@ -83,7 +83,7 @@ size_t MaterialManager::UniformTypeToSize(uint8_t type) const
 	case kUniformCameraPosition:
 		return sizeof(glm::vec4);
 	case kUniformViewProjectionMatrix:
-		return sizeof(ViewProjectionMatrix);
+		return sizeof(glm::mat4) * 2;
 	default:
 		Debug::LogMsg("Invalid uniform type is being used");
 		return 0;

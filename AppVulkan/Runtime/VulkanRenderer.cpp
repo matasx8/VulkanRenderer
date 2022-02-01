@@ -695,8 +695,6 @@ std::vector<UniformBuffer> VulkanRenderer::CreateUniformBuffers(const std::vecto
     {
         // Uniform buffers and they contain buffers and device memory for each swapchain image
         ubo.buffer.resize(swapChainImages.size());
-        ubo.buffer.resize(swapChainImages.size());
-        ubo.deviceMemory.resize(swapChainImages.size());
         ubo.deviceMemory.resize(swapChainImages.size());
     }
 

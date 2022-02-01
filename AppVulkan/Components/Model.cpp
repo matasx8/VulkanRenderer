@@ -1,4 +1,5 @@
 #include "Model.h"
+#include<glm/gtx/matrix_decompose.hpp>
 
 static size_t s_AllTimeModelCount = 0;
 
@@ -55,7 +56,8 @@ size_t Model::GetModelHandle() const
 
 const glm::mat4x4& Model::GetModelMatrix() const
 {
-	return m_ModelMatrix;
+	
+	return m_ModelMatrix; 
 }
 
 Model Model::Duplicate(bool instanced) const
