@@ -37,7 +37,8 @@ layout(location = 5) out vec3 camPos;
 	
 void main()
 {
-	gl_Position = uboViewProjection.projection * uboViewProjection.view * pushModel.model * vec4(pos, 1.0);
+	mat4 model = mat4(1.0);
+	gl_Position = /*uboViewProjection.projection * uboViewProjection.view * model * */vec4(pos, 1.0);
 	
 	fragPos = vec3(pushModel.model * vec4(pos, 1.0));
 	fragTex = tex;

@@ -2,7 +2,7 @@
 #include <string.h>
 
 Camera::Camera()
-	: m_Position(glm::vec3(-12.0f, 33.0f, 25.0f)), m_Front(glm::vec3(1.0f, -0.2f, -0.2f)), m_WorldUp(glm::vec3(0.0f, 1.0f, 0.0f)),
+	: m_Position(glm::vec3(0.0f, 0.0f, 150.0f)), m_Front(glm::vec3(0.0f, 0.0f, 0.0f)), m_WorldUp(glm::vec3(0.0f, 1.0f, 0.0f)),
 	m_Yaw(-60.0f), m_Pitch(0.0f), m_MoveSpeed(80.0f), m_TurnSpeed(0.5f)
 {
 	update();
@@ -19,6 +19,7 @@ Camera::Camera(glm::vec3 startPosition, glm::vec3 startUp, float startYaw,
 
 void Camera::keyControl(bool* keys, GLfloat deltaTime)
 {
+	return;
 	float velocity = m_MoveSpeed * deltaTime;
 	if (keys[GLFW_KEY_W])
 	{
@@ -43,7 +44,7 @@ void Camera::keyControl(bool* keys, GLfloat deltaTime)
 
 void Camera::mouseControl(GLfloat xChange, GLfloat yChange)
 {
-
+	return;
 	xChange *= m_TurnSpeed;
 	yChange *= m_TurnSpeed;
 
@@ -112,11 +113,11 @@ glm::vec3 Camera::getCameraDirection() const
 
 void Camera::update()
 {
-	m_Position = glm::vec3(0.0f, 0.0f, 20.0f);
-	m_Front.x = cos(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));
-	m_Front.y = sin(glm::radians(m_Pitch));
-	m_Front.z = sin(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));
-	m_Front = glm::normalize(m_Front);//make unit vec
+	//m_Position = glm::vec3(0.0f, 0.0f, 20.0f);
+	//m_Front.x = cos(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));
+	//m_Front.y = sin(glm::radians(m_Pitch));
+	//m_Front.z = sin(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));
+	m_Front = glm::normalize(m_Position);//make unit vec
 
 	m_Right = glm::normalize(glm::cross(m_Front, m_WorldUp));
 	m_Up = glm::normalize(glm::cross(m_Right, m_Front));
