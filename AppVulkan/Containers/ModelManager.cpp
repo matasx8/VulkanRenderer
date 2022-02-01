@@ -67,7 +67,7 @@ void ModelManager::LoadModelsNonThreaded(std::vector<std::string>* paths)
 void ModelManager::LoadModel(std::string& path)
 {
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals);
+    const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals | aiProcess_JoinIdenticalVertices);
     if (!scene)
     {
         throw std::runtime_error("Failed to load model! (" + path + ")");
