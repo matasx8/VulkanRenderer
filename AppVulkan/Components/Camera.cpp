@@ -2,7 +2,7 @@
 #include <string.h>
 
 Camera::Camera()
-	: m_Position(glm::vec3(9.0f, 10.0f, 20.0f)), m_Front(glm::vec3(0.0f, 0.0f, 0.0f)), m_WorldUp(glm::vec3(0.0f, 1.0f, 0.0f)),
+	: m_Position(glm::vec3(10.0f, 15.0f, 20.0f)), m_Front(glm::vec3(0.0f, 0.0f, 0.0f)), m_WorldUp(glm::vec3(0.0f, 1.0f, 0.0f)),
 	m_Yaw(-90.0f), m_Pitch(-20.0f), m_MoveSpeed(80.0f), m_TurnSpeed(0.5f)
 {
 	update();

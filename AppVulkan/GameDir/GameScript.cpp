@@ -4,8 +4,6 @@
 #include<glm/gtx/matrix_decompose.hpp>
 #include "Model.h"
 
-// Example of instanced and non-instanced drawing
-
 namespace GameScript
 {
 	void UpdateModelsNew(float dt);
@@ -36,8 +34,9 @@ namespace GameScript
 		auto func = [&](ModelManager* const man, Model& model, int idx)
 		{
 			constexpr int numDuplicates = 10;
+			Model copy = model;
 			for(int i = 0; i < numDuplicates; i++)
-				man->Duplicate(model, false);
+				man->Duplicate(copy, false);
 		};
 		g_Engine->ForEachModelConditional(predicate, func);
 
@@ -46,7 +45,7 @@ namespace GameScript
 		{
 			const int nthOther = numDefaultResources;
 			const int offset = idx / numDefaultResources; // fix the move func
-			model.MoveLocal(glm::vec3(2.0f * offset, 2.f * (idx % numDefaultResources ), 0.0f));
+			model.MoveLocal(glm::vec3(2.0f * offset, 2.f * (idx % numDefaultResources + 2), 0.0f));
 		};
 		g_Engine->UpdateModels(update);
 	}
