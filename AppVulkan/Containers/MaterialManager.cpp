@@ -37,6 +37,8 @@ void MaterialManager::BindMaterial(size_t frameIndex, uint32_t id)
 	if (m_BoundMaterial == id)
 		return;
 
+	m_BoundMaterial = id;
+
 	const Material& material = GetMaterial(id);
 	const Pipeline& pipeline = material.GetPipeline();
 

@@ -57,6 +57,7 @@ struct ShaderCreateInfo
 	bool isInstanced;
 };
 
+// hm it's a bit weird that shadercreateinfo and shader are seperate classes. There's no more need for that?
 class Shader
 {
 public:

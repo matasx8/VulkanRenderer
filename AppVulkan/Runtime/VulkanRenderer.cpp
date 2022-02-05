@@ -879,6 +879,8 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
         }
     }
 
+    m_MaterialManager.ForceNextBind();
+
     vkCmdEndRenderPass(commandBuffer[currentImage]);
 
     //stop recording to command buffer
