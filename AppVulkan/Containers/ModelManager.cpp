@@ -43,6 +43,13 @@ void ModelManager::Duplicate(const Model& model, bool isInstanced)
     m_Models.emplace_back(model.Duplicate(isInstanced));
 }
 
+void ModelManager::DuplicateWithMaterial(const Model& model, bool isInstanced, uint32_t newMaterialID)
+{
+    auto newModel = model.Duplicate(isInstanced);
+    newModel.SetMaterialForAllMeshes(newMaterialID);
+    m_Models.emplace_back(newModel);
+}
+
 void ModelManager::BindMesh(const Mesh& mesh)
 {
     m_GfxEngine.BindMesh(mesh);

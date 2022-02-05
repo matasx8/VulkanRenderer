@@ -64,14 +64,10 @@ void Pipeline::createPipeline(VkExtent2D extent, RenderPass renderPass, const Ma
     VkPipelineDepthStencilStateCreateInfo depthStencilCreateInfo = {};
     createDepthStencilCreateInfo(depthStencilCreateInfo);
 
-    //TODO: cover else branch
-   // if(shaderFlags & kUseModelMatrixForPushConstant)
     createPushConstantRange();
 
-    // I messed up, redo the descriptor management again. Cant associate a resource with its own descriptor because
-    // there aren't enough slots
     auto descriptorSetLayout = material.GetDescriptorSetLayout();
-    auto textureDescritptorSetLayout = material.GetTextures()[0].GetDescriptorSetLayout();
+    auto textureDescritptorSetLayout = material.GetTextureDescriptorSetLayout();
     std::array<VkDescriptorSetLayout, 2> layouts = { descriptorSetLayout, textureDescritptorSetLayout };
     createPipelineLayout(layouts.data(), 2, pushConstantRange.size);
 

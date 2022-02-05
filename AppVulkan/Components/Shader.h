@@ -46,30 +46,15 @@ struct UniformData
 	}
 };
 
-struct PushConstantData
-{
-
-};
-
 struct ShaderCreateInfo
 {
-	// TODO: use gfx caps for push constants at least
-	const char* vertexShader;
-	const char* fragmentShader;
+	std::string vertexShader;
+	std::string fragmentShader;
 
 	std::vector<uint8_t> uniforms;
-	std::vector<TextureCreateInfo> textureCreateInfos;
+	uint8_t textureCount;
 
-	// push constants
-	// if 0, then no push constant
-	// TODO: something like with uniformdata..
-	size_t pushConstantSize;
-	void* pushConstantDataBuffer;
-
-	// to save time, size of instance data will be a mat4 for now
 	bool isInstanced;
-	unsigned int shaderFlags;
-
 };
 
 class Shader
@@ -80,7 +65,6 @@ public:
 
 	bool operator==(const Shader& shader) const;
 	
-	// Don't need private?
 	ShaderCreateInfo m_ShaderInfo;
 };
 

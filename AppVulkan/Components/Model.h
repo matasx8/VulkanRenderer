@@ -39,6 +39,8 @@ public:
 
 	void SetModelMatrix(const ModelMatrix& matrix);
 	void SetIsHidden(bool isHidden) { m_IsHidden = isHidden; }
+	// move this to model manager, when i move meshes out of model class
+	void SetMaterialForAllMeshes(uint32_t materialID);
 
 
 	bool IsInstanced() const { return m_IsInstanced; }

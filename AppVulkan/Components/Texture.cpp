@@ -1,7 +1,7 @@
 #include "Texture.h"
 
 Texture::Texture()
-    : m_Image()
+    : m_Image(), m_Sampler(), m_TextureDescription()
 {
 }
 
@@ -10,29 +10,19 @@ void Texture::AddImage(Image& image)
     m_Image = image;
 }
 
-void Texture::SetDescriptorSet(VkDescriptorSet descriptorSet)
-{
-    m_DescriptorSet = descriptorSet;
-}
-
-void Texture::SetDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout)
-{
-    m_DescriptorSetLayout = descriptorSetLayout;
-}
-
 void Texture::SetSampler(VkSampler sampler)
 {
     m_Sampler = sampler;
 }
 
-VkDescriptorSet Texture::GetDescriptorSet() const
+void Texture::SetTextureDescription(TextureCreateInfo& desc)
 {
-    return m_DescriptorSet;
+    m_TextureDescription = desc;
 }
 
-VkDescriptorSetLayout Texture::GetDescriptorSetLayout() const
+void Texture::SetTextureDescription(const TextureCreateInfo& desc)
 {
-    return m_DescriptorSetLayout;
+    m_TextureDescription = desc;
 }
 
 VkSampler Texture::GetSampler() const
@@ -44,4 +34,25 @@ VkSampler Texture::GetSampler() const
 void Texture::DestroyTexture(VkDevice logicalDevice)
 {
     
+}
+
+bool Texture::operator==(const Texture& texture) const
+{
+    return m_TextureDescription == texture.m_TextureDescription;
+}
+
+bool Texture::operator==(const TextureCreateInfo& texture) const
+{
+    return m_TextureDescription == texture;
+}
+
+bool TextureCreateInfo::operator==(const TextureCreateInfo& tci) const
+{
+    if (fileName != tci.fileName)
+        return false;
+    if (filtering != tci.filtering)
+        return false;
+    if (wrap != tci.wrap)
+        return false;
+    return true;
 }

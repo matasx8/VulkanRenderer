@@ -16,7 +16,6 @@ public:
 
 	void CleanUp();
 private:
-	// TODOOO: use ordered map obviously and order by render queue
 	std::unordered_map<RenderPassDesc, RenderPass, RenderPassDescHasher> m_RenderPassMap;
 };
 

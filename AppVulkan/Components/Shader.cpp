@@ -11,6 +11,15 @@ Shader::Shader(const ShaderCreateInfo& shaderInfo)
 
 bool Shader::operator==(const Shader& shader) const
 {
-	return m_ShaderInfo.vertexShader == shader.m_ShaderInfo.vertexShader && 
-		m_ShaderInfo.fragmentShader == shader.m_ShaderInfo.fragmentShader;
+	const auto& lhs = m_ShaderInfo;
+	const auto& rhs = shader.m_ShaderInfo;
+	if (lhs.vertexShader != rhs.vertexShader)
+		return false;
+	if (lhs.fragmentShader != rhs.fragmentShader)
+		return false;
+	if (lhs.uniforms != rhs.uniforms)
+		return false;
+	if (lhs.isInstanced != rhs.isInstanced)
+		return false;
+	return true;
 }

@@ -13,6 +13,7 @@ public:
 	void LoadDefaultModels();
 
 	void Duplicate(const Model& model, bool isInstanced);
+	void DuplicateWithMaterial(const Model& model, bool isInstanced, uint32_t newMaterialID);
 
 	void BindMesh(const Mesh& mesh);
 

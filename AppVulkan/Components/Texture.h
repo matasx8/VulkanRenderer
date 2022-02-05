@@ -14,6 +14,8 @@ struct TextureCreateInfo
 	std::string fileName;
 	VkFilter filtering;
 	VkSamplerAddressMode wrap;
+
+	bool operator==(const TextureCreateInfo& tci) const;
 };
 
 class Texture
@@ -23,21 +25,23 @@ public:
 
 	void AddImage(Image& image);
 
-	void SetDescriptorSet(VkDescriptorSet descriptorSet);
-	void SetDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout);
 	void SetSampler(VkSampler sampler);
+	void SetTextureDescription(TextureCreateInfo& desc);
+	void SetTextureDescription(const TextureCreateInfo& desc);
 
-	VkDescriptorSet GetDescriptorSet() const;
-	VkDescriptorSetLayout GetDescriptorSetLayout() const;
 	VkSampler GetSampler() const;
 	Image& getImage() { return m_Image; }
+	const Image& getImage() const { return m_Image; }
 	
 	void DestroyTexture(VkDevice logicalDevice);
+	bool operator==(const Texture& texture) const;
+	bool operator==(const TextureCreateInfo& texture) const;
 
 private:
+
+
 	Image m_Image;
-	VkDescriptorSet m_DescriptorSet;
-	VkDescriptorSetLayout m_DescriptorSetLayout;
 	VkSampler m_Sampler;
+	TextureCreateInfo m_TextureDescription;
 };
 

@@ -545,56 +545,41 @@ Image VulkanRenderer::UploadImage(int width, int height, VkDeviceSize imageSize,
     return texImage;
 }
 
-VkDescriptorSet VulkanRenderer::CreateTextureDescriptorSet(Texture& texture)
+VkDescriptorSet VulkanRenderer::CreateTextureDescriptorSet(VkDescriptorSetLayout layout, const std::vector<Texture>& textures)
 {
-    VkSampler sampler = texture.GetSampler();
     std::vector<VkDescriptorSet> descriptorSets(1);
-    std::vector<VkDescriptorSetLayout> setLayouts = { texture.GetDescriptorSetLayout() };
+    std::vector<VkDescriptorSetLayout> setLayouts = { layout };
 
+    // change later to not use vector for layout. For descriptor sets probably too
     m_DescriptorPool.AllocateDescriptorSets(descriptorSets, setLayouts, kDescriptorTypeImageSampler);
 
-    VkDescriptorImageInfo imageInfo = {};
-    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    imageInfo.imageView = texture.getImage().getImageView();
-    imageInfo.sampler = sampler;
+    std::vector<VkDescriptorImageInfo> imageInfos(textures.size());
+    std::vector<VkWriteDescriptorSet> SetWrites(textures.size());
+    for (int i = 0; i < textures.size(); i++)
+    {
+        VkDescriptorImageInfo imageInfo = {};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = textures[i].getImage().getImageView();
+        imageInfo.sampler = textures[i].GetSampler();
+        imageInfos[i] = imageInfo;
 
-    // descriptor write info
-    VkWriteDescriptorSet descriptorWrite = {};
-    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrite.dstSet = descriptorSets[0];
-    descriptorWrite.dstBinding = 0;
-    descriptorWrite.dstArrayElement = 0;
-    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    descriptorWrite.descriptorCount = 1;
-    descriptorWrite.pImageInfo = &imageInfo;
-    descriptorWrite.pNext = nullptr;
+        // descriptor write info
+        VkWriteDescriptorSet descriptorWrite = {};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = descriptorSets[0];
+        descriptorWrite.dstBinding = 0;
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pImageInfo = &imageInfos[i];
+        descriptorWrite.pNext = nullptr;
+        SetWrites[i] = descriptorWrite;
+    }
 
     // update new descriptor set
-    vkUpdateDescriptorSets(mainDevice.logicalDevice, 1, &descriptorWrite, 0, nullptr);
+    vkUpdateDescriptorSets(mainDevice.logicalDevice, textures.size(), SetWrites.data(), 0, nullptr);
 
     return descriptorSets[0];
-}
-
-VkDescriptorSetLayout VulkanRenderer::CreateTextureDescriptorSetLayout()
-{
-    VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
-    samplerLayoutBinding.binding = 0;
-    samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerLayoutBinding.descriptorCount = 1;
-    samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    VkDescriptorSetLayoutCreateInfo textureLayoutCreateInfo = {};
-    textureLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    textureLayoutCreateInfo.bindingCount = 1;
-    textureLayoutCreateInfo.pBindings = &samplerLayoutBinding;
-
-    VkDescriptorSetLayout layout;
-    VkResult result = vkCreateDescriptorSetLayout(mainDevice.logicalDevice, &textureLayoutCreateInfo, nullptr, &layout);
-    if (result != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to create a descriptor set layout");
-    }
-    return layout;
 }
 
 VkSampler VulkanRenderer::CreateTextureSampler(const TextureCreateInfo& createInfo)
@@ -621,16 +606,15 @@ VkSampler VulkanRenderer::CreateTextureSampler(const TextureCreateInfo& createIn
     return sampler;
 }
 
-VkDescriptorSetLayout VulkanRenderer::CreateDescriptorSetLayout(size_t UboCount)
+VkDescriptorSetLayout VulkanRenderer::CreateDescriptorSetLayout(size_t bindingCount, VkDescriptorType descriptorType)
 {
-    // here we show what uniforms we need.
-    std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings(UboCount);
-    for (size_t i = 0; i < UboCount; i++)
+    std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings(bindingCount);
+    for (size_t i = 0; i < bindingCount; i++)
     {
         descriptorSetLayoutBindings[i].binding = i;
-        descriptorSetLayoutBindings[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorSetLayoutBindings[i].descriptorType = descriptorType;
         descriptorSetLayoutBindings[i].descriptorCount = 1;
-        descriptorSetLayoutBindings[i].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        descriptorSetLayoutBindings[i].stageFlags = descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ? VK_SHADER_STAGE_VERTEX_BIT : VK_SHADER_STAGE_FRAGMENT_BIT;
     }
 
     // create descriptor set layout with given bidnings
@@ -650,13 +634,13 @@ VkDescriptorSetLayout VulkanRenderer::CreateDescriptorSetLayout(size_t UboCount)
 
 std::vector<VkDescriptorSet> VulkanRenderer::CreateDescriptorSets(const size_t* dataSizes, std::vector<UniformBuffer>& UniformBuffers, VkDescriptorSetLayout descriptorSetLayout)
 {
+    assert(UniformBuffers.size());
     const size_t setSize = swapChainImages.size();
     std::vector<VkDescriptorSet> descriptorSets(setSize);
 
     std::vector<VkDescriptorSetLayout> setLayouts(setSize, descriptorSetLayout);
 
     m_DescriptorPool.AllocateDescriptorSets(descriptorSets, setLayouts, kDescriptorTypeUniformBuffer);
-
 
     std::vector<VkDescriptorBufferInfo> BufferInfos(setSize);
     std::vector<VkWriteDescriptorSet> SetWrites(setSize * UniformBuffers.size());
@@ -756,6 +740,16 @@ void VulkanRenderer::UpdateMappedMemory(VkDeviceMemory memory, size_t size, void
     vkMapMemory(mainDevice.logicalDevice, memory, 0, size, 0, &dataMap);
     memcpy(dataMap, data, size);
     vkUnmapMemory(mainDevice.logicalDevice, memory);
+}
+
+uint32_t VulkanRenderer::CreateMaterial(Material& material)
+{
+    return m_MaterialManager.CreateMaterial(material);
+}
+
+const Material& VulkanRenderer::GetMaterial(uint32_t idx) const
+{
+    return m_MaterialManager.GetMaterial(idx);
 }
 
 void VulkanRenderer::EnableCrashDumps()

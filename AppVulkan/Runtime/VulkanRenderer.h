@@ -60,6 +60,8 @@ public:
 	uint32_t GetSwapchainIndex() const { return m_SwapchainIndex; }
 
 	void UpdateMappedMemory(VkDeviceMemory memory, size_t size, void* data);
+	uint32_t CreateMaterial(Material& material);
+	const Material& GetMaterial(uint32_t idx) const;
 
 	template<typename F>
 	void UpdateModels(F& transformationFunction);
@@ -154,13 +156,14 @@ private:
 	void CreateDescriptorPool();
 	void CreateThreadPool(uint32_t numThreads);
 	Image UploadImage(int width, int height, VkDeviceSize imageSize, stbi_uc* imageData);
-	VkDescriptorSet CreateTextureDescriptorSet(Texture& texture);
-	VkDescriptorSetLayout CreateTextureDescriptorSetLayout();
+	VkDescriptorSet CreateTextureDescriptorSet(VkDescriptorSetLayout layout, const std::vector<Texture>& textures);
 	VkSampler CreateTextureSampler(const TextureCreateInfo& createInfo);
-	VkDescriptorSetLayout CreateDescriptorSetLayout(size_t UboCount); //TODO: have one function for dsetlayout
+	VkDescriptorSetLayout CreateDescriptorSetLayout(size_t bindingCount, VkDescriptorType descriptorType);
+	// TODO: have one function for descriptor sets too
 	std::vector<VkDescriptorSet> CreateDescriptorSets(const size_t* dataSizes, std::vector<UniformBuffer>& UniformBuffers, VkDescriptorSetLayout descriptorSetLayout);
 	std::vector<UniformBuffer> CreateUniformBuffers(const std::vector<size_t>& dataSizes, size_t UboCount);
 	Pipeline CreatePipeline(const Material& material);
+
 
 	void BindPipeline(VkPipeline pipeline);
 	void BindDescriptorSets(const VkDescriptorSet* descriptorSets, uint32_t count, VkPipelineLayout layout);

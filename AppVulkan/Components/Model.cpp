@@ -109,6 +109,12 @@ void Model::SetModelMatrix(const ModelMatrix& matrix)
 	m_ModelMatrix = matrix;
 }
 
+void Model::SetMaterialForAllMeshes(uint32_t materialID)
+{
+	for (auto& mesh : meshList)
+		mesh.SetMaterialID(materialID);
+}
+
 void Model::destroyMeshModel()
 {
 	if (!m_IsDuplicate)

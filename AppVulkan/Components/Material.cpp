@@ -5,16 +5,17 @@
 Material::Material(size_t id)
 	: m_ID(id)
 {
+	// TODO: init vars
 }
 
 const char* Material::getVertexShader() const
 {
-	return m_Shader.m_ShaderInfo.vertexShader;
+	return m_Shader.m_ShaderInfo.vertexShader.c_str();
 }
 
 const char* Material::getFragmentShader() const
 {
-	return m_Shader.m_ShaderInfo.fragmentShader;
+	return m_Shader.m_ShaderInfo.fragmentShader.c_str();
 }
 
 size_t Material::getUboCount() const
@@ -22,29 +23,9 @@ size_t Material::getUboCount() const
 	return m_Shader.m_ShaderInfo.uniforms.size();
 }
 
-uint32_t Material::getShaderFlags() const
-{
-	return m_Shader.m_ShaderInfo.shaderFlags;
-}
-
-const void* Material::getPushConstantDataBuffer() const
-{
-	return m_Shader.m_ShaderInfo.pushConstantDataBuffer;
-}
-
-const size_t Material::getPushConstantSize() const
-{
-	return m_Shader.m_ShaderInfo.pushConstantSize;
-}
-
 uint32_t Material::GetInstanceCount() const
 {
 	return m_InstanceCount;
-}
-
-const std::vector<Texture>& Material::GetTextures() const
-{
-	return m_Textures;
 }
 
 VkDescriptorSetLayout Material::GetDescriptorSetLayout() const
@@ -52,14 +33,19 @@ VkDescriptorSetLayout Material::GetDescriptorSetLayout() const
 	return m_DescriptorSetLayout;
 }
 
-const std::vector<VkDescriptorSet>& Material::GetDescriptorSets() const
-{
-	return m_DescriptorSets;
-}
-
 VkDescriptorSet Material::GetDescriptorSet(int swapchainIndex) const
 {
 	return m_DescriptorSets[swapchainIndex];
+}
+
+VkDescriptorSetLayout Material::GetTextureDescriptorSetLayout() const
+{
+	return m_TextureDescriptorSetLayout;
+}
+
+VkDescriptorSet Material::GetTextureDescriptorSet() const
+{
+	return m_TextureDescriptorSet;
 }
 
 const Pipeline& Material::GetPipeline() const
@@ -72,9 +58,19 @@ const Shader& Material::GetShader() const
 	return m_Shader;
 }
 
-void Material::SetTextures(std::vector<Texture>& textures)
+const uint32_t Material::GetId() const
 {
-	m_Textures = textures;
+	return m_ID;
+}
+
+const std::vector<TextureCreateInfo>& Material::GetTextureDescriptions() const
+{
+	return m_TextureDescriptions;
+}
+
+void Material::SetTextureDescriptions(const std::vector<TextureCreateInfo>& descs)
+{
+	m_TextureDescriptions = descs;
 }
 
 void Material::SetDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout)
@@ -87,6 +83,16 @@ void Material::SetDescriptorSets(std::vector<VkDescriptorSet>& descriptorSets)
 	m_DescriptorSets = descriptorSets;
 }
 
+void Material::SetTextureDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout)
+{
+	m_TextureDescriptorSetLayout = descriptorSetLayout;
+}
+
+void Material::SetTextureDescriptorSet(VkDescriptorSet descriptorSet)
+{
+	m_TextureDescriptorSet = descriptorSet;
+}
+
 void Material::SetShader(const ShaderCreateInfo& createInfo)
 {
 	m_Shader = Shader(createInfo);
@@ -97,14 +103,9 @@ void Material::SetPipeline(Pipeline pipeline)
 	m_Pipeline = pipeline;
 }
 
-const bool Material::hasPushConstant() const
+void Material::ChangeTextures(std::vector<TextureCreateInfo>& newTextures)
 {
-	return getPushConstantSize() || (m_Shader.m_ShaderInfo.shaderFlags & kUseModelMatrixForPushConstant);
-}
-
-const bool Material::hasFlag(ShaderCreateInfoFlags flag) const
-{
-	return m_Shader.m_ShaderInfo.shaderFlags & flag;
+	m_TextureDescriptions = newTextures;
 }
 
 bool Material::IsInstanced() const
@@ -114,5 +115,10 @@ bool Material::IsInstanced() const
 
 bool Material::operator==(const Material& mat) const
 {
-	return mat.m_Shader == m_Shader;
+	return mat.m_Shader == m_Shader && mat.m_TextureDescriptions == m_TextureDescriptions;
+}
+
+void Material::SetNewMaterialID(uint32_t id)
+{
+	m_ID = id;
 }
