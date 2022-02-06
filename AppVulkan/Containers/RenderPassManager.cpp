@@ -10,6 +10,33 @@ void RenderPassManager::AddRenderPass(RenderPassDesc& desc, RenderPass& renderPa
 	m_RenderPassMap.insert(std::make_pair(desc, renderPass));
 }
 
+void RenderPassManager::AddColorCodingRenderPass()
+{
+	// 1. Do RenderPass before color pass
+	// 2. Somehow sinchronize and vkCmdCopyImageToBuffer
+	// 3. Get the id of object we are selecting
+	// 4. Do Color pass
+	// 5. Do outline pass
+
+	RenderPassDesc ColorCode =
+	{
+		1,	// msaaCount
+		kRenderPassPlace_ColorCode, // place
+		kTargetColor, 
+		1, // collor att count
+		VK_FORMAT_B8G8R8A8_UNORM,
+		kLoadOpClear,
+		kStoreOpStore,					
+		VK_FORMAT_D16_UNORM,
+		kLoadOpClear,
+		kStoreOpDontCare
+	};
+
+	RenderPass rp;
+	rp.CreateRenderPass(ColorCode);
+	AddRenderPass(ColorCode, rp);
+}
+
 void RenderPassManager::AddExampleRenderPass()
 {
 	RenderPassDesc DrawOpaques =

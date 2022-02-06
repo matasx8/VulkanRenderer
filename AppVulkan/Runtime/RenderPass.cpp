@@ -22,7 +22,7 @@ void RenderPass::CreateRenderPass(const RenderPassDesc& desc)
 			colorDescriptions[i].samples = static_cast<VkSampleCountFlagBits>(desc.msaaCount);
 			colorDescriptions[i].loadOp = static_cast<VkAttachmentLoadOp>(desc.colorLoadOp);
 			colorDescriptions[i].storeOp = static_cast<VkAttachmentStoreOp>(desc.colorStoreOp);
-			if(desc.msaaCount)
+			if(desc.msaaCount > 1)
 				colorDescriptions[i].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 			else
 				colorDescriptions[i].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;

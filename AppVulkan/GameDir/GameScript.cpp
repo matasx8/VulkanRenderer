@@ -98,7 +98,7 @@ namespace GameScript
 			constexpr int numDuplicates = 10;
 			Model copy = model;
 			for(int i = 0; i < numDuplicates; i++)
-				man->DuplicateWithMaterial(copy, false, i % 4);
+				man->DuplicateWithMaterial(copy, false, i % 1);
 		};
 		g_Engine->ForEachModelConditional(predicate, func);
 
@@ -114,7 +114,11 @@ namespace GameScript
 
 	void GameScript::OnUpdate()
 	{
-
+		auto update = [=](Model& model, int idx)
+		{
+			model.RotateLocal(1.0f * g_Engine->GetDeltaTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+		};
+		g_Engine->UpdateModels(update);
 	}
 
 	void GameScript::OnEndOfFrame()

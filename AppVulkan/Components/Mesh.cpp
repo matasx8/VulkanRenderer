@@ -112,11 +112,11 @@ void Mesh::createIndexBuffer(VkPhysicalDevice physicalDevice, VkDevice device, V
 
 void ViewProjectionMatrix::ProvideUniformData(void* dst)
 {
-    std::array<glm::mat4, 2> uni = { projection, view };
-    memcpy(dst, uni.data(), ProvideUniformDataSize());
+    glm::mat4 ProjectionViewMatrix = projection * view;
+    memcpy(dst, &ProjectionViewMatrix, ProvideUniformDataSize());
 }
 
 size_t ViewProjectionMatrix::ProvideUniformDataSize()
 {
-    return sizeof(glm::mat4) + sizeof(glm::mat4);
+    return sizeof(glm::mat4);
 }

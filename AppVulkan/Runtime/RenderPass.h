@@ -5,6 +5,7 @@
 
 enum RenderPassPlace : uint8_t
 {
+	kRenderPassPlace_ColorCode,
 	kRenderPassPlace_Opaques,
 	kRenderPassPlace_AfterOpaques
 };
@@ -12,7 +13,7 @@ enum RenderPassPlace : uint8_t
 enum FramebufferTarget : uint8_t
 {
 	kTargetSwapchain,
-	kTargetCustom
+	kTargetColor
 };
 
 enum AttachmentLoadOp : uint8_t

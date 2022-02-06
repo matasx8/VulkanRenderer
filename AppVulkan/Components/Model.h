@@ -36,6 +36,7 @@ public:
 	void ApplyFunc(Tfunc func, Targs&... args);
 
 	void MoveLocal(const glm::vec3& vector);
+	void RotateLocal(float angle, const glm::vec3& axis);
 
 	void SetModelMatrix(const ModelMatrix& matrix);
 	void SetIsHidden(bool isHidden) { m_IsHidden = isHidden; }

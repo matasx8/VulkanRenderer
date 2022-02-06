@@ -104,6 +104,11 @@ void Model::MoveLocal(const glm::vec3& vector)
 	m_ModelMatrix = glm::translate(m_ModelMatrix, vector);
 }
 
+void Model::RotateLocal(float angle, const glm::vec3& axis)
+{
+	m_ModelMatrix = glm::rotate(m_ModelMatrix, angle, axis);
+}
+
 void Model::SetModelMatrix(const ModelMatrix& matrix)
 {
 	m_ModelMatrix = matrix;

@@ -864,8 +864,6 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
         {
             const auto& mesh = model.GetMesh(j);
 
-            // insert condition that checks if this mesh is compatible with this renderpass
-
             // TODO: when I introduce dynamic uniform buffers, use those for model matrix.
 
             // for now we only have default material and no way to set material to mesh.

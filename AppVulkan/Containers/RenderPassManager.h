@@ -9,6 +9,7 @@ public:
 	RenderPassManager();
 
 	void AddRenderPass(RenderPassDesc& desc, RenderPass& renderPass);
+	void AddColorCodingRenderPass();
 	void AddExampleRenderPass();
 
 	// temporary, dont use this actually
