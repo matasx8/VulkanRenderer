@@ -5,12 +5,12 @@
 #include <thread-pool/thread_pool.hpp>
 
 ModelManager::ModelManager(VulkanRenderer& gfxEngine)
-    :m_Mutex(), m_Models(), m_ThreadedImport(true), m_GfxEngine(gfxEngine)
+    :m_Mutex(), m_Models(), m_Meshes(), m_ModelMatrices(), m_ThreadedImport(true), m_GfxEngine(gfxEngine)
 {
 }
 
 ModelManager::ModelManager(VulkanRenderer& gfxEngine, bool isThreadedImport)
-	: m_Mutex(), m_Models(), m_ThreadedImport(isThreadedImport), m_GfxEngine(gfxEngine)
+	: m_Mutex(), m_Models(), m_Meshes(), m_ModelMatrices(), m_ThreadedImport(isThreadedImport), m_GfxEngine(gfxEngine)
 {
 }
 
@@ -86,15 +86,19 @@ void ModelManager::LoadModel(std::string& path)
     }
 
     std::vector<Mesh> modelMeshes;
+    Model model(false);
+    auto handle = model.GetModelHandle();
 
     std::unique_lock<std::mutex> lock(m_Mutex);
     m_GfxEngine.LoadNode(modelMeshes, scene->mRootNode, scene);
+    for (auto& mesh : modelMeshes) mesh.SetMaterialID(handle);
 
-    Model meshModel(modelMeshes, false);
-    m_Models.push_back(meshModel);
+    m_Meshes.insert(m_Meshes.end(), modelMeshes.begin(), modelMeshes.end());
+    m_ModelMatrices.insert(std::make_pair(handle, glm::mat4(1.0f)));
+    m_Models.push_back(model);
 }
 
-Model& ModelManager::operator[](size_t idx)
+Mesh& ModelManager::operator[](size_t idx)
 {
-    return m_Models[idx];
+    return m_Meshes[idx];
 }

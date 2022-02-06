@@ -17,9 +17,9 @@ public:
 
 	void BindMesh(const Mesh& mesh);
 
-	inline size_t Size() { return m_Models.size(); };
+	inline size_t Size() { return m_Meshes.size(); };
 
-	Model& operator[](size_t idx);
+	Mesh& operator[](size_t idx);
 
 private:
 
@@ -30,6 +30,8 @@ private:
 
 	std::mutex m_Mutex;
 	std::vector<Model> m_Models;
+	std::vector<Mesh> m_Meshes;
+	std::unordered_map<ModelHandle, ModelMatrix> m_ModelMatrices;
 	// for now create thread pool on demand
 	bool m_ThreadedImport;
 

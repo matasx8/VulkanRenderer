@@ -4,25 +4,13 @@
 #include "InstanceDataBuffer.h"
 #include <assimp/scene.h>
 
-// unique identifier for a Model
-typedef unsigned int ModelHandle;
-typedef glm::mat4x4 ModelMatrix;
-
 class Model
 {
 public:
 	Model();
-	//Model(const Model& copyFrom);
-	Model(std::vector<Mesh>& newMeshList);
-#ifdef _DEBUG
-	Model(std::vector<Mesh>& newMeshList, const char* name);
-#endif
-	Model(std::vector<Mesh>& newMeshList, bool isInstanced = false);
+	Model(bool isInstanced = false);
 
-	size_t GetMeshCount() const;
-	const Mesh& GetMesh(size_t index) const;
 	size_t GetModelHandle() const;
-	const glm::mat4x4& GetModelMatrix() const;
 	int GetInstanceCount() const { return m_InstanceCount; }
 	VkBuffer GetInstanceData() const { return m_InstanceDataBuffer->GetInstanceData(); }
 	InstanceDataBuffer* GetInstanceDataBuffer() { return m_InstanceDataBuffer; }
@@ -38,10 +26,7 @@ public:
 	void MoveLocal(const glm::vec3& vector);
 	void RotateLocal(float angle, const glm::vec3& axis);
 
-	void SetModelMatrix(const ModelMatrix& matrix);
 	void SetIsHidden(bool isHidden) { m_IsHidden = isHidden; }
-	// move this to model manager, when i move meshes out of model class
-	void SetMaterialForAllMeshes(uint32_t materialID);
 
 
 	bool IsInstanced() const { return m_IsInstanced; }
@@ -66,8 +51,6 @@ private:
 	InstanceDataBuffer* m_InstanceDataBuffer;
 
 	ModelHandle m_Handle;
-	std::vector<Mesh> meshList;
-	ModelMatrix m_ModelMatrix;
 #ifdef _DEBUG
 	//std::string m_Name;
 #endif

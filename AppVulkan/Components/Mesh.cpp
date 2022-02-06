@@ -14,6 +14,11 @@ Mesh::Mesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue trans
     createIndexBuffer(newPhysicalDevice, newDevice, transferQueue, transferCommandPool, indices);
 }
 
+void Mesh::SetModelHandle(ModelHandle handle)
+{
+    m_ModelHandle = handle;
+}
+
 void Mesh::SetMaterialID(uint32_t id)
 {
     m_MaterialId = id;

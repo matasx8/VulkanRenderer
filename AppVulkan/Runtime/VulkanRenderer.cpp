@@ -857,24 +857,18 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
 
     for (size_t i = 0; i < m_ModelManager.Size(); i++)
     {
-        const auto& model = m_ModelManager[i];
-        const auto& modelMatrix = model.GetModelMatrix();
+        const auto& mesh = m_ModelManager[i];
 
-        for (size_t j = 0; j < model.GetMeshCount(); j++)
-        {
-            const auto& mesh = model.GetMesh(j);
+        // TODO: when I introduce dynamic uniform buffers, use those for model matrix.
 
-            // TODO: when I introduce dynamic uniform buffers, use those for model matrix.
+        // for now we only have default material and no way to set material to mesh.
+        m_MaterialManager.BindMaterial(currentImage, mesh.GetMaterialID());
 
-            // for now we only have default material and no way to set material to mesh.
-            m_MaterialManager.BindMaterial(currentImage, mesh.GetMaterialID());
+        m_MaterialManager.PushConstants(modelMatrix, mesh.GetMaterialID());
 
-            m_MaterialManager.PushConstants(modelMatrix, mesh.GetMaterialID());
+        m_ModelManager.BindMesh(mesh);
 
-            m_ModelManager.BindMesh(mesh);
-
-            DrawIndexed(mesh.GetIndexCount(), /*mesh.GetInstanceCount()*/ 1);
-        }
+        DrawIndexed(mesh.GetIndexCount(), /*mesh.GetInstanceCount()*/ 1);
     }
 
     m_MaterialManager.ForceNextBind();
