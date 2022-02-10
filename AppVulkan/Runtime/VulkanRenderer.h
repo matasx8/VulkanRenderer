@@ -38,6 +38,7 @@
 #include "InstanceDataBuffer.h"
 #include "Containers/ModelManager.h"
 #include "Containers/MaterialManager.h"
+#include "Containers/SurfaceManager.h"
 #include "OSUtilities.h"
 
 struct TextureCreateInfo;
@@ -58,6 +59,7 @@ public:
 	float GetDeltaTime() const { return m_DeltaTime; }
 	thread_pool* const GetThreadPool() { return m_ThreadPool;}
 	uint32_t GetSwapchainIndex() const { return m_SwapchainIndex; }
+	unsigned long long GetCurrentFrame() const { return m_CurrentFrameNumber; }
 
 	void UpdateMappedMemory(VkDeviceMemory memory, size_t size, void* data);
 	uint32_t CreateMaterial(Material& material);
@@ -79,10 +81,13 @@ private:
 
 	friend class ModelManager;
 	friend class MaterialManager;
+	friend class SurfaceManager;
 
 	int currentFrame = 0;
 	float m_DeltaTime;
 	float m_LastTime;
+	unsigned long long m_CurrentFrameNumber;
+	uint32_t m_SwapchainImageCount;
 
 	//-- SCENE ---
 	Scene currentScene;
@@ -105,17 +110,12 @@ private:
 	VkQueue presentationQueue;
 	VkSurfaceKHR surface;
 	uint32_t m_SwapchainIndex;
-	VkSwapchainKHR swapchain;
-	std::vector<SwapChainImage> swapChainImages;
-	std::vector<VkFramebuffer> swapchainFramebuffers;
 	std::vector<VkCommandBuffer> commandBuffer;
 	  
 	RenderPassManager m_RenderPassManager;
 	ModelManager m_ModelManager;
 	MaterialManager m_MaterialManager;
-
-	Image depthBufferImage;
-	Image colorImage;
+	SurfaceManager m_SurfaceManager;
 
 	ShaderMan shaderMan;
 
@@ -135,20 +135,12 @@ private:
 	std::vector<VkSemaphore> renderFinished;
 	std::vector<VkFence> drawFences;
 
-	VkFormat swapChainImageFormat;
-	VkExtent2D swapChainExtent;
-	VkFormat depthFormat;// not sure if this is alright
-
 	void createInstance();
 	void createLogicalDevice();
 	void createSurface();
 	// a queue of images that are waiting to be presented to the screen
 	void createSwapChain();
 	
-	//void createRenderPass();
-	void createDepthBufferImage();
-	void createColorResources();
-	void createFramebuffers();
 	void createCommandPool();
 	void createCommandBuffers();
 	void createSynchronization();
@@ -163,6 +155,9 @@ private:
 	std::vector<VkDescriptorSet> CreateDescriptorSets(const size_t* dataSizes, std::vector<UniformBuffer>& UniformBuffers, VkDescriptorSetLayout descriptorSetLayout);
 	std::vector<UniformBuffer> CreateUniformBuffers(const std::vector<size_t>& dataSizes, size_t UboCount);
 	Pipeline CreatePipeline(const Material& material);
+	std::vector<Surface> CreateSwapchainSurfaces(const SwapchainInfo& swapchain);
+	Surface CreateSurface(const SurfaceDesc& desc);
+	VkFramebuffer CreateFramebuffer(const std::vector<VkImageView>& imageViews, const RenderPass& rp);
 
 
 	void BindPipeline(VkPipeline pipeline);
@@ -181,9 +176,9 @@ private:
 
 	void LoadNode(std::vector<Mesh>& meshList, aiNode* node, const aiScene* scene);
 
-	// record funcs
 	void recordCommands(uint32_t currentImage);
-	void recordingDefaultPath(int currentPipelineIndex, Model& model, int currentImage);
+	void OpaqueColorPass();
+	void PresentBlit();
 
 	//getters
 	void getPhysicalDevice();

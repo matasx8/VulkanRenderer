@@ -8,8 +8,9 @@ RenderPass::RenderPass()
 #endif
 }
 
-void RenderPass::CreateRenderPass(const RenderPassDesc& desc)
+void RenderPass::CreateRenderPass(const RenderPassDesc& desc, std::vector<std::pair<uint32_t, SurfaceDesc>>& surfaceDescriptions)
 {
+	m_SurfaceDescriptions = surfaceDescriptions;
 	// setup color attachments
 	std::vector<VkAttachmentDescription> colorDescriptions;
 	if (desc.colorFormat)
@@ -124,6 +125,15 @@ void RenderPass::CreateRenderPass(const RenderPassDesc& desc)
 	}
 
 	m_Desc = desc;
+}
+
+void RenderPass::UpdateRenderPassViewport(uint32_t width, uint32_t height)
+{
+	for (auto& desc : m_SurfaceDescriptions)
+	{
+		desc.second.width = width;
+		desc.second.height = height;
+	}
 }
 
 void RenderPass::Destroy()

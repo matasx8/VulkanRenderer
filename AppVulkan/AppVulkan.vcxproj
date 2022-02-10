@@ -251,6 +251,8 @@
     <ClCompile Include="Containers\RenderPassManager.cpp" />
     <ClCompile Include="Containers\ModelManager.cpp" />
     <ClCompile Include="Containers\MaterialManager.cpp" />
+    <ClCompile Include="Containers\SurfaceManager.cpp" />
+    <ClCompile Include="Runtime\Surface.cpp" />
     <ClCompile Include="Utils\OSUtilities.cpp" />
     <ClCompile Include="Runtime\RenderPass.cpp" />
     <ClCompile Include="Runtime\InstanceDataBuffer.cpp" />
@@ -282,6 +284,8 @@
     <ClInclude Include="Containers\ModelManager.h" />
     <ClInclude Include="Containers\MaterialManager.h" />
     <ClInclude Include="Runtime\UniformProvider.h" />
+    <ClInclude Include="Containers\SurfaceManager.h" />
+    <ClInclude Include="Runtime\Surface.h" />
     <ClInclude Include="Utils\OSUtilities.h" />
     <ClInclude Include="Runtime\RenderPass.h" />
     <ClInclude Include="Runtime\InstanceDataBuffer.h" />

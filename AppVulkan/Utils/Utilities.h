@@ -222,6 +222,12 @@ static void copyBuffer(VkDevice device, VkQueue transferQueue, VkCommandPool tra
 	endAndSubmitCommandBuffer(device, transferCommandPool, transferQueue, transferCommandBuffer);
 }
 
+static bool IsColorSurface(VkFormat format)
+{
+	// This is probably very not right, but it'll work for me;
+	return format < VK_FORMAT_D16_UNORM_S8_UINT;
+}
+
 static void copyImageBuffer(VkDevice device, VkQueue transferQueue, VkCommandPool transferCommandPool,
 	VkBuffer srcBuffer, VkImage image, uint32_t width, uint32_t height)
 {

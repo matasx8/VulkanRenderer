@@ -1,5 +1,15 @@
 #include "Image.h"
 
+Image::Image()
+    : m_Image(0), m_ImageView(0), m_ImageMemory(0)
+{
+}
+
+Image::Image(VkImage img, VkImageView imgView, VkDeviceMemory imgMem)
+    : m_Image(img), m_ImageView(imgView), m_ImageMemory(imgMem)
+{
+}
+
 void Image::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags useFlags, VkSampleCountFlagBits numSamples, VkMemoryPropertyFlags propFlags, VkPhysicalDevice physicalDevice, VkDevice logicalDevice)
 {
     //Create Image

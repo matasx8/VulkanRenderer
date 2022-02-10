@@ -98,7 +98,7 @@ namespace GameScript
 			constexpr int numDuplicates = 10;
 			Model copy = model;
 			for(int i = 0; i < numDuplicates; i++)
-				man->DuplicateWithMaterial(copy, false, i % 1);
+				man->DuplicateWithMaterial(copy, false, i % 4);
 		};
 		g_Engine->ForEachModelConditional(predicate, func);
 

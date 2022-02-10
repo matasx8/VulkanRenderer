@@ -8,15 +8,18 @@ class RenderPassManager
 public:
 	RenderPassManager();
 
-	void AddRenderPass(RenderPassDesc& desc, RenderPass& renderPass);
-	void AddColorCodingRenderPass();
-	void AddExampleRenderPass();
+	void InitRenderPasses();
 
-	// temporary, dont use this actually
-	RenderPass GetRenderPass();
+	const RenderPass& GetRenderPass(uint8_t renderPassPlace) const;
 
 	void CleanUp();
 private:
-	std::unordered_map<RenderPassDesc, RenderPass, RenderPassDescHasher> m_RenderPassMap;
+
+	void AddRenderPass(RenderPassDesc& desc, RenderPass& renderPass);
+	void AddColorCodingRenderPass();
+	void AddOpaqueColorPass();
+	void AddPresentBlitPass();
+
+	std::array<RenderPass, KRenderPassPlace_RenderpassCount> m_RenderPassCache;
 };
 

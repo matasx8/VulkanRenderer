@@ -3,12 +3,13 @@
 #include <iostream>
 
 VulkanRenderer::VulkanRenderer() 
-    : m_ModelManager(*this, true), m_MaterialManager(*this)
+    : m_ModelManager(*this, true), m_MaterialManager(*this), m_SurfaceManager(*this)
 {
     m_DeltaTime = 0;
     m_LastTime = 0;
     m_InstancingBuffers;
     m_RenderPassManager;
+    m_CurrentFrameNumber = 0;
 }
 
 int VulkanRenderer::init(const RendererInitializationSettings& initSettings)
@@ -28,8 +29,6 @@ int VulkanRenderer::init(const RendererInitializationSettings& initSettings)
         createLogicalDevice();
         createSwapChain();
         shaderMan.WaitForCompile();
-        createColorResources();
-        createDepthBufferImage();
         createCommandPool();
         CreateDescriptorPool();
         TemporarySetup();
@@ -75,7 +74,7 @@ void VulkanRenderer::draw()
     vkResetFences(mainDevice.logicalDevice, 1, &drawFences[currentFrame]);
 
     // get the next available image to draw to and set something to signal when were finished with the image
-    vkAcquireNextImageKHR(mainDevice.logicalDevice, swapchain, std::numeric_limits<uint64_t>::max(), imageAvailable[currentFrame], VK_NULL_HANDLE, &m_SwapchainIndex);
+    vkAcquireNextImageKHR(mainDevice.logicalDevice, m_SurfaceManager.GetSwapchain(), std::numeric_limits<uint64_t>::max(), imageAvailable[currentFrame], VK_NULL_HANDLE, &m_SwapchainIndex);
 
     recordCommands(m_SwapchainIndex);
 
@@ -106,6 +105,7 @@ void VulkanRenderer::draw()
     presentInfo.waitSemaphoreCount = 1;  
     presentInfo.pWaitSemaphores = &renderFinished[currentFrame];
     presentInfo.swapchainCount = 1;
+    auto swapchain = m_SurfaceManager.GetSwapchain();
     presentInfo.pSwapchains = &swapchain; // swapchain to present images to
     presentInfo.pImageIndices = &m_SwapchainIndex; //index of images in swapchain to present
 
@@ -117,6 +117,7 @@ void VulkanRenderer::draw()
 
     currentScene.updateScene(m_SwapchainIndex);
     m_MaterialManager.UpdateUniforms();
+    m_SurfaceManager.CombForUnusedSurfaces();
 
     //get next frame
     currentFrame = (currentFrame + 1) % MAX_FRAME_DRAWS;
@@ -125,54 +126,54 @@ void VulkanRenderer::draw()
 
 void VulkanRenderer::cleanup()
 {
-    //wait until no actions being run on device
-    vkDeviceWaitIdle(mainDevice.logicalDevice);
+    ////wait until no actions being run on device
+    //vkDeviceWaitIdle(mainDevice.logicalDevice);
 
-    for (size_t i = 0; i < MAX_FRAME_DRAWS; i++)
-    {
-        vkDestroySemaphore(mainDevice.logicalDevice, renderFinished[i], nullptr);
-        vkDestroySemaphore(mainDevice.logicalDevice, imageAvailable[i], nullptr);
-        vkDestroyFence(mainDevice.logicalDevice, drawFences[i], nullptr);
-    }
-    vkDestroyCommandPool(mainDevice.logicalDevice, graphicsCommandPool, nullptr);
-    for (auto& framebuffer : swapchainFramebuffers)
-    {
-        vkDestroyFramebuffer(mainDevice.logicalDevice, framebuffer, nullptr);
-    }
+    //for (size_t i = 0; i < MAX_FRAME_DRAWS; i++)
+    //{
+    //    vkDestroySemaphore(mainDevice.logicalDevice, renderFinished[i], nullptr);
+    //    vkDestroySemaphore(mainDevice.logicalDevice, imageAvailable[i], nullptr);
+    //    vkDestroyFence(mainDevice.logicalDevice, drawFences[i], nullptr);
+    //}
+    //vkDestroyCommandPool(mainDevice.logicalDevice, graphicsCommandPool, nullptr);
+    //for (auto& framebuffer : swapchainFramebuffers)
+    //{
+    //    vkDestroyFramebuffer(mainDevice.logicalDevice, framebuffer, nullptr);
+    //}
 
-    m_DescriptorPool.DestroyDescriptorPool();
-    
-    for (auto& buffer : m_InstancingBuffers)
-    {
-        buffer.Destroy();
-    }
+    //m_DescriptorPool.DestroyDescriptorPool();
+    //
+    //for (auto& buffer : m_InstancingBuffers)
+    //{
+    //    buffer.Destroy();
+    //}
 
-    currentScene.CleanUp(mainDevice.logicalDevice);
-    depthBufferImage.destroyImage(mainDevice.logicalDevice);
-    colorImage.destroyImage(mainDevice.logicalDevice);
-    for (auto& pipe : Pipelines)//!HERE
-    {
-        pipe.CleanUp(mainDevice.logicalDevice);
-    }
+    //currentScene.CleanUp(mainDevice.logicalDevice);
+    //depthBufferImage.destroyImage(mainDevice.logicalDevice);
+    //colorImage.destroyImage(mainDevice.logicalDevice);
+    //for (auto& pipe : Pipelines)//!HERE
+    //{
+    //    pipe.CleanUp(mainDevice.logicalDevice);
+    //}
 
-    m_RenderPassManager.CleanUp();
+    //m_RenderPassManager.CleanUp();
 
-    for (auto& image : swapChainImages)
-    {
-        vkDestroyImageView(mainDevice.logicalDevice, image.imageView, nullptr);
-    }
+    //for (auto& image : swapChainImages)
+    //{
+    //    vkDestroyImageView(mainDevice.logicalDevice, image.imageView, nullptr);
+    //}
 
-    vkDestroySwapchainKHR(mainDevice.logicalDevice, swapchain, nullptr);
+    //vkDestroySwapchainKHR(mainDevice.logicalDevice, swapchain, nullptr);
 
-    if (enableValidationLayers) {
-        DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
-    }
+    //if (enableValidationLayers) {
+    //    DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+    //}
 
-    vkDestroySurfaceKHR(instance, surface, nullptr);
-    vkDestroyDevice(mainDevice.logicalDevice, nullptr);
-    vkDestroyInstance(instance, nullptr);
+    //vkDestroySurfaceKHR(instance, surface, nullptr);
+    //vkDestroyDevice(mainDevice.logicalDevice, nullptr);
+    //vkDestroyInstance(instance, nullptr);
 
-    delete m_ThreadPool;
+    //delete m_ThreadPool;
 }
 
 VkResult VulkanRenderer::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
@@ -195,12 +196,11 @@ void VulkanRenderer::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugU
 
 void VulkanRenderer::TemporarySetup()
 {
-    currentScene = Scene(swapChainExtent);
+    currentScene = Scene(m_SurfaceManager.GetSwapchainExtent());
     createLight();
     
 
-    m_RenderPassManager.AddExampleRenderPass();
-    createFramebuffers();
+    m_RenderPassManager.InitRenderPasses();
     createCommandBuffers();
     m_ModelManager.LoadDefaultModels();
     m_MaterialManager.InitializeDefaultMaterials();
@@ -286,8 +286,6 @@ void VulkanRenderer::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreat
     createInfo.pfnUserCallback = debugCallback;
 }
 
-//format: vk_format_G8G8B8A8_UNORM
-//colorspace: VK_COLOR_SPACE_SRGB8_NONLINEAR
 VkSurfaceFormatKHR VulkanRenderer::chooseBestSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats)
 {
     if (formats.size() == 1 && formats[0].format == VK_FORMAT_UNDEFINED)
@@ -371,62 +369,6 @@ VkFormat VulkanRenderer::chooseSupportedFormat(const std::vector<VkFormat>& form
     throw std::runtime_error("Failed to find a matching format!");
 }
 
-void VulkanRenderer::createDepthBufferImage()
-{
-    //get supported format for depth buffer
-    depthFormat = chooseSupportedFormat({ VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT },
-        VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    //create depth buffer image
-
-
-    depthBufferImage.createImage(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, msaaSamples, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mainDevice.physicalDevice, mainDevice.logicalDevice);
-
-    depthBufferImage.createImageView(depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, mainDevice.logicalDevice);
-}
-
-void VulkanRenderer::createColorResources()
-{
-    VkFormat colorFormat = swapChainImageFormat;
-
-
-    colorImage.createImage(swapChainExtent.width, swapChainExtent.height, colorFormat,
-        VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 
-        msaaSamples, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mainDevice.physicalDevice, mainDevice.logicalDevice);//hmm
-    colorImage.createImageView(colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, mainDevice.logicalDevice);
-}
-
-void VulkanRenderer::createFramebuffers()
-{
-    swapchainFramebuffers.resize(swapChainImages.size());
-
-    // create a framebuffer for each swapchain image
-    for (size_t i = 0; i < swapchainFramebuffers.size(); i++)
-    {
-        std::array<VkImageView, 3> attachments =
-        {
-                            colorImage.getImageView(),
-            depthBufferImage.getImageView(),
-                        swapChainImages[i].imageView
-        };
-
-        VkFramebufferCreateInfo framebufferCreateInfo = {};
-        framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferCreateInfo.renderPass = m_RenderPassManager.GetRenderPass().GetVkRenderPass(); //render pass layout the framebuffer will be used with
-        framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-        framebufferCreateInfo.pAttachments = attachments.data(); //list of attachments (1:1 with render pass)
-        framebufferCreateInfo.width = swapChainExtent.width; //framebuffer width
-        framebufferCreateInfo.height = swapChainExtent.height;
-        framebufferCreateInfo.layers = 1;
-
-        VkResult result = vkCreateFramebuffer(mainDevice.logicalDevice, &framebufferCreateInfo, nullptr, &swapchainFramebuffers[i]);
-        if (result != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to create a Framebuffer");
-        }
-    }
-}
-
 void VulkanRenderer::createCommandPool()
 {
     //get indices of queue families from device
@@ -447,8 +389,8 @@ void VulkanRenderer::createCommandPool()
 
 void VulkanRenderer::createCommandBuffers()
 {
-    //resize command buffer count to have one for each fb
-    commandBuffer.resize(swapchainFramebuffers.size());
+    assert(m_SwapchainImageCount);
+    commandBuffer.resize(m_SwapchainImageCount);
 
     VkCommandBufferAllocateInfo cbAllocInfo = {};
     cbAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -635,7 +577,7 @@ VkDescriptorSetLayout VulkanRenderer::CreateDescriptorSetLayout(size_t bindingCo
 std::vector<VkDescriptorSet> VulkanRenderer::CreateDescriptorSets(const size_t* dataSizes, std::vector<UniformBuffer>& UniformBuffers, VkDescriptorSetLayout descriptorSetLayout)
 {
     assert(UniformBuffers.size());
-    const size_t setSize = swapChainImages.size();
+    const size_t setSize = m_SwapchainImageCount;
     std::vector<VkDescriptorSet> descriptorSets(setSize);
 
     std::vector<VkDescriptorSetLayout> setLayouts(setSize, descriptorSetLayout);
@@ -645,7 +587,7 @@ std::vector<VkDescriptorSet> VulkanRenderer::CreateDescriptorSets(const size_t* 
     std::vector<VkDescriptorBufferInfo> BufferInfos(setSize);
     std::vector<VkWriteDescriptorSet> SetWrites(setSize * UniformBuffers.size());
     size_t index = 0;
-    for (size_t i = 0; i < swapChainImages.size(); i++)
+    for (size_t i = 0; i < setSize; i++)
     {
         for (size_t j = 0; j < UniformBuffers.size(); j++)
         {
@@ -678,11 +620,11 @@ std::vector<UniformBuffer> VulkanRenderer::CreateUniformBuffers(const std::vecto
     for (auto& ubo : UniformBuffers)
     {
         // Uniform buffers and they contain buffers and device memory for each swapchain image
-        ubo.buffer.resize(swapChainImages.size());
-        ubo.deviceMemory.resize(swapChainImages.size());
+        ubo.buffer.resize(m_SwapchainImageCount);
+        ubo.deviceMemory.resize(m_SwapchainImageCount);
     }
 
-    for (size_t i = 0; i < swapChainImages.size(); i++)
+    for (size_t i = 0; i < m_SwapchainImageCount; i++)
     {
         for (size_t j = 0; j < UboCount; j++)// TODO: create all three in a row?
             createBuffer(mainDevice.physicalDevice, mainDevice.logicalDevice, dataSizes[j],
@@ -698,10 +640,73 @@ Pipeline VulkanRenderer::CreatePipeline(const Material& material)
     // should get something and pick a renderpass or create one
     // for now just get the one
 
-    Pipeline pipeline;
-    pipeline.createPipeline(swapChainExtent, m_RenderPassManager.GetRenderPass(), material);
+    Pipeline pipeline;// not sure what im going to do for other render passes, but maybe just getting opaque here could do?
+    // Note: will have to figure out the viewport and scissor problem, because currently passing swapchain extent.
+    // probably will have to get it from renderpass
+    pipeline.createPipeline(m_SurfaceManager.GetSwapchainExtent(), m_RenderPassManager.GetRenderPass(kRenderPassPlace_Opaques), material);
 
     return pipeline;
+}
+
+std::vector<Surface> VulkanRenderer::CreateSwapchainSurfaces(const SwapchainInfo& swapchain)
+{
+    vkGetSwapchainImagesKHR(mainDevice.logicalDevice, swapchain.swapchain, &m_SwapchainImageCount, nullptr);
+    std::vector<VkImage> images(m_SwapchainImageCount);
+    vkGetSwapchainImagesKHR(mainDevice.logicalDevice, swapchain.swapchain, &m_SwapchainImageCount, images.data());
+
+    std::vector<Surface> swapchainSurfaces;
+
+    for (VkImage image : images)
+    {
+        VkImageView imageView = Image::createImageView(image, swapchain.swapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, mainDevice.logicalDevice);
+        Image img (image, imageView, 0 );
+        const uint32_t numSamples = 1;
+        SurfaceDesc desc = { swapchain.swapchainExtent.width, swapchain.swapchainExtent.height, swapchain.swapchainImageFormat, numSamples };
+        const unsigned long long frameLastUsed = ~0ull; // we never want to destroy this surface accidentally
+        swapchainSurfaces.emplace_back(img, desc, frameLastUsed);
+    }
+    return swapchainSurfaces;
+}
+
+Surface VulkanRenderer::CreateSurface(const SurfaceDesc& desc)
+{
+    Image img;
+
+    bool isColor = IsColorSurface(desc.format);
+    VkImageUsageFlagBits attachmentBit = isColor ? VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT : VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    VkImageAspectFlagBits aspectBit = isColor ? VK_IMAGE_ASPECT_COLOR_BIT : VK_IMAGE_ASPECT_DEPTH_BIT;
+
+    // remove transient
+    img.createImage(desc.width, desc.height, desc.format,
+        VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | attachmentBit,
+        static_cast<VkSampleCountFlagBits>(desc.msaaCount), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mainDevice.physicalDevice, mainDevice.logicalDevice);
+    
+    img.createImageView(desc.format, aspectBit, mainDevice.logicalDevice);
+
+    Surface surf(img, desc, 0ull);
+    return surf;
+}
+
+VkFramebuffer VulkanRenderer::CreateFramebuffer(const std::vector<VkImageView>& imageViews, const RenderPass& rp)
+{
+    // surfaces should have the same width/height
+    auto desc = rp.GetSurfaceDescriptions()[0].second;
+    VkFramebufferCreateInfo framebufferCreateInfo = {};
+    framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferCreateInfo.renderPass = rp.GetVkRenderPass();
+    framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(imageViews.size());
+    framebufferCreateInfo.pAttachments = imageViews.data();
+    framebufferCreateInfo.width = desc.width;
+    framebufferCreateInfo.height = desc.height;
+    framebufferCreateInfo.layers = 1;
+
+    VkFramebuffer fb;
+    VkResult result = vkCreateFramebuffer(mainDevice.logicalDevice, &framebufferCreateInfo, nullptr, &fb);
+    if (result != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create a Framebuffer");
+    }
+    return fb;
 }
 
 void VulkanRenderer::BindPipeline(VkPipeline pipeline)
@@ -833,27 +838,52 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
     VkCommandBufferBeginInfo bufferBeginInfo = {};
     bufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-    VkRenderPassBeginInfo renderPassBeginInfo = {};
-    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassBeginInfo.renderPass = m_RenderPassManager.GetRenderPass().GetVkRenderPass();
-    renderPassBeginInfo.renderArea.offset = { 0, 0 }; //start point of render pass in pixels
-    renderPassBeginInfo.renderArea.extent = swapChainExtent; // size of region t run render pass
-    
-    std::array<VkClearValue, 2> clearValues = {};
-    clearValues[0].color = { 0.5f, 0.65f, 0.4f, 1.0f };
-    clearValues[1].depthStencil.depth = 1.0f;
-    renderPassBeginInfo.pClearValues = clearValues.data(); // list of clear values
-    renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-
-    renderPassBeginInfo.framebuffer = swapchainFramebuffers[currentImage];
-
-    VkResult result = vkBeginCommandBuffer(commandBuffer[currentImage], &bufferBeginInfo);
+    VkResult result = vkBeginCommandBuffer(commandBuffer[m_SwapchainIndex], &bufferBeginInfo);
     if (result != VK_SUCCESS)
     {
         throw std::runtime_error("Failed to start recording a Command Buffer");
     }
 
-    vkCmdBeginRenderPass(commandBuffer[currentImage], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    OpaqueColorPass();
+   // PresentBlit();
+
+    //stop recording to command buffer
+    result = vkEndCommandBuffer(commandBuffer[currentImage]);
+    if (result != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to stop recording a Command Buffer");
+    }
+}
+
+static void ConfigureRenderPassBeginClears(const RenderPass& rp, VkRenderPassBeginInfo& rpBegin, 
+    std::vector<VkClearValue> clears)
+{
+
+}
+
+void VulkanRenderer::OpaqueColorPass()
+{
+    RenderPass renderpass = m_RenderPassManager.GetRenderPass(kRenderPassPlace_Opaques);
+    const auto currentViewport = m_SurfaceManager.GetSwapchainExtent();
+    // Since this is a copy, won't update actual extent on cached renderpass
+    // But it's probably okay, because we update the extent here anyway
+    renderpass.UpdateRenderPassViewport(currentViewport.width, currentViewport.height);
+
+    // TODO: renderpass.GetBeginInfo();
+    VkRenderPassBeginInfo renderPassBeginInfo = {};
+    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassBeginInfo.renderPass = renderpass.GetVkRenderPass();
+    renderPassBeginInfo.renderArea.offset = { 0, 0 };
+    renderPassBeginInfo.renderArea.extent = m_SurfaceManager.GetSwapchainExtent();
+
+    std::array<VkClearValue, 2> clearValues = {};
+    clearValues[0].color = { 0.5f, 0.65f, 0.4f, 1.0f };
+    clearValues[1].depthStencil.depth = 1.0f;
+    renderPassBeginInfo.pClearValues = clearValues.data(); // list of clear values
+    renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    renderPassBeginInfo.framebuffer = m_SurfaceManager.GetFramebuffer(renderpass, m_SwapchainIndex);
+
+    vkCmdBeginRenderPass(commandBuffer[m_SwapchainIndex], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     for (size_t i = 0; i < m_ModelManager.Size(); i++)
     {
@@ -867,7 +897,7 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
             // TODO: when I introduce dynamic uniform buffers, use those for model matrix.
 
             // for now we only have default material and no way to set material to mesh.
-            m_MaterialManager.BindMaterial(currentImage, mesh.GetMaterialID());
+            m_MaterialManager.BindMaterial(m_SwapchainIndex, mesh.GetMaterialID());
 
             m_MaterialManager.PushConstants(modelMatrix, mesh.GetMaterialID());
 
@@ -879,14 +909,11 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
 
     m_MaterialManager.ForceNextBind();
 
-    vkCmdEndRenderPass(commandBuffer[currentImage]);
+    vkCmdEndRenderPass(commandBuffer[m_SwapchainIndex]);
+}
 
-    //stop recording to command buffer
-    result = vkEndCommandBuffer(commandBuffer[currentImage]);
-    if (result != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to stop recording a Command Buffer");
-    }
+void VulkanRenderer::PresentBlit()
+{
 }
 
 
@@ -951,6 +978,7 @@ void VulkanRenderer::createLogicalDevice()
 
 void VulkanRenderer::createSurface()
 {
+    // For now leave this function here and pass the created surface to surface manager.
     //creating a surface create info struct specific to OS
     VkResult result = glfwCreateWindowSurface(instance, window.window, nullptr, &surface);
 
@@ -962,6 +990,8 @@ void VulkanRenderer::createSurface()
 
 void VulkanRenderer::createSwapChain()
 {
+    // TODO: very old impl. Must improve this later
+
     //get swapchain details so we can pick the best settings
     SwapChainDetails swapChainDetails = getSwapChainDetails(mainDevice.physicalDevice);
 
@@ -1019,30 +1049,18 @@ void VulkanRenderer::createSwapChain()
     //if old swap chain being destroyed and this one replaces it
     swapChainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 
+    VkSwapchainKHR swapchain;
     VkResult result = vkCreateSwapchainKHR(mainDevice.logicalDevice, &swapChainCreateInfo, nullptr, &swapchain);
     if (result != VK_SUCCESS)
     {
         throw std::runtime_error("Failed to create a swapchain");
     }
 
-    swapChainImageFormat = surfaceFormats.format;
-    swapChainExtent = extent;
-
-    uint32_t swapChainImageCount;
-    vkGetSwapchainImagesKHR(mainDevice.logicalDevice, swapchain, &swapChainImageCount, nullptr);
-    std::vector<VkImage> images(swapChainImageCount);
-    vkGetSwapchainImagesKHR(mainDevice.logicalDevice, swapchain, &swapChainImageCount, images.data());
-
-    for (VkImage image : images)
-    {
-        //store image handle
-        SwapChainImage swapchainImage = {};
-        
-        swapchainImage.image = image;
-        swapchainImage.imageView = Image::createImageView(image, swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, mainDevice.logicalDevice);
-
-        swapChainImages.push_back(swapchainImage);
-    }
+    SwapchainInfo swapchainInfo;
+    swapchainInfo.swapchain = swapchain;
+    swapchainInfo.swapchainExtent = extent;
+    swapchainInfo.swapchainImageFormat = surfaceFormats.format;
+    m_SurfaceManager.CreateSwapchainSurfaces(surface, swapchainInfo);
 }
 
 

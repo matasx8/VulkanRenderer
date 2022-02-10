@@ -2,18 +2,21 @@
 #include "Utilities.h"
 #include "Material.h"
 #include <string>
+#include "Surface.h"
 
 enum RenderPassPlace : uint8_t
 {
 	kRenderPassPlace_ColorCode,
 	kRenderPassPlace_Opaques,
-	kRenderPassPlace_AfterOpaques
+	kRenderPassPlace_Outline,
+	kRenderPassPlace_PresentBlit,
+	KRenderPassPlace_RenderpassCount
 };
 
 enum FramebufferTarget : uint8_t
 {
 	kTargetSwapchain,
-	kTargetColor
+	kTargetSceneView
 };
 
 enum AttachmentLoadOp : uint8_t
@@ -33,7 +36,7 @@ struct RenderPassDesc
 {
 	uint8_t msaaCount;
 	uint8_t renderpassPlace;
-	uint8_t framebufferTarget;
+	//uint8_t framebufferTarget;
 	uint8_t colorAttachmentCount;
 	uint8_t colorFormat;
 	uint8_t colorLoadOp;
@@ -48,38 +51,25 @@ struct RenderPassDesc
 	}
 };
 
-struct RenderPassDescHasher
-{
-	size_t operator()(const RenderPassDesc& k) const noexcept
-	{
-		return std::hash<uint8_t>()(k.msaaCount) ^
-			std::hash<uint8_t>()(k.renderpassPlace) ^
-			std::hash<uint8_t>()(k.framebufferTarget) ^
-			std::hash<uint8_t>()(k.colorAttachmentCount) ^
-			std::hash<uint8_t>()(k.colorFormat) ^
-			std::hash<uint8_t>()(k.colorLoadOp) ^
-			std::hash<uint8_t>()(k.colorStoreOp) ^
-			std::hash<uint8_t>()(k.depthFormat) ^
-			std::hash<uint8_t>()(k.depthLoadOp) ^
-			std::hash<uint8_t>()(k.depthStoreOp);
-	}
-};
-
 class RenderPass
 {
 public:
 
 	RenderPass();
-	void CreateRenderPass(const RenderPassDesc& desc);
+	void CreateRenderPass(const RenderPassDesc& desc, std::vector<std::pair<uint32_t, SurfaceDesc>>& surfaceDescriptions);
 
 	VkRenderPass GetVkRenderPass() const { return m_RenderPass; }
 	RenderPassDesc GetRenderPassDesc() const { return m_Desc; }
+	const std::vector<std::pair<uint32_t, SurfaceDesc>>& GetSurfaceDescriptions() const { return m_SurfaceDescriptions; }
+
+	void UpdateRenderPassViewport(uint32_t width, uint32_t height);
 
 	void Destroy();
 	
 private:
 
 	VkRenderPass m_RenderPass;
+	std::vector<std::pair<uint32_t, SurfaceDesc>> m_SurfaceDescriptions;
 	RenderPassDesc m_Desc;
 #ifdef _DEBUG
 	std::string m_Name;
