@@ -86,7 +86,7 @@ void VulkanRenderer::draw()
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = &imageAvailable[currentFrame]; // list of semaphores to wait one
     VkPipelineStageFlags waitStages[] = {
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+        VK_PIPELINE_STAGE_TRANSFER_BIT
     };
     submitInfo.pWaitDstStageMask = waitStages; // stages to check semaphores at
     submitInfo.commandBufferCount = 1; //number of command buffers to submit
@@ -676,9 +676,15 @@ Surface VulkanRenderer::CreateSurface(const SurfaceDesc& desc)
     VkImageUsageFlagBits attachmentBit = isColor ? VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT : VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     VkImageAspectFlagBits aspectBit = isColor ? VK_IMAGE_ASPECT_COLOR_BIT : VK_IMAGE_ASPECT_DEPTH_BIT;
 
-    // remove transient
-    img.createImage(desc.width, desc.height, desc.format,
-        VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | attachmentBit,
+    if (isColor)
+    {
+        img.createImage(desc.width, desc.height, desc.format,
+            VK_IMAGE_TILING_OPTIMAL, attachmentBit | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+            static_cast<VkSampleCountFlagBits>(desc.msaaCount), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mainDevice.physicalDevice, mainDevice.logicalDevice);
+    }
+    else
+        img.createImage(desc.width, desc.height, desc.format,
+        VK_IMAGE_TILING_OPTIMAL, attachmentBit,
         static_cast<VkSampleCountFlagBits>(desc.msaaCount), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mainDevice.physicalDevice, mainDevice.logicalDevice);
     
     img.createImageView(desc.format, aspectBit, mainDevice.logicalDevice);
@@ -845,7 +851,7 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
     }
 
     OpaqueColorPass();
-   // PresentBlit();
+    PresentBlit();
 
     //stop recording to command buffer
     result = vkEndCommandBuffer(commandBuffer[currentImage]);
@@ -853,12 +859,6 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
     {
         throw std::runtime_error("Failed to stop recording a Command Buffer");
     }
-}
-
-static void ConfigureRenderPassBeginClears(const RenderPass& rp, VkRenderPassBeginInfo& rpBegin, 
-    std::vector<VkClearValue> clears)
-{
-
 }
 
 void VulkanRenderer::OpaqueColorPass()
@@ -879,8 +879,9 @@ void VulkanRenderer::OpaqueColorPass()
     std::array<VkClearValue, 2> clearValues = {};
     clearValues[0].color = { 0.5f, 0.65f, 0.4f, 1.0f };
     clearValues[1].depthStencil.depth = 1.0f;
-    renderPassBeginInfo.pClearValues = clearValues.data(); // list of clear values
+    renderPassBeginInfo.pClearValues = clearValues.data();
     renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    // again, don't forget to cache the framebuffers. But it works for now
     renderPassBeginInfo.framebuffer = m_SurfaceManager.GetFramebuffer(renderpass, m_SwapchainIndex);
 
     vkCmdBeginRenderPass(commandBuffer[m_SwapchainIndex], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -896,7 +897,6 @@ void VulkanRenderer::OpaqueColorPass()
 
             // TODO: when I introduce dynamic uniform buffers, use those for model matrix.
 
-            // for now we only have default material and no way to set material to mesh.
             m_MaterialManager.BindMaterial(m_SwapchainIndex, mesh.GetMaterialID());
 
             m_MaterialManager.PushConstants(modelMatrix, mesh.GetMaterialID());
@@ -914,6 +914,78 @@ void VulkanRenderer::OpaqueColorPass()
 
 void VulkanRenderer::PresentBlit()
 {
+    const uint32_t renderResult = 3;
+    const uint32_t backbuffer = 0;
+    const Surface resultSurf = m_SurfaceManager.GetSurface(renderResult);
+    const Surface backbufferSurf = m_SurfaceManager.GetSurface(0, m_SwapchainIndex);
+
+    VkImage renderResultImg = resultSurf.GetImage().getImage();
+    VkImage backbufferImg = backbufferSurf.GetImage().getImage();
+
+    VkImageMemoryBarrier memoryBarier = {};
+    memoryBarier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    memoryBarier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    memoryBarier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    memoryBarier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED; //queue family to transifition from
+    memoryBarier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED; // means we wont change
+    memoryBarier.image = renderResultImg; // image being accessed and modified as part of barrier
+    memoryBarier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; //aspect of image being altered
+    memoryBarier.subresourceRange.baseMipLevel = 0;
+    memoryBarier.subresourceRange.levelCount = 1;
+    memoryBarier.subresourceRange.baseArrayLayer = 0;
+    memoryBarier.subresourceRange.layerCount = 1;
+    memoryBarier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    memoryBarier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+    VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+    vkCmdPipelineBarrier(commandBuffer[m_SwapchainIndex],
+        srcStage, dstStage, // pipeline stages (match to src and dst accessmasks
+        0, //dependency flags
+        0, nullptr, //memeory barrier count + data
+        0, nullptr, //buffer memory barrient count + data
+        1, &memoryBarier);
+
+    memoryBarier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    memoryBarier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    memoryBarier.image = backbufferImg;
+
+    vkCmdPipelineBarrier(commandBuffer[m_SwapchainIndex], srcStage, dstStage, 0, 0, nullptr, 0, nullptr, 1, &memoryBarier);
+
+    VkImageBlit blit{};
+    auto resultDesc = resultSurf.GetDesc();
+    auto extent = m_SurfaceManager.GetSwapchainExtent();
+    blit.srcOffsets[0] = { 0, 0, 0 };
+    blit.srcOffsets[1] = { (int32_t)resultDesc.width, (int32_t)resultDesc.height, 1 };
+    blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blit.srcSubresource.layerCount = 1;
+    blit.dstOffsets[0] = { 0, 0, 0 };
+    blit.dstOffsets[1] = { (int32_t)extent.width, (int32_t)extent.height, 1};
+    blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blit.dstSubresource.layerCount = 1;
+
+    vkCmdBlitImage(commandBuffer[m_SwapchainIndex], renderResultImg, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, backbufferImg, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
+
+    // --------------------------------------------------------------
+
+    memoryBarier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    memoryBarier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    memoryBarier.image = backbufferImg; // image being accessed and modified as part of barrier
+    memoryBarier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    memoryBarier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+    srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+    vkCmdPipelineBarrier(commandBuffer[m_SwapchainIndex],
+        srcStage, dstStage, // pipeline stages (match to src and dst accessmasks
+        0, //dependency flags
+        0, nullptr, //memeory barrier count + data
+        0, nullptr, //buffer memory barrient count + data
+        1, &memoryBarier);
+
+    //vkCmdBlitImage(commandBuffer[m_SwapchainIndex], renderResultImg, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, backbufferImg, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 1, &blit, VK_FILTER_LINEAR);
 }
 
 
@@ -1021,7 +1093,7 @@ void VulkanRenderer::createSwapChain()
     swapChainCreateInfo.imageExtent = extent;
     swapChainCreateInfo.minImageCount = imageCount;
     swapChainCreateInfo.imageArrayLayers = 1; // number of layers for each image in chain
-    swapChainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapChainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     swapChainCreateInfo.preTransform = swapChainDetails.surfaceCapabilities.currentTransform; //transform to perform on swapchain images
     swapChainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR; // how to handle blending images
     swapChainCreateInfo.clipped = VK_TRUE;

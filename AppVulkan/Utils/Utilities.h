@@ -225,7 +225,7 @@ static void copyBuffer(VkDevice device, VkQueue transferQueue, VkCommandPool tra
 static bool IsColorSurface(VkFormat format)
 {
 	// This is probably very not right, but it'll work for me;
-	return format < VK_FORMAT_D16_UNORM_S8_UINT;
+	return format < VK_FORMAT_D16_UNORM;
 }
 
 static void copyImageBuffer(VkDevice device, VkQueue transferQueue, VkCommandPool transferCommandPool,
@@ -287,6 +287,14 @@ static void transitionImageLayout(VkDevice device, VkQueue queue, VkCommandPool 
 
 		srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+	{
+		memoryBarier.srcAccessMask = 0;
+		memoryBarier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; // must happen beofre..
+
+		srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 	}
 
 	vkCmdPipelineBarrier(commandBuffer,

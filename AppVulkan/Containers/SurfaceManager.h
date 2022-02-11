@@ -23,6 +23,8 @@ public:
 	// TODO: cache framebuffers also. To save time now create a new FB each query.
 	VkFramebuffer GetFramebuffer(const RenderPass& rp, uint32_t swapchainIndex = ~0ull);
 
+	Surface GetSurface(uint32_t surfaceSlot, uint32_t swapchainIndex = 0);
+
 	void CombForUnusedSurfaces();
 
 	void CleanUp();

@@ -23,10 +23,8 @@ void RenderPass::CreateRenderPass(const RenderPassDesc& desc, std::vector<std::p
 			colorDescriptions[i].samples = static_cast<VkSampleCountFlagBits>(desc.msaaCount);
 			colorDescriptions[i].loadOp = static_cast<VkAttachmentLoadOp>(desc.colorLoadOp);
 			colorDescriptions[i].storeOp = static_cast<VkAttachmentStoreOp>(desc.colorStoreOp);
-			if(desc.msaaCount > 1)
-				colorDescriptions[i].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-			else
-				colorDescriptions[i].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+			colorDescriptions[i].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
 		}
 	}
 
@@ -57,7 +55,7 @@ void RenderPass::CreateRenderPass(const RenderPassDesc& desc, std::vector<std::p
 		colorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		colorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	}
 	
 	std::vector<VkAttachmentReference> colorAttachments;
@@ -76,7 +74,7 @@ void RenderPass::CreateRenderPass(const RenderPassDesc& desc, std::vector<std::p
 	}
 
 	VkAttachmentReference colorAttachmentResolveReference;
-	if (desc.msaaCount)
+	if (desc.msaaCount > 1)
 	{
 		if(desc.depthFormat)
 			colorAttachmentResolveReference.attachment = desc.colorAttachmentCount + 1;
@@ -90,7 +88,7 @@ void RenderPass::CreateRenderPass(const RenderPassDesc& desc, std::vector<std::p
 	subpass.colorAttachmentCount = desc.colorAttachmentCount;
 	subpass.pColorAttachments = desc.colorAttachmentCount ? colorAttachments.data() : nullptr;
 	subpass.pDepthStencilAttachment = desc.depthFormat ? &depthAttachmentReference : nullptr;
-	subpass.pResolveAttachments = desc.msaaCount ? &colorAttachmentResolveReference : nullptr;
+	subpass.pResolveAttachments = desc.msaaCount > 1? &colorAttachmentResolveReference : nullptr;
 	
 	// so far we have 1 subpass supported so leave this
 	VkSubpassDependency dependency{};
@@ -105,7 +103,7 @@ void RenderPass::CreateRenderPass(const RenderPassDesc& desc, std::vector<std::p
 	if(desc.depthFormat)
 		colorDescriptions.push_back(std::move(depthAttachment));
 
-	if (desc.msaaCount)
+	if (desc.msaaCount > 1)
 		colorDescriptions.push_back(std::move(colorAttachmentResolve));
 
 	VkRenderPassCreateInfo renderPassCreateInfo = {};

@@ -95,7 +95,7 @@ namespace GameScript
 
 		auto func = [&](ModelManager* const man, Model& model, int idx)
 		{
-			constexpr int numDuplicates = 10;
+			constexpr int numDuplicates = 1000;
 			Model copy = model;
 			for(int i = 0; i < numDuplicates; i++)
 				man->DuplicateWithMaterial(copy, false, i % 4);
@@ -107,7 +107,8 @@ namespace GameScript
 		{
 			const int nthOther = numDefaultResources;
 			const int offset = idx / nthOther; // fix the move func
-			model.MoveLocal(glm::vec3(2.0f * offset, 2.f * (idx % nthOther + 1), 0.0f));
+			const int zOffset = idx / 40;
+			model.MoveLocal(glm::vec3(2.0f * (offset % 10), 2.f * (idx % nthOther + 1), -2.f * zOffset));
 		};
 		g_Engine->UpdateModels(update);
 	}

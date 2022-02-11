@@ -34,6 +34,13 @@ VkFramebuffer SurfaceManager::GetFramebuffer(const RenderPass& rp, uint32_t swap
 	return fb;
 }
 
+Surface SurfaceManager::GetSurface(uint32_t surfaceSlot, uint32_t swapchainIndex)
+{
+	if (surfaceSlot == 0)
+		return m_SwapchainSurfaces[swapchainIndex];
+	return m_SurfacePool[surfaceSlot];
+}
+
 void SurfaceManager::CombForUnusedSurfaces()
 {
 }

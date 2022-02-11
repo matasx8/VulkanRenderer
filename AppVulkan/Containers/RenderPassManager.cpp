@@ -46,19 +46,6 @@ void RenderPassManager::AddColorCodingRenderPass()
 
 void RenderPassManager::AddOpaqueColorPass()
 {
-	//RenderPassDesc DrawOpaques =
-	//{
-	//	8,	// msaaCount
-	//	kRenderPassPlace_Opaques, // place
-	//	kTargetSceneView,
-	//	1,
-	//	VK_FORMAT_B8G8R8A8_UNORM,
-	//	kLoadOpClear,
-	//	kStoreOpStore,					// what happens if its dont care on swapchain?
-	//	VK_FORMAT_D32_SFLOAT,
-	//	kLoadOpClear,
-	//	kStoreOpStore
-	//};
 	RenderPassDesc DrawOpaques =
 	{
 			8,	// msaaCount
@@ -66,10 +53,10 @@ void RenderPassManager::AddOpaqueColorPass()
 			1,
 			VK_FORMAT_B8G8R8A8_UNORM,
 			kLoadOpClear,
-			kStoreOpStore,					// what happens if its dont care on swapchain?
-			VK_FORMAT_D32_SFLOAT_S8_UINT,
+			kStoreOpStore,
+			VK_FORMAT_D32_SFLOAT,
 			kLoadOpClear,
-			kStoreOpStore
+			kStoreOpDontCare
 	};
 	const uint32_t GameViewColorSurface = 1;
 	const SurfaceDesc GameViewColorSurfaceDesc = {
@@ -83,13 +70,13 @@ void RenderPassManager::AddOpaqueColorPass()
 	const SurfaceDesc GameViewDepthSurfaceDesc = {
 		0, 
 		0,
-		VK_FORMAT_D32_SFLOAT_S8_UINT,
-		8	// do i need msaa on depth?
+		VK_FORMAT_D32_SFLOAT,
+		8
 	};
 
 	// resolve surface
-	const uint32_t BackbufferSurface = 0;
-	const SurfaceDesc BackbufferSurfaceDesc = {
+	const uint32_t ResolveSurface = 3;
+	const SurfaceDesc ResolveSurfaceDesc = {
 	0,
 	0,
 	VK_FORMAT_B8G8R8A8_UNORM,
@@ -99,7 +86,7 @@ void RenderPassManager::AddOpaqueColorPass()
 	std::vector<std::pair<uint32_t, SurfaceDesc>> surfaceDescriptions;
 	surfaceDescriptions.emplace_back(GameViewColorSurface, GameViewColorSurfaceDesc);
 	surfaceDescriptions.emplace_back(GameViewDepthSurface, GameViewDepthSurfaceDesc);
-	surfaceDescriptions.emplace_back(BackbufferSurface, BackbufferSurfaceDesc);
+	surfaceDescriptions.emplace_back(ResolveSurface, ResolveSurfaceDesc);
 
 	// create renderpass
 	RenderPass rp;
@@ -111,26 +98,35 @@ void RenderPassManager::AddOpaqueColorPass()
 
 void RenderPassManager::AddPresentBlitPass()
 {
-	//RenderPassDesc DrawOpaques =
-	//{
-	//	1,	// msaaCount
-	//	kRenderPassPlace_PresentBlit, // place
-	//	1,
-	//	VK_FORMAT_B8G8R8A8_UNORM,
-	//	kLoadOpDontCare,
-	//	kStoreOpStore,
-	//	VK_FORMAT_UNDEFINED,			// no need for depth here
-	//	kLoadOpDontCare,
-	//	kStoreOpDontCare
-	//};
+	RenderPassDesc presentBlit =
+	{
+			1,	// msaaCount
+			kRenderPassPlace_PresentBlit, // place
+			1,
+			VK_FORMAT_B8G8R8A8_UNORM,
+			kLoadOpClear,
+			kStoreOpStore,
+			VK_FORMAT_UNDEFINED, // no depth
+			kStoreOpDontCare,
+			kStoreOpDontCare
+	};
+	const uint32_t GameViewColorSurface = 3;
+	const SurfaceDesc GameViewColorSurfaceDesc = {
+		0, // dont care yet, engine will fill with up when needed
+		0,
+		VK_FORMAT_B8G8R8A8_UNORM,	// actually should be able to not specify this and let engine pick or something
+		1
+	};
 
+	std::vector<std::pair<uint32_t, SurfaceDesc>> surfaceDescriptions;
+	surfaceDescriptions.emplace_back(GameViewColorSurface, GameViewColorSurfaceDesc);
 
-	//// create renderpass
-	//RenderPass rp;
-	//rp.CreateRenderPass(DrawOpaques);
+	// create renderpass
+	RenderPass rp;
+	rp.CreateRenderPass(presentBlit, surfaceDescriptions);
 
-	//// add the renderpass, now we have initial one for now
-	//AddRenderPass(DrawOpaques, rp);
+	// add the renderpass, now we have initial one for now
+	AddRenderPass(presentBlit, rp);
 }
 
 const RenderPass& RenderPassManager::GetRenderPass(uint8_t renderPassPlace) const
