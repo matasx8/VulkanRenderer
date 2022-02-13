@@ -61,8 +61,9 @@ void Pipeline::createPipeline(VkExtent2D extent, RenderPass renderPass, const Ma
     VkPipelineColorBlendStateCreateInfo colorBlendingCreateInfo = {};
     createPipelineColorBlendStateCreateInfo(colorBlendingCreateInfo, colorState);
 
+    const Shader& shader = material.GetShader();
     VkPipelineDepthStencilStateCreateInfo depthStencilCreateInfo = {};
-    createDepthStencilCreateInfo(depthStencilCreateInfo);
+    createDepthStencilCreateInfo(depthStencilCreateInfo, shader);
 
     createPushConstantRange();
 
@@ -280,10 +281,10 @@ void Pipeline::createPushConstantRange()
     pushConstantRange.size = sizeof(ModelMatrix);
 }
 
-void Pipeline::createDepthStencilCreateInfo(VkPipelineDepthStencilStateCreateInfo& depthStencilCreateInfo)
+void Pipeline::createDepthStencilCreateInfo(VkPipelineDepthStencilStateCreateInfo& depthStencilCreateInfo, const Shader& shader)
 {
     depthStencilCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depthStencilCreateInfo.depthTestEnable = VK_TRUE;
+    depthStencilCreateInfo.depthTestEnable = shader.m_ShaderInfo.isDepthTestEnabled;
     depthStencilCreateInfo.depthWriteEnable = VK_TRUE;
     depthStencilCreateInfo.depthCompareOp = VK_COMPARE_OP_LESS; // potential for cool effects, coparison op that allows overwrite
     depthStencilCreateInfo.depthBoundsTestEnable = VK_FALSE;

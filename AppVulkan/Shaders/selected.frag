@@ -6,5 +6,5 @@ layout(set = 1, binding = 0) uniform sampler2D textureSampler;
 
 void main()
 {
-	outColour = vec4(1.0, 0.0, 0.0, 1.0); //
+	outColour = vec4(1.0, 1.0, 1.0, 1.0); //
 }

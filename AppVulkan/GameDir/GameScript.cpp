@@ -18,32 +18,6 @@ namespace GameScript
 		initSettings.numThreadsInPool = 0;
 	}
 
-	void CreateSelectedMaterial()
-	{
-		ShaderCreateInfo shader = { "Shaders/selected_vert.spv", "Shaders/selected_frag.spv" };
-		constexpr size_t kUniformCount = 1;
-
-		std::vector<uint8_t> Uniforms(kUniformCount);
-		Uniforms[0] = kUniformViewProjectionMatrix;
-
-		shader.uniforms = std::move(Uniforms);
-		shader.isInstanced = false;
-
-		// TODO: make it so I can have no textures on a material
-		std::vector<TextureCreateInfo> textureInfos;
-		TextureCreateInfo tci;
-		tci.fileName = "plain.png";
-		tci.filtering = VK_FILTER_NEAREST;
-		tci.wrap = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		textureInfos.push_back(tci);
-
-		Material material(0); // pass any number in constructor, material man will assign
-		material.SetShader(shader);
-		material.SetTextureDescriptions(textureInfos);
-
-		g_Engine->CreateMaterial(material);
-	}
-
 	uint32_t CreateMaterials(const char* filename, int shadernum)
 	{
 		// get material by id
@@ -85,7 +59,6 @@ namespace GameScript
 
 		CreateMaterials("UVs.jpg", kRegularShader);
 		CreateMaterials("default.png", kCelShader);
-		CreateSelectedMaterial();
 		// duplicate with material
 		// but first just duplicate
 		auto predicate = [=](int idx)
@@ -95,10 +68,10 @@ namespace GameScript
 
 		auto func = [&](ModelManager* const man, Model& model, int idx)
 		{
-			constexpr int numDuplicates = 1000;
+			constexpr int numDuplicates = 2000;
 			Model copy = model;
 			for(int i = 0; i < numDuplicates; i++)
-				man->DuplicateWithMaterial(copy, false, i % 4);
+				man->DuplicateWithMaterial(copy, false, i % 2 + kDefaultMaterialCount);
 		};
 		g_Engine->ForEachModelConditional(predicate, func);
 

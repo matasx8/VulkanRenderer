@@ -19,6 +19,7 @@ void MaterialManager::InitializeDefaultMaterials()
 
 	defaultShader.uniforms = std::move(Uniforms);
 	defaultShader.isInstanced = false;
+	defaultShader.isDepthTestEnabled = true;
 
 	std::vector<TextureCreateInfo> textureInfos;
 	TextureCreateInfo tci;
@@ -30,6 +31,31 @@ void MaterialManager::InitializeDefaultMaterials()
 	// default material should be 0
 	CreateMaterial(defaultShader, textureInfos);
 
+	{
+		ShaderCreateInfo shader = { "Shaders/selected_vert.spv", "Shaders/selected_frag.spv" };
+		constexpr size_t kUniformCount = 1;
+
+		std::vector<uint8_t> Uniforms(kUniformCount);
+		Uniforms[0] = kUniformViewProjectionMatrix;
+
+		shader.uniforms = std::move(Uniforms);
+		shader.isInstanced = false;
+		shader.isDepthTestEnabled = false;
+
+		// TODO: make it so I can have no textures on a material
+		std::vector<TextureCreateInfo> textureInfos;
+		TextureCreateInfo tci;
+		tci.fileName = "plain.png";
+		tci.filtering = VK_FILTER_NEAREST;
+		tci.wrap = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		textureInfos.push_back(tci);
+
+		Material material(kMaterialSelected);
+		material.SetShader(shader);
+		material.SetTextureDescriptions(textureInfos);
+
+		CreateMaterial(material);
+	}
 }
 
 void MaterialManager::BindMaterial(size_t frameIndex, uint32_t id)

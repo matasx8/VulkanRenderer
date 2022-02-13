@@ -40,6 +40,7 @@
 #include "Containers/MaterialManager.h"
 #include "Containers/SurfaceManager.h"
 #include "OSUtilities.h"
+#include "Input.h"
 
 struct TextureCreateInfo;
 typedef unsigned char stbi_uc;
@@ -60,6 +61,7 @@ public:
 	thread_pool* const GetThreadPool() { return m_ThreadPool;}
 	uint32_t GetSwapchainIndex() const { return m_SwapchainIndex; }
 	unsigned long long GetCurrentFrame() const { return m_CurrentFrameNumber; }
+	const Input& GetInputController() const { return m_InputController; }
 
 	void UpdateMappedMemory(VkDeviceMemory memory, size_t size, void* data);
 	uint32_t CreateMaterial(Material& material);
@@ -116,6 +118,8 @@ private:
 	ModelManager m_ModelManager;
 	MaterialManager m_MaterialManager;
 	SurfaceManager m_SurfaceManager;
+
+	Input m_InputController;
 
 	ShaderMan shaderMan;
 
@@ -178,6 +182,7 @@ private:
 
 	void recordCommands(uint32_t currentImage);
 	void OpaqueColorPass();
+	void SelectedHighlightPass();
 	void PresentBlit();
 
 	//getters

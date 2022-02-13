@@ -55,6 +55,7 @@ struct ShaderCreateInfo
 	uint8_t textureCount;
 
 	bool isInstanced;
+	bool isDepthTestEnabled;
 };
 
 // hm it's a bit weird that shadercreateinfo and shader are seperate classes. There's no more need for that?

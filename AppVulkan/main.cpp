@@ -1,8 +1,5 @@
 //TODO: rename member variables to m_VariableName
-//TODO: make physical and logical device accessible everywhere
-//TODO: must create a data structure for Models!! currently this is a huge bottleneck
-//		- make it so its fast to retrieve a model
-//		- make it data oriented
+// TODO: make stuff non copyable
 
 #pragma once
 #define STB_IMAGE_IMPLEMENTATION
@@ -25,7 +22,7 @@ int main()
 
 	GameScript::OnStart(&vulkanRenderer);
 
-	while (!glfwWindowShouldClose(vulkanRenderer.window.window))
+	while (!glfwWindowShouldClose(vulkanRenderer.window.m_WindowPtr))
 	{
 		glfwPollEvents();
 

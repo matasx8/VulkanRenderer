@@ -14,6 +14,13 @@ enum UniformType : uint8_t
 	kUniformTypeTotalCount
 };
 
+enum DefaultMaterials
+{
+	kMaterialDefault,
+	kMaterialSelected,
+	kDefaultMaterialCount
+};
+
 class MaterialManager
 {
 public:

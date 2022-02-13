@@ -2,7 +2,7 @@
 #include "VulkanRenderer.h"
 
 // Get debug information printed to console
-#define DEBUG_FRAME_INFO
+//#define DEBUG_FRAME_INFO
 
 namespace GameScript
 {

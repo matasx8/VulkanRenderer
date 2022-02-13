@@ -1,9 +1,10 @@
 #include "VulkanRenderer.h"
 #include "Texture.h"
 #include <iostream>
+#include <stdlib.h>
 
 VulkanRenderer::VulkanRenderer() 
-    : m_ModelManager(*this, true), m_MaterialManager(*this), m_SurfaceManager(*this)
+    : window(), m_ModelManager(*this, true), m_MaterialManager(*this), m_SurfaceManager(*this), m_InputController(window)
 {
     m_DeltaTime = 0;
     m_LastTime = 0;
@@ -65,8 +66,8 @@ void VulkanRenderer::draw()
 {
     UpdateDeltaTime();
 
-    currentScene.cameraKeyControl(window.getKeys(), m_DeltaTime);
-    currentScene.cameraMouseControl(window.getXChange(), window.getYchange());
+    //currentScene.cameraKeyControl(window.getKeys(), m_DeltaTime);
+    //currentScene.cameraMouseControl(window.getXChange(), window.getYchange());
 
     //wait for given fence to signal open from last draw before xontinuing
     vkWaitForFences(mainDevice.logicalDevice, 1, &drawFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
@@ -119,9 +120,10 @@ void VulkanRenderer::draw()
     m_MaterialManager.UpdateUniforms();
     m_SurfaceManager.CombForUnusedSurfaces();
 
-    //get next frame
+    // Something is very sus with this variable. TODOOOO: look into this later
     currentFrame = (currentFrame + 1) % MAX_FRAME_DRAWS;
     currentScene.onFrameEnded();
+    window.NotifyFrameEnded();
 }
 
 void VulkanRenderer::cleanup()
@@ -328,9 +330,9 @@ VkExtent2D VulkanRenderer::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& surf
     }
     else
     {//if value can vary, need to set manually
-        int width, height;//get window size
-        height = (int)window.getBufferHeigt();
-        width = (int)window.getBufferWidth();
+        // WHAAT
+        int height = (int)window.GetBufferHeight();
+        int width = (int)window.GetBufferWidth();
         //glfwGetFramebufferSize(window, &width, &height);
 
         //create new extent using window size
@@ -850,6 +852,12 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
         throw std::runtime_error("Failed to start recording a Command Buffer");
     }
 
+    if (m_InputController.GetMouseKey(GLFW_MOUSE_BUTTON_1, GLFW_PRESS))
+    {
+        auto pos = m_InputController.GetMouseCoords();
+        printf("%f %f\n", pos.x, pos.y);
+    }
+
     OpaqueColorPass();
     PresentBlit();
 
@@ -906,10 +914,31 @@ void VulkanRenderer::OpaqueColorPass()
             DrawIndexed(mesh.GetIndexCount(), /*mesh.GetInstanceCount()*/ 1);
         }
     }
-
     m_MaterialManager.ForceNextBind();
 
+    SelectedHighlightPass();
+
     vkCmdEndRenderPass(commandBuffer[m_SwapchainIndex]);
+}
+
+void VulkanRenderer::SelectedHighlightPass()
+{
+    const auto& model = m_ModelManager[rand() % 100];
+    const auto& modelMatrix = model.GetModelMatrix();
+
+    for (size_t j = 0; j < model.GetMeshCount(); j++)
+    {
+        const auto& mesh = model.GetMesh(j);
+
+        m_MaterialManager.BindMaterial(m_SwapchainIndex, kMaterialSelected);
+
+        m_MaterialManager.PushConstants(modelMatrix, kMaterialSelected);
+
+        m_ModelManager.BindMesh(mesh);
+
+        DrawIndexed(mesh.GetIndexCount(), /*mesh.GetInstanceCount()*/ 1);
+    }
+    m_MaterialManager.ForceNextBind();
 }
 
 void VulkanRenderer::PresentBlit()
@@ -984,8 +1013,6 @@ void VulkanRenderer::PresentBlit()
         0, nullptr, //memeory barrier count + data
         0, nullptr, //buffer memory barrient count + data
         1, &memoryBarier);
-
-    //vkCmdBlitImage(commandBuffer[m_SwapchainIndex], renderResultImg, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, backbufferImg, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 1, &blit, VK_FILTER_LINEAR);
 }
 
 
@@ -1052,7 +1079,7 @@ void VulkanRenderer::createSurface()
 {
     // For now leave this function here and pass the created surface to surface manager.
     //creating a surface create info struct specific to OS
-    VkResult result = glfwCreateWindowSurface(instance, window.window, nullptr, &surface);
+    VkResult result = glfwCreateWindowSurface(instance, window.m_WindowPtr, nullptr, &surface);
 
     if (result != VK_SUCCESS)
     {

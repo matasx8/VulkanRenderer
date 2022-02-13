@@ -1,46 +1,67 @@
 #pragma once
-
-#include <stdio.h>
+#include "NonCopyable.h"
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 #include <string>
+#include <array>
 
-class Window
+struct KeyInput
+{
+	// -1 for no action
+	int16_t keyAction;
+	int16_t keyMod;
+};
+
+struct MouseInput
+{
+	glm::vec2 m_MouseScreenSpacePos;
+};
+
+class Window : NonCopyable
 {
 public:
 	Window();
 
 	int Initialise(std::string wName, const int width, const int height);
 
-	float getBufferWidth() { return bufferWidth; }
-	float getBufferHeigt() { return bufferHeight; }
+	float GetBufferWidth() { return m_BufferWidth; }
+	float GetBufferHeight() { return m_BufferHeight; }
 
-	bool getShouldClose() { return glfwWindowShouldClose(window); }
+	bool GetShouldClose() { return glfwWindowShouldClose(m_WindowPtr); }
+	const std::array<KeyInput, 1024>& GetKeys() const;
+	const std::array<KeyInput, 8>& GetMouseKeys() const;
+	glm::vec2 GetMousePos() const;
 
-	bool* getKeys() { return keys; }
-	float getXChange();
-	float getYchange();
+	void NotifyFrameEnded();
 
-	void swapBuffers() { glfwSwapBuffers(window); }//probably don't need this
+/*	float GetXChange();
+	float GetYchange()*/;
+
+	void SwapBuffers() { glfwSwapBuffers(m_WindowPtr); }
 
 	~Window();
-	static bool mHandleMouse;
 
-	GLFWwindow* window;
+	// Find out if I can make this private
+	GLFWwindow* m_WindowPtr;
 private:
 
-	int width, height;
-	int bufferWidth, bufferHeight;
+	int m_Width, m_Height;
+	int m_BufferWidth, m_BufferHeight;
+	bool m_HandleMouse;
 
-	bool keys[1024];
+	std::array<KeyInput, 1024> m_Keys;
+	std::array<KeyInput, 8> m_MouseKeys;
+	MouseInput m_MousePos;
 
-	float lastX;
-	float lastY;
-	float xChange;
-	float yChange;
-	bool mouseFirstMoved;
+	//float lastX;
+	//float lastY;
+	//float xChange;
+	//float yChange;
+	//bool mouseFirstMoved;
 
-	void createCallbacks();
+	void CreateCallbacks();
 
-	static void handleKeys(GLFWwindow* window, int key, int code, int action, int mode);
-	static void handleMouse(GLFWwindow* window, double xPos, double yPos);
+	static void HandleKeys(GLFWwindow* window, int key, int code, int action, int mod);
+	static void HandleMouse(GLFWwindow* window, double xPos, double yPos);
+	static void HandleMouseButtons(GLFWwindow* window, int button, int action, int mods);
 };

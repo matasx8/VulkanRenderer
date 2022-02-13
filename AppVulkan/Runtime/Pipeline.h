@@ -6,6 +6,7 @@
 
 class RenderPass;
 class Material;
+class Shader;
 
 struct UniformBuffer
 {
@@ -58,7 +59,7 @@ private:
     void createPipelineColorBlendAttachmentState(VkPipelineColorBlendAttachmentState& colourState) const;
     void createPipelineColorBlendStateCreateInfo(VkPipelineColorBlendStateCreateInfo& colorBlendingCreateInfo, VkPipelineColorBlendAttachmentState& colorState) const;
     void createPushConstantRange();
-    void createDepthStencilCreateInfo(VkPipelineDepthStencilStateCreateInfo& depthStencilCreateInfo);
+    void createDepthStencilCreateInfo(VkPipelineDepthStencilStateCreateInfo& depthStencilCreateInfo, const Shader& shader);
     void createPipelineLayout(VkDescriptorSetLayout* descriptorSetLayouts, uint32_t dSetLayoutCount, size_t pushSize);
     
     VkPipeline pipeline;
