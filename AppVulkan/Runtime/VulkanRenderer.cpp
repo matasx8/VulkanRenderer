@@ -207,7 +207,9 @@ void VulkanRenderer::TemporarySetup()
     m_ModelManager.LoadDefaultModels();
     m_MaterialManager.InitializeDefaultMaterials();
 
-    
+    // temporary buffer to make selection work asap
+    createBuffer(mainDevice.physicalDevice, mainDevice.logicalDevice, 800 * 600 * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &cpuBuffer, &cpuBufferMemory);
 }
 
 void VulkanRenderer::createInstance()
@@ -637,7 +639,7 @@ std::vector<UniformBuffer> VulkanRenderer::CreateUniformBuffers(const std::vecto
     return UniformBuffers;
 }
 
-Pipeline VulkanRenderer::CreatePipeline(const Material& material)
+Pipeline VulkanRenderer::CreatePipeline(const Material& material, uint8_t renderpassSlot)
 {
     // should get something and pick a renderpass or create one
     // for now just get the one
@@ -645,7 +647,7 @@ Pipeline VulkanRenderer::CreatePipeline(const Material& material)
     Pipeline pipeline;// not sure what im going to do for other render passes, but maybe just getting opaque here could do?
     // Note: will have to figure out the viewport and scissor problem, because currently passing swapchain extent.
     // probably will have to get it from renderpass
-    pipeline.createPipeline(m_SurfaceManager.GetSwapchainExtent(), m_RenderPassManager.GetRenderPass(kRenderPassPlace_Opaques), material);
+    pipeline.createPipeline(m_SurfaceManager.GetSwapchainExtent(), m_RenderPassManager.GetRenderPass(renderpassSlot), material);
 
     return pipeline;
 }
@@ -732,6 +734,17 @@ void VulkanRenderer::PushConstants(const ModelMatrix& modelMatrix, VkPipelineLay
     uint32_t size = sizeof(modelMatrix);
     const void* pushDataBuffer = &modelMatrix;
     vkCmdPushConstants(commandBuffer[m_SwapchainIndex], layout, VK_SHADER_STAGE_VERTEX_BIT, 0, size, pushDataBuffer);
+}
+
+void VulkanRenderer::PushConstants(const ModelMatrix& modelMatrix, const glm::vec4& color, VkPipelineLayout layout)
+{
+    uint32_t size = sizeof(glm::mat4x4) + sizeof(glm::vec4);
+    void* buffer = alloca(size);
+    memcpy(buffer, &modelMatrix, sizeof(modelMatrix));
+    uint8_t* tmp = static_cast<uint8_t *>(buffer);
+    tmp += sizeof(modelMatrix);
+    memcpy(tmp, &color, sizeof(color));
+    vkCmdPushConstants(commandBuffer[m_SwapchainIndex], layout, VK_SHADER_STAGE_VERTEX_BIT, 0, size, buffer);
 }
 
 void VulkanRenderer::BindMesh(const Mesh& mesh)
@@ -854,8 +867,8 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
 
     if (m_InputController.GetMouseKey(GLFW_MOUSE_BUTTON_1, GLFW_PRESS))
     {
-        auto pos = m_InputController.GetMouseCoords();
-        printf("%f %f\n", pos.x, pos.y);
+        //auto pos = m_InputController.GetMouseCoords();
+        ColorCodePass();
     }
 
     OpaqueColorPass();
@@ -867,6 +880,104 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
     {
         throw std::runtime_error("Failed to stop recording a Command Buffer");
     }
+}
+
+void VulkanRenderer::ColorCodePass()
+{
+    RenderPass renderpass = m_RenderPassManager.GetRenderPass(kRenderPassPlace_ColorCode);
+    const auto currentViewport = m_SurfaceManager.GetSwapchainExtent(); // do smoll viewport later
+    renderpass.UpdateRenderPassViewport(currentViewport.width, currentViewport.height);
+
+    VkRenderPassBeginInfo renderPassBeginInfo = {};
+    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassBeginInfo.renderPass = renderpass.GetVkRenderPass();
+    renderPassBeginInfo.renderArea.offset = { 0, 0 };
+    renderPassBeginInfo.renderArea.extent = m_SurfaceManager.GetSwapchainExtent();
+
+    std::array<VkClearValue, 1> clearValues = {};
+    clearValues[0].color = { 0.0f, 0.0f, 0.0f, 0.0f };
+    renderPassBeginInfo.pClearValues = clearValues.data();
+    renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    renderPassBeginInfo.framebuffer = m_SurfaceManager.GetFramebuffer(renderpass, m_SwapchainIndex);
+
+    vkCmdBeginRenderPass(commandBuffer[m_SwapchainIndex], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    for (size_t i = 0; i < m_ModelManager.Size(); i++)
+    {
+        const auto& model = m_ModelManager[i];
+        const auto& modelMatrix = model.GetModelMatrix();
+
+        for (size_t j = 0; j < model.GetMeshCount(); j++)
+        {
+            const auto& mesh = model.GetMesh(j);
+
+            // TODO: when I introduce dynamic uniform buffers, use those for model matrix.
+
+            m_MaterialManager.BindMaterial(m_SwapchainIndex, kMaterialColorCoded);
+
+            // pass color coded
+            glm::vec4 colorCode = model.GetColorCode();
+            m_MaterialManager.PushConstants(modelMatrix, colorCode, kMaterialColorCoded);
+
+            m_ModelManager.BindMesh(mesh);
+
+            DrawIndexed(mesh.GetIndexCount(), /*mesh.GetInstanceCount()*/ 1);
+        }
+    }
+    m_MaterialManager.ForceNextBind();
+
+    vkCmdEndRenderPass(commandBuffer[m_SwapchainIndex]);
+
+    const uint32_t renderResult = 123;
+    const Surface resultSurf = m_SurfaceManager.GetSurface(renderResult);
+
+    VkImage renderResultImg = resultSurf.GetImage().getImage();
+
+    VkBufferImageCopy copy{};
+    copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copy.imageSubresource.layerCount = 1;
+    copy.imageExtent.width = 800;
+    copy.imageExtent.height = 600;
+    copy.imageExtent.depth = 1;
+
+
+    vkCmdCopyImageToBuffer(commandBuffer[m_SwapchainIndex], renderResultImg, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, cpuBuffer, 1, &copy);
+
+    VkBufferMemoryBarrier bar = {};
+    bar.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    bar.buffer = cpuBuffer;
+    bar.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    bar.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+    bar.size = VK_WHOLE_SIZE;
+
+    VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_HOST_BIT;
+
+    vkCmdPipelineBarrier(commandBuffer[m_SwapchainIndex],
+        srcStage, dstStage, // pipeline stages (match to src and dst accessmasks
+        0, //dependency flags
+        0, nullptr, //memeory barrier count + data
+        1, &bar, //buffer memory barrient count + data
+        0, nullptr);
+    //// copy image data to staging buffer
+    //void* data;
+    //vkMapMemory(mainDevice.logicalDevice, imageStagingBufferMemory, 0, imageSize, 0, &data);
+    //memcpy(data, imageData, static_cast<size_t>(imageSize));
+    //vkUnmapMemory(mainDevice.logicalDevice, imageStagingBufferMemory);
+    std::array<uint8_t, 800 * 600 * 4>* data = new std::array<uint8_t, 800 * 600 * 4>();
+    void* ptr = data->data();
+    void* ptrr = nullptr;
+    auto res = vkMapMemory(mainDevice.logicalDevice, cpuBufferMemory, 0, 800 * 600 * 4, 0, &ptrr);
+    memcpy(data->data(), ptrr, 800 * 600 * 4);
+    vkUnmapMemory(mainDevice.logicalDevice, cpuBufferMemory);
+    auto coord = m_InputController.GetMouseCoords();
+    int idx = 4 * (800 * coord.y) + 4 * coord.x;
+    auto val = (*data)[idx++];
+    auto val2 = (*data)[idx++];
+    auto val3 = (*data)[idx++];
+    auto val4 = (*data)[idx];
+    printf("%d %d %d %d\n", val, val2, val3, val4);
+    delete data;
 }
 
 void VulkanRenderer::OpaqueColorPass()

@@ -5,6 +5,7 @@
 #include "Model.h"
 
 class RenderPass;
+struct RenderPassDesc;
 class Material;
 class Shader;
 
@@ -58,7 +59,7 @@ private:
     void createMSAAStateCreateInfo(VkPipelineMultisampleStateCreateInfo& multisamplingCreateInfo, VkSampleCountFlagBits msaaSamples) const;
     void createPipelineColorBlendAttachmentState(VkPipelineColorBlendAttachmentState& colourState) const;
     void createPipelineColorBlendStateCreateInfo(VkPipelineColorBlendStateCreateInfo& colorBlendingCreateInfo, VkPipelineColorBlendAttachmentState& colorState) const;
-    void createPushConstantRange();
+    void createPushConstantRange(const RenderPassDesc& renderpass);
     void createDepthStencilCreateInfo(VkPipelineDepthStencilStateCreateInfo& depthStencilCreateInfo, const Shader& shader);
     void createPipelineLayout(VkDescriptorSetLayout* descriptorSetLayouts, uint32_t dSetLayoutCount, size_t pushSize);
     

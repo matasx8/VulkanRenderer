@@ -10,6 +10,7 @@ RenderPass::RenderPass()
 
 void RenderPass::CreateRenderPass(const RenderPassDesc& desc, std::vector<std::pair<uint32_t, SurfaceDesc>>& surfaceDescriptions)
 {
+	// TODO: redo this creation to use surface descriptions
 	m_SurfaceDescriptions = surfaceDescriptions;
 	// setup color attachments
 	std::vector<VkAttachmentDescription> colorDescriptions;
@@ -23,8 +24,7 @@ void RenderPass::CreateRenderPass(const RenderPassDesc& desc, std::vector<std::p
 			colorDescriptions[i].samples = static_cast<VkSampleCountFlagBits>(desc.msaaCount);
 			colorDescriptions[i].loadOp = static_cast<VkAttachmentLoadOp>(desc.colorLoadOp);
 			colorDescriptions[i].storeOp = static_cast<VkAttachmentStoreOp>(desc.colorStoreOp);
-			colorDescriptions[i].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
+			colorDescriptions[i].finalLayout = static_cast<VkImageLayout>(surfaceDescriptions[0].second.finalLyout);
 		}
 	}
 

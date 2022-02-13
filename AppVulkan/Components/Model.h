@@ -27,6 +27,7 @@ public:
 	VkBuffer GetInstanceData() const { return m_InstanceDataBuffer->GetInstanceData(); }
 	InstanceDataBuffer* GetInstanceDataBuffer() { return m_InstanceDataBuffer; }
 	bool IsHidden() const { return m_IsHidden; }
+	glm::vec4 GetColorCode() const;
 
 	Model Duplicate(bool instanced = false) const;
 	void AddInstances(int numInstances);

@@ -65,7 +65,8 @@ void Pipeline::createPipeline(VkExtent2D extent, RenderPass renderPass, const Ma
     VkPipelineDepthStencilStateCreateInfo depthStencilCreateInfo = {};
     createDepthStencilCreateInfo(depthStencilCreateInfo, shader);
 
-    createPushConstantRange();
+    const auto& desc = renderPass.GetRenderPassDesc();
+    createPushConstantRange(desc);
 
     auto descriptorSetLayout = material.GetDescriptorSetLayout();
     auto textureDescritptorSetLayout = material.GetTextureDescriptorSetLayout();
@@ -274,11 +275,13 @@ void Pipeline::createPipelineColorBlendStateCreateInfo(VkPipelineColorBlendState
     colorBlendingCreateInfo.flags = 0;
 }
 
-void Pipeline::createPushConstantRange()
+void Pipeline::createPushConstantRange(const RenderPassDesc& renderpass)
 {
+    // Redo this when I redo push constant handling
+    uint32_t size = renderpass.renderpassPlace == kRenderPassPlace_ColorCode ? sizeof(ModelMatrix) + sizeof(glm::vec4) : sizeof(ModelMatrix);
     pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     pushConstantRange.offset = 0;
-    pushConstantRange.size = sizeof(ModelMatrix);
+    pushConstantRange.size = size;
 }
 
 void Pipeline::createDepthStencilCreateInfo(VkPipelineDepthStencilStateCreateInfo& depthStencilCreateInfo, const Shader& shader)

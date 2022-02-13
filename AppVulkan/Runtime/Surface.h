@@ -7,6 +7,7 @@ struct SurfaceDesc
 	uint32_t height;
 	VkFormat format;
 	uint32_t msaaCount;
+	uint32_t finalLyout;
 
 	inline bool operator==(const SurfaceDesc& other) const noexcept
 	{

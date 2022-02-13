@@ -56,6 +56,32 @@ void MaterialManager::InitializeDefaultMaterials()
 
 		CreateMaterial(material);
 	}
+
+	{
+		ShaderCreateInfo shader = { "Shaders/colorCode_vert.spv", "Shaders/colorCode_frag.spv" };
+		constexpr size_t kUniformCount = 1;
+
+		std::vector<uint8_t> Uniforms(kUniformCount);
+		Uniforms[0] = kUniformViewProjectionMatrix;
+
+		shader.uniforms = std::move(Uniforms);
+		shader.isInstanced = false; // YES! Same material for color coding
+		shader.isDepthTestEnabled = true;
+
+		// TODO: make it so I can have no textures on a material
+		std::vector<TextureCreateInfo> textureInfos;
+		TextureCreateInfo tci;
+		tci.fileName = "plain.png";
+		tci.filtering = VK_FILTER_NEAREST;
+		tci.wrap = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		textureInfos.push_back(tci);
+
+		Material material(kMaterialColorCoded);
+		material.SetShader(shader);
+		material.SetTextureDescriptions(textureInfos);
+
+		CreateMaterial(material, kRenderPassPlace_ColorCode);
+	}
 }
 
 void MaterialManager::BindMaterial(size_t frameIndex, uint32_t id)
@@ -91,7 +117,13 @@ void MaterialManager::PushConstants(const ModelMatrix& modelMatrix, uint32_t mat
 	m_GfxEngine.PushConstants(modelMatrix, layout);
 }
 
-uint32_t MaterialManager::CreateMaterial(Material& material)
+void MaterialManager::PushConstants(const ModelMatrix& modelMatrix, const glm::vec4& color, uint32_t materialId)
+{
+	const VkPipelineLayout layout = GetMaterial(materialId).GetPipeline().getPipelineLayout();
+	m_GfxEngine.PushConstants(modelMatrix, color, layout);
+}
+
+uint32_t MaterialManager::CreateMaterial(Material& material, uint8_t renderpassSlot)
 {
 	// first check are we sure we don't have the same material yet. Don't plan to have many materials yet
 	// so this linear algorithm will do
@@ -108,7 +140,7 @@ uint32_t MaterialManager::CreateMaterial(Material& material)
 
 	EnsureTextureDescriptorSets(material);
 
-	EnsurePipeline(material);
+	EnsurePipeline(material, renderpassSlot);
 
 	material.SetNewMaterialID(m_AllTimeMaterialCount++);
 
@@ -211,7 +243,7 @@ void MaterialManager::CreateMaterial(const ShaderCreateInfo& shaderCreateInfo, c
 
 	// create pipeline
 	// pass in something that will indicate renderpass manager what renderpass to use
-	Pipeline pipeline = m_GfxEngine.CreatePipeline(material);
+	Pipeline pipeline = m_GfxEngine.CreatePipeline(material, kRenderPassPlace_Opaques);
 	material.SetPipeline(pipeline);
 
 	m_Materials.push_back(material);
@@ -293,10 +325,10 @@ void MaterialManager::EnsureTextureDescriptorSets(Material& material)
 	material.SetTextureDescriptorSet(descriptorSet);
 }
 
-void MaterialManager::EnsurePipeline(Material& material)
+void MaterialManager::EnsurePipeline(Material& material, uint8_t renderpassSlot)
 {
 	// for now just create one. Later use derivatives or whatever a pipeline cache is
-	Pipeline pipeline = m_GfxEngine.CreatePipeline(material);
+	Pipeline pipeline = m_GfxEngine.CreatePipeline(material, renderpassSlot);
 	material.SetPipeline(pipeline);
 }
 

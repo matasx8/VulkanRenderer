@@ -64,6 +64,16 @@ const glm::mat4x4& Model::GetModelMatrix() const
 	return m_ModelMatrix; 
 }
 
+glm::vec4 Model::GetColorCode() const
+{
+	glm::vec4 code(0.0f);
+	code.r = (m_Handle & 0xFF) / 255.0f;
+	code.g = ((m_Handle >> 8) & 0xFF) / 255.0f;
+	code.b = ((m_Handle >> 16) & 0xFF) / 255.0f;
+	code.a = 1.0f;
+	return code;
+}
+
 Model Model::Duplicate(bool instanced) const
 {
 	Model tmp = Model(*this);

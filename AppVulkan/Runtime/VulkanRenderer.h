@@ -134,6 +134,9 @@ private:
 
 	GpuCrashTracker tracker;
 
+	VkBuffer cpuBuffer;
+	VkDeviceMemory cpuBufferMemory;
+
 	//synch
 	std::vector<VkSemaphore> imageAvailable;
 	std::vector<VkSemaphore> renderFinished;
@@ -158,7 +161,7 @@ private:
 	// TODO: have one function for descriptor sets too
 	std::vector<VkDescriptorSet> CreateDescriptorSets(const size_t* dataSizes, std::vector<UniformBuffer>& UniformBuffers, VkDescriptorSetLayout descriptorSetLayout);
 	std::vector<UniformBuffer> CreateUniformBuffers(const std::vector<size_t>& dataSizes, size_t UboCount);
-	Pipeline CreatePipeline(const Material& material);
+	Pipeline CreatePipeline(const Material& material, uint8_t renderpassSlot);
 	std::vector<Surface> CreateSwapchainSurfaces(const SwapchainInfo& swapchain);
 	Surface CreateSurface(const SurfaceDesc& desc);
 	VkFramebuffer CreateFramebuffer(const std::vector<VkImageView>& imageViews, const RenderPass& rp);
@@ -166,7 +169,9 @@ private:
 
 	void BindPipeline(VkPipeline pipeline);
 	void BindDescriptorSets(const VkDescriptorSet* descriptorSets, uint32_t count, VkPipelineLayout layout);
+	// do better handling of push constants later
 	void PushConstants(const ModelMatrix& modelMatrix, VkPipelineLayout layout);
+	void PushConstants(const ModelMatrix& modelMatrix, const glm::vec4& color, VkPipelineLayout layout);
 	void BindMesh(const Mesh& mesh);
 	void DrawIndexed(uint32_t indexCount, uint32_t instanceCount);
 
@@ -181,6 +186,7 @@ private:
 	void LoadNode(std::vector<Mesh>& meshList, aiNode* node, const aiScene* scene);
 
 	void recordCommands(uint32_t currentImage);
+	void ColorCodePass();
 	void OpaqueColorPass();
 	void SelectedHighlightPass();
 	void PresentBlit();

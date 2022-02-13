@@ -18,6 +18,7 @@ enum DefaultMaterials
 {
 	kMaterialDefault,
 	kMaterialSelected,
+	kMaterialColorCoded,
 	kDefaultMaterialCount
 };
 
@@ -39,8 +40,9 @@ public:
 	void BindMaterial(size_t frameIndex, uint32_t materialId);
 	void ForceNextBind();
 	void PushConstants(const ModelMatrix& modelMatrix, uint32_t materialId);
+	void PushConstants(const ModelMatrix& modelMatrix, const glm::vec4& color, uint32_t materialId);
 	
-	uint32_t CreateMaterial(Material& material);
+	uint32_t CreateMaterial(Material& material, uint8_t renderpassSlot = kRenderPassPlace_Opaques);
 
 private:
 
@@ -49,7 +51,7 @@ private:
 	void KeepTrackOfDirtyUniforms(const std::vector<uint8_t>& types);
 	void EnsureUniformDescriptorSets(Material& material);
 	void EnsureTextureDescriptorSets(Material& material);
-	void EnsurePipeline(Material& material);
+	void EnsurePipeline(Material& material, uint8_t renderpassSlot);
 	std::vector<uint8_t> UBOsThatNeedCreation(const std::vector<uint8_t>& requestedUbos) const;
 	void CacheUBOs(const std::vector<uint8_t>& types, std::vector<UniformBuffer>& UBOs);
 	std::vector<TextureCreateInfo> TexturesThatNeedCreation(const std::vector<TextureCreateInfo>& requestedTextures) const;

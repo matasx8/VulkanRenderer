@@ -8,8 +8,9 @@ RenderPassManager::RenderPassManager()
 
 void RenderPassManager::InitRenderPasses()
 {
+	AddColorCodingRenderPass();
 	AddOpaqueColorPass();
-	AddPresentBlitPass();
+	//AddPresentBlitPass();
 }
 
 void RenderPassManager::AddRenderPass(RenderPassDesc& desc, RenderPass& renderPass)
@@ -25,23 +26,34 @@ void RenderPassManager::AddColorCodingRenderPass()
 	// 4. Do Color pass
 	// 5. Do outline pass
 
-	//RenderPassDesc ColorCode =
-	//{
-	//	1,	// msaaCount
-	//	kRenderPassPlace_ColorCode, // place
-	//	kTargetColor, 
-	//	1, // collor att count
-	//	VK_FORMAT_B8G8R8A8_UNORM,
-	//	kLoadOpClear,
-	//	kStoreOpStore,					
-	//	VK_FORMAT_D16_UNORM,
-	//	kLoadOpClear,
-	//	kStoreOpDontCare
-	//};
+	RenderPassDesc ColorCode =
+	{
+		1,	// msaaCount
+		kRenderPassPlace_ColorCode, // place
+		1, // collor att count
+		VK_FORMAT_R8G8B8A8_UNORM,
+		kLoadOpClear,
+		kStoreOpStore,					
+		VK_FORMAT_UNDEFINED,	// no depth
+		kStoreOpDontCare,
+		kStoreOpDontCare
+	};
 
-	/*RenderPass rp;
-	rp.CreateRenderPass(ColorCode);
-	AddRenderPass(ColorCode, rp);*/
+	const uint32_t ColorCodeSurface = 123;
+	const SurfaceDesc ColorCodeSurfaceDesc = {
+		0,
+		0,
+		VK_FORMAT_R8G8B8A8_UNORM,
+		1,
+		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL // probably not this one
+	};
+
+	std::vector<std::pair<uint32_t, SurfaceDesc>> surfaceDescriptions;
+	surfaceDescriptions.emplace_back(ColorCodeSurface, ColorCodeSurfaceDesc);
+
+	RenderPass rp;
+	rp.CreateRenderPass(ColorCode, surfaceDescriptions);
+	AddRenderPass(ColorCode, rp);
 }
 
 void RenderPassManager::AddOpaqueColorPass()
@@ -63,7 +75,8 @@ void RenderPassManager::AddOpaqueColorPass()
 		0, // dont care yet, engine will fill with up when needed
 		0,
 		VK_FORMAT_B8G8R8A8_UNORM,	// actually should be able to not specify this and let engine pick or something
-		8
+		8,
+		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 	};
 
 	const uint32_t GameViewDepthSurface = 2;
@@ -94,39 +107,6 @@ void RenderPassManager::AddOpaqueColorPass()
 	
 	// add the renderpass, now we have initial one for now
 	AddRenderPass(DrawOpaques, rp);
-}
-
-void RenderPassManager::AddPresentBlitPass()
-{
-	RenderPassDesc presentBlit =
-	{
-			1,	// msaaCount
-			kRenderPassPlace_PresentBlit, // place
-			1,
-			VK_FORMAT_B8G8R8A8_UNORM,
-			kLoadOpClear,
-			kStoreOpStore,
-			VK_FORMAT_UNDEFINED, // no depth
-			kStoreOpDontCare,
-			kStoreOpDontCare
-	};
-	const uint32_t GameViewColorSurface = 3;
-	const SurfaceDesc GameViewColorSurfaceDesc = {
-		0, // dont care yet, engine will fill with up when needed
-		0,
-		VK_FORMAT_B8G8R8A8_UNORM,	// actually should be able to not specify this and let engine pick or something
-		1
-	};
-
-	std::vector<std::pair<uint32_t, SurfaceDesc>> surfaceDescriptions;
-	surfaceDescriptions.emplace_back(GameViewColorSurface, GameViewColorSurfaceDesc);
-
-	// create renderpass
-	RenderPass rp;
-	rp.CreateRenderPass(presentBlit, surfaceDescriptions);
-
-	// add the renderpass, now we have initial one for now
-	AddRenderPass(presentBlit, rp);
 }
 
 const RenderPass& RenderPassManager::GetRenderPass(uint8_t renderPassPlace) const
