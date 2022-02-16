@@ -45,7 +45,7 @@ void RenderPassManager::AddColorCodingRenderPass()
 		0,
 		VK_FORMAT_R8G8B8A8_UNORM,
 		1,
-		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL // probably not this one
+		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL // probably not this one
 	};
 	const uint32_t ColorCodeDepthSurface = 1234;
 	const SurfaceDesc GameViewDepthSurfaceDesc = {

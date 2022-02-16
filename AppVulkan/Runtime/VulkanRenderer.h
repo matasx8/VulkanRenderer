@@ -91,6 +91,9 @@ private:
 	unsigned long long m_CurrentFrameNumber;
 	uint32_t m_SwapchainImageCount;
 
+	int m_FrameToWaitFor;
+	glm::vec2 m_PreviousCoords;
+
 	//-- SCENE ---
 	Scene currentScene;
 
@@ -107,7 +110,6 @@ private:
 	VkInstance instance;
 	Device mainDevice;
 	VkDebugUtilsMessengerEXT debugMessenger;
-	VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 	VkQueue graphicsQueue;
 	VkQueue presentationQueue;
 	VkSurfaceKHR surface;

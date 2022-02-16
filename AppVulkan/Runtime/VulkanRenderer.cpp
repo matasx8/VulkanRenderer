@@ -11,6 +11,7 @@ VulkanRenderer::VulkanRenderer()
     m_InstancingBuffers;
     m_RenderPassManager;
     m_CurrentFrameNumber = 0;
+    m_FrameToWaitFor = -1;
 }
 
 int VulkanRenderer::init(const RendererInitializationSettings& initSettings)
@@ -68,11 +69,53 @@ void VulkanRenderer::draw()
 
     //currentScene.cameraKeyControl(window.getKeys(), m_DeltaTime);
     //currentScene.cameraMouseControl(window.getXChange(), window.getYchange());
+    
 
     //wait for given fence to signal open from last draw before xontinuing
     vkWaitForFences(mainDevice.logicalDevice, 1, &drawFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
     //manually reset close fences
     vkResetFences(mainDevice.logicalDevice, 1, &drawFences[currentFrame]);
+
+    if (m_FrameToWaitFor == currentFrame)
+    {
+        m_FrameToWaitFor = -1;
+        //m_ColorCodeReadbackReady = false;
+        const auto extent = m_SurfaceManager.GetSwapchainExtent();
+        //const auto viewportWidth = renderpass.GetSurfaceDescriptions()[0].second.width;
+        //const auto viewportHeight = renderpass.GetSurfaceDescriptions()[0].second.height;
+        constexpr int pixelSize = 4; // should query this somehow
+        const auto imageSize = extent.width * extent.height * pixelSize;
+
+        // TODO: dont have to copy the whole image
+        std::vector<uint8_t>* data = new std::vector<uint8_t>(imageSize);
+        void* ptr = data->data();
+        void* ptrr = nullptr;
+        auto res = vkMapMemory(mainDevice.logicalDevice, cpuBufferMemory, 0, imageSize, 0, &ptrr);
+        memcpy(data->data(), ptrr, imageSize);
+        vkUnmapMemory(mainDevice.logicalDevice, cpuBufferMemory);
+
+        for (int i = 0; i < data->size(); i++)
+            if ((*data)[i] > 0)
+            {
+                printf("%d ", i);
+                break;
+            }
+        printf("\n");
+
+        const auto coord = m_PreviousCoords;
+        auto indices = ScreenSpaceCoordsToPixelIndex(coord, extent);
+        std::array<uint8_t, 4> color = { (*data)[indices[0]], (*data)[indices[1]], (*data)[indices[2]], (*data)[indices[3]] };
+        auto handle = DecodeColorToID(color);
+
+        printf("%d %d %d %d\n", (*data)[indices[0]], (*data)[indices[1]], (*data)[indices[2]], (*data)[indices[3]]);
+        printf("indices: %d %d %d %d\n", indices[0], indices[1], indices[2], indices[3]);
+        printf("pos: %f : %f\n", coord.x, coord.y);
+        printf("handle: %d\n\n", handle);
+
+        m_ModelManager.SelectModels(handle);
+
+        delete data;
+    }
 
     // get the next available image to draw to and set something to signal when were finished with the image
     vkAcquireNextImageKHR(mainDevice.logicalDevice, m_SurfaceManager.GetSwapchain(), std::numeric_limits<uint64_t>::max(), imageAvailable[currentFrame], VK_NULL_HANDLE, &m_SwapchainIndex);
@@ -963,12 +1006,16 @@ void VulkanRenderer::ColorCodePass()
     copy.imageExtent.height = 600;
     copy.imageExtent.depth = 1;
 
-    VkBufferMemoryBarrier bar = {};
-    bar.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-    bar.buffer = cpuBuffer;
+    VkImageMemoryBarrier bar = {};
+    bar.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    bar.image = resultSurf.GetImage().getImage();
     bar.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    bar.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    bar.size = VK_WHOLE_SIZE;
+    bar.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    bar.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    bar.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    bar.subresourceRange.levelCount = 1;
+    bar.subresourceRange.layerCount = 1;
+    bar.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
     VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
@@ -977,18 +1024,18 @@ void VulkanRenderer::ColorCodePass()
         srcStage, dstStage, // pipeline stages (match to src and dst accessmasks
         0, //dependency flags
         0, nullptr, //memeory barrier count + data
-        1, &bar, //buffer memory barrient count + data
-        0, nullptr);
+        0, nullptr, //buffer memory barrient count + data
+        1, &bar);
 
 
     vkCmdCopyImageToBuffer(commandBuffer[m_SwapchainIndex], renderResultImg, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, cpuBuffer, 1, &copy);
 
-   // VkBufferMemoryBarrier bar = {};
-    bar.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-    bar.buffer = cpuBuffer;
-    bar.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    bar.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
-    bar.size = VK_WHOLE_SIZE;
+    VkBufferMemoryBarrier barr = {};
+    barr.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    barr.buffer = cpuBuffer;
+    barr.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    barr.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+    barr.size = VK_WHOLE_SIZE;
 
     srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
     dstStage = VK_PIPELINE_STAGE_HOST_BIT;
@@ -997,41 +1044,11 @@ void VulkanRenderer::ColorCodePass()
         srcStage, dstStage, // pipeline stages (match to src and dst accessmasks
         0, //dependency flags
         0, nullptr, //memeory barrier count + data
-        1, &bar, //buffer memory barrient count + data
+        1, &barr, //buffer memory barrient count + data
         0, nullptr);
 
-    const auto viewportWidth = renderpass.GetSurfaceDescriptions()[0].second.width;
-    const auto viewportHeight = renderpass.GetSurfaceDescriptions()[0].second.height;
-    constexpr int pixelSize = 4; // should query this somehow
-    const auto imageSize = viewportWidth * viewportHeight * pixelSize;
-
-    std::vector<uint8_t>* data = new std::vector<uint8_t>(imageSize);
-    void* ptr = data->data();
-    void* ptrr = nullptr;
-    auto res = vkMapMemory(mainDevice.logicalDevice, cpuBufferMemory, 0, imageSize, 0, &ptrr);
-    memcpy(data->data(), ptrr, imageSize);
-    vkUnmapMemory(mainDevice.logicalDevice, cpuBufferMemory);
-
-    for (int i = 0; i < data->size(); i++)
-        if ((*data)[i] > 0)
-        {
-            printf("%d ", i);
-            break;
-        }
-    printf("\n");
-
-    auto indices = ScreenSpaceCoordsToPixelIndex(coord, extent);
-    std::array<uint8_t, 4> color = { (*data)[indices[0]], (*data)[indices[1]], (*data)[indices[2]], (*data)[indices[3]] };
-    auto handle = DecodeColorToID(color);
-
-    printf("%d %d %d %d\n", (*data)[indices[0]], (*data)[indices[1]], (*data)[indices[2]], (*data)[indices[3]]);
-    printf("indices: %d %d %d %d\n", indices[0], indices[1], indices[2], indices[3]);
-    printf("pos: %f : %f\n", coord.x, coord.y);
-    printf("handle: %d\n\n", handle);
-
-    m_ModelManager.SelectModels(handle);
-
-    delete data;
+    m_FrameToWaitFor = currentFrame;
+    m_PreviousCoords = coord;
 }
 
 void VulkanRenderer::OpaqueColorPass()
@@ -1356,7 +1373,6 @@ void VulkanRenderer::getPhysicalDevice()
         if (checkDeviceSuitable(device))
         {
             mainDevice.physicalDevice = device;
-            msaaSamples = getMaxUsableSampleCount();
             break;
         }
     }
