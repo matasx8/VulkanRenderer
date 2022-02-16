@@ -65,8 +65,9 @@ void MaterialManager::InitializeDefaultMaterials()
 		Uniforms[0] = kUniformViewProjectionMatrix;
 
 		shader.uniforms = std::move(Uniforms);
-		shader.isInstanced = false; // YES! Same material for color coding
+		shader.isInstanced = false; 
 		shader.isDepthTestEnabled = true;
+		shader.isViewportDynamic = true;
 
 		// TODO: make it so I can have no textures on a material
 		std::vector<TextureCreateInfo> textureInfos;

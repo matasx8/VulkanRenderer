@@ -68,7 +68,7 @@ namespace GameScript
 
 		auto func = [&](ModelManager* const man, Model& model, int idx)
 		{
-			constexpr int numDuplicates = 200;
+			constexpr int numDuplicates = 2000;
 			Model copy = model;
 			for(int i = 0; i < numDuplicates; i++)
 				man->DuplicateWithMaterial(copy, false, i % 2 + kDefaultMaterialCount);

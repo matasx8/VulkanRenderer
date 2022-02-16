@@ -29,12 +29,11 @@ public:
     Pipeline();
 
     void createPipeline(VkExtent2D extent, RenderPass renderPass, const Material& material);
-    // temporary.. for creation of initial pipeline
 	void CreatePipeline(VkPipelineShaderStageCreateInfo* shaderStages, VkPipelineVertexInputStateCreateInfo* vertexInputCreateInfo,
         VkPipelineInputAssemblyStateCreateInfo* inputAssembly, VkPipelineViewportStateCreateInfo* viewportStateCreateInfo,
         VkPipelineDynamicStateCreateInfo* dynamicState, VkPipelineRasterizationStateCreateInfo* rasterizerCreateInfo,
         VkPipelineMultisampleStateCreateInfo* multisamplingCreateInfo, VkPipelineColorBlendStateCreateInfo* colourBlendingCreateInfo,
-        VkPipelineDepthStencilStateCreateInfo* depthStencilCreateInfo, VkPipelineLayout pipelineLayout,
+        VkPipelineDepthStencilStateCreateInfo* depthStencilCreateInfo, VkPipelineDynamicStateCreateInfo* dynamicStateCreateInfo, VkPipelineLayout pipelineLayout,
         VkRenderPass renderPass, uint32_t subpass, VkPipeline basePipelineHandle, uint32_t basePipelineIndex,
         VkPipelineCreateFlags flags, VkDevice device);
 
@@ -62,6 +61,7 @@ private:
     void createPushConstantRange(const RenderPassDesc& renderpass);
     void createDepthStencilCreateInfo(VkPipelineDepthStencilStateCreateInfo& depthStencilCreateInfo, const Shader& shader);
     void createPipelineLayout(VkDescriptorSetLayout* descriptorSetLayouts, uint32_t dSetLayoutCount, size_t pushSize);
+    //void CreatePipelineDynamicStateCreateInfo(VkPipelineDynamicStateCreateInfo& stateinfo, std::vector<VkDynamicState>& dynamicStates);
     
     VkPipeline pipeline;
     VkPipelineLayout pipelineLayout;

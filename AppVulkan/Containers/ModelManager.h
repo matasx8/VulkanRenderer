@@ -10,6 +10,10 @@ public:
 	ModelManager(VulkanRenderer& gfxEngine);
 	ModelManager(VulkanRenderer& gfxEngine, bool isThreadedImport);
 
+	// ~0u handle will mean deselect all
+	void SelectModels(ModelHandle handle);
+	const std::set<Model*>& GetSelectedModels();
+
 	void LoadDefaultModels();
 
 	void Duplicate(const Model& model, bool isInstanced);
@@ -28,8 +32,14 @@ private:
 	void LoadModelsNonThreaded(std::vector<std::string>* paths);
 	void LoadModel(std::string& path);
 
+	Model* GetModel(ModelHandle);
+
 	std::mutex m_Mutex;
 	std::vector<Model> m_Models;
+	// I'm not sure if that's a good idea. Will have to clear this after each change to m_Models that 
+	// might cause allocation
+	std::set<Model*> m_SelectedModelPtrs;
+
 	// for now create thread pool on demand
 	bool m_ThreadedImport;
 

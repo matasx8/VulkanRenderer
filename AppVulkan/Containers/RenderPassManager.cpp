@@ -34,8 +34,8 @@ void RenderPassManager::AddColorCodingRenderPass()
 		VK_FORMAT_R8G8B8A8_UNORM,
 		kLoadOpClear,
 		kStoreOpStore,					
-		VK_FORMAT_UNDEFINED,	// no depth
-		kStoreOpDontCare,
+		VK_FORMAT_D32_SFLOAT,
+		kLoadOpClear,
 		kStoreOpDontCare
 	};
 
@@ -47,9 +47,17 @@ void RenderPassManager::AddColorCodingRenderPass()
 		1,
 		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL // probably not this one
 	};
+	const uint32_t ColorCodeDepthSurface = 1234;
+	const SurfaceDesc GameViewDepthSurfaceDesc = {
+		0,
+		0,
+		VK_FORMAT_D32_SFLOAT,
+		1
+	};
 
 	std::vector<std::pair<uint32_t, SurfaceDesc>> surfaceDescriptions;
 	surfaceDescriptions.emplace_back(ColorCodeSurface, ColorCodeSurfaceDesc);
+	surfaceDescriptions.emplace_back(ColorCodeDepthSurface, GameViewDepthSurfaceDesc);
 
 	RenderPass rp;
 	rp.CreateRenderPass(ColorCode, surfaceDescriptions);

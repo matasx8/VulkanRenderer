@@ -228,6 +228,24 @@ static bool IsColorSurface(VkFormat format)
 	return format < VK_FORMAT_D16_UNORM;
 }
 
+static std::array<int, 4> ScreenSpaceCoordsToPixelIndex(glm::vec2 coords, VkExtent2D extent)
+{
+	constexpr int pixelSize = 4;
+	std::array<int, pixelSize> indices;
+	indices[0] = pixelSize * (extent.width * coords.y) + pixelSize * coords.x;
+	indices[1] = indices[0] + 1;
+	indices[2] = indices[1] + 1;
+	indices[3] = indices[2] + 1;
+	return indices;
+}
+
+static unsigned int DecodeColorToID(std::array<uint8_t, 4> color)
+{
+	if (color[3] == 0) // A8 is 0 when there is no object
+		return ~0u;
+	return color[0] | color[1] << 8 | color[2] << 16;
+}
+
 static void copyImageBuffer(VkDevice device, VkQueue transferQueue, VkCommandPool transferCommandPool,
 	VkBuffer srcBuffer, VkImage image, uint32_t width, uint32_t height)
 {

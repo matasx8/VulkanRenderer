@@ -56,6 +56,7 @@ struct ShaderCreateInfo
 
 	bool isInstanced;
 	bool isDepthTestEnabled;
+	bool isViewportDynamic;
 };
 
 // hm it's a bit weird that shadercreateinfo and shader are seperate classes. There's no more need for that?

@@ -47,8 +47,19 @@ void Pipeline::createPipeline(VkExtent2D extent, RenderPass renderPass, const Ma
     createScissor(scissor, extent);
     VkPipelineViewportStateCreateInfo viewportStateCreateInfo = {};;
     createPipelineViewportStateCreateInfo(viewportStateCreateInfo, &viewport, &scissor);
+    const Shader& shader = material.GetShader();
 
-    // TODO dynamic states
+    VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo{};
+    VkPipelineDynamicStateCreateInfo* dynamicStatePtr = nullptr;
+    std::vector<VkDynamicState> dynamicStates;
+    dynamicStates.emplace_back(VK_DYNAMIC_STATE_SCISSOR);
+    if (shader.m_ShaderInfo.isViewportDynamic)
+    {
+        dynamicStateCreateInfo.dynamicStateCount = 1;
+        dynamicStateCreateInfo.pDynamicStates = dynamicStates.data();
+        dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+        dynamicStatePtr = &dynamicStateCreateInfo;
+    }
     
     VkPipelineRasterizationStateCreateInfo rasterizerCreateInfo = {};
     createPipelineRasterizationStateCreateInfo(rasterizerCreateInfo);
@@ -61,7 +72,6 @@ void Pipeline::createPipeline(VkExtent2D extent, RenderPass renderPass, const Ma
     VkPipelineColorBlendStateCreateInfo colorBlendingCreateInfo = {};
     createPipelineColorBlendStateCreateInfo(colorBlendingCreateInfo, colorState);
 
-    const Shader& shader = material.GetShader();
     VkPipelineDepthStencilStateCreateInfo depthStencilCreateInfo = {};
     createDepthStencilCreateInfo(depthStencilCreateInfo, shader);
 
@@ -74,7 +84,7 @@ void Pipeline::createPipeline(VkExtent2D extent, RenderPass renderPass, const Ma
     createPipelineLayout(layouts.data(), 2, pushConstantRange.size);
 
     CreatePipeline(shaderStages, &vertexInputCreateInfo, &inputAssembly, &viewportStateCreateInfo,
-        NULL, &rasterizerCreateInfo, &multisamplingCreateInfo, &colorBlendingCreateInfo, &depthStencilCreateInfo,
+        NULL, &rasterizerCreateInfo, &multisamplingCreateInfo, &colorBlendingCreateInfo, &depthStencilCreateInfo, dynamicStatePtr,
         pipelineLayout, renderPass.GetVkRenderPass(), 0, VK_NULL_HANDLE, -1,
         VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT, s_DevicePtr.logicalDevice); // TODO pipeline cache or at least derivatives
 
@@ -86,7 +96,7 @@ void Pipeline::CreatePipeline(VkPipelineShaderStageCreateInfo* shaderStages, VkP
     VkPipelineInputAssemblyStateCreateInfo* inputAssembly, VkPipelineViewportStateCreateInfo* viewportStateCreateInfo,
     VkPipelineDynamicStateCreateInfo* dynamicState, VkPipelineRasterizationStateCreateInfo* rasterizerCreateInfo,
     VkPipelineMultisampleStateCreateInfo* multisamplingCreateInfo, VkPipelineColorBlendStateCreateInfo* colourBlendingCreateInfo,
-    VkPipelineDepthStencilStateCreateInfo* depthStencilCreateInfo, VkPipelineLayout pipelineLayout, 
+    VkPipelineDepthStencilStateCreateInfo* depthStencilCreateInfo, VkPipelineDynamicStateCreateInfo* dynamicStateCreateInfo, VkPipelineLayout pipelineLayout,
     VkRenderPass renderPass, uint32_t subpass, VkPipeline basePipelineHandle, uint32_t basePipelineIndex, 
     VkPipelineCreateFlags flags, VkDevice device)
 {
@@ -102,6 +112,7 @@ void Pipeline::CreatePipeline(VkPipelineShaderStageCreateInfo* shaderStages, VkP
     pipelineCreateInfo.pMultisampleState = multisamplingCreateInfo;
     pipelineCreateInfo.pColorBlendState = colourBlendingCreateInfo;
     pipelineCreateInfo.pDepthStencilState = depthStencilCreateInfo;
+    pipelineCreateInfo.pDynamicState = dynamicStateCreateInfo;
     pipelineCreateInfo.layout = pipelineLayout;
     pipelineCreateInfo.renderPass = renderPass;
     pipelineCreateInfo.subpass = 0;
@@ -289,12 +300,11 @@ void Pipeline::createDepthStencilCreateInfo(VkPipelineDepthStencilStateCreateInf
     depthStencilCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depthStencilCreateInfo.depthTestEnable = shader.m_ShaderInfo.isDepthTestEnabled;
     depthStencilCreateInfo.depthWriteEnable = VK_TRUE;
-    depthStencilCreateInfo.depthCompareOp = VK_COMPARE_OP_LESS; // potential for cool effects, coparison op that allows overwrite
+    depthStencilCreateInfo.depthCompareOp = VK_COMPARE_OP_LESS;
     depthStencilCreateInfo.depthBoundsTestEnable = VK_FALSE;
     depthStencilCreateInfo.stencilTestEnable = VK_FALSE;
     depthStencilCreateInfo.pNext = nullptr;
     depthStencilCreateInfo.flags = 0;
-  //  depthStencilCreateInfo.
 }
 
 void Pipeline::createPipelineLayout(VkDescriptorSetLayout* descriptorSetLayouts, uint32_t dSetLayoutCount, size_t pushSize)
@@ -314,3 +324,11 @@ void Pipeline::createPipelineLayout(VkDescriptorSetLayout* descriptorSetLayouts,
         throw std::runtime_error("Failed to create pipeline layout");
     }
 }
+
+//void Pipeline::CreatePipelineDynamicStateCreateInfo(VkPipelineDynamicStateCreateInfo& stateinfo, std::vector<VkDynamicState>& dynamicStates)
+//{
+//    stateinfo.dynamicStateCount = 1;
+//    dynamicStates.emplace_back(dynamicStates);
+//    stateinfo.pDynamicStates = dynamicStates.data();
+//    stateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+//}

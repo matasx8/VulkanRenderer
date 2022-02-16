@@ -5,13 +5,30 @@
 #include <thread-pool/thread_pool.hpp>
 
 ModelManager::ModelManager(VulkanRenderer& gfxEngine)
-    :m_Mutex(), m_Models(), m_ThreadedImport(true), m_GfxEngine(gfxEngine)
+    :m_Mutex(), m_Models(), m_SelectedModelPtrs(), m_ThreadedImport(true), m_GfxEngine(gfxEngine)
 {
 }
 
 ModelManager::ModelManager(VulkanRenderer& gfxEngine, bool isThreadedImport)
-	: m_Mutex(), m_Models(), m_ThreadedImport(isThreadedImport), m_GfxEngine(gfxEngine)
+	: m_Mutex(), m_Models(), m_SelectedModelPtrs(), m_ThreadedImport(isThreadedImport), m_GfxEngine(gfxEngine)
 {
+}
+
+void ModelManager::SelectModels(ModelHandle handle)
+{
+    if (handle == ~0u)
+    {
+        m_SelectedModelPtrs.clear();
+        return;
+    }
+
+    Model* model = GetModel(handle);
+    m_SelectedModelPtrs.insert(model);
+}
+
+const std::set<Model*>& ModelManager::GetSelectedModels()
+{
+    return m_SelectedModelPtrs;
 }
 
 void ModelManager::LoadDefaultModels()
@@ -92,6 +109,18 @@ void ModelManager::LoadModel(std::string& path)
 
     Model meshModel(modelMeshes, false);
     m_Models.push_back(meshModel);
+}
+
+Model* ModelManager::GetModel(ModelHandle handle)
+{
+    // Hmm I've gotten myself into this bottleneck again
+    // Good enough for now, try to not use this function often
+    for (auto& model : m_Models)
+        if (model.GetModelHandle() == handle)
+            return &model;
+
+    Debug::LogMsg("Trying to get pointer to model that does not exist..");
+    return nullptr;
 }
 
 Model& ModelManager::operator[](size_t idx)

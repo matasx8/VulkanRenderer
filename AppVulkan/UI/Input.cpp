@@ -35,11 +35,6 @@ glm::vec2 Input::GetMouseCoords() const
 bool Input::GetMouseKey(int key, int action) const
 {
 	const auto& keys = m_Window.GetMouseKeys();
-	/*for (const auto& key : keys)
-	{
-		printf("%f ", key.keyAction);
-	}
-	printf("\n");*/
 	return static_cast<int>(keys[key].keyAction) == action;
 }
 
