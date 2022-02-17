@@ -34,6 +34,8 @@ public:
 
 private:
 
+	friend class ModelManager;
+
 	int vertexCount;
 	VkBuffer vertexBuffer;
 	VkDeviceMemory vertexBufferMemory;

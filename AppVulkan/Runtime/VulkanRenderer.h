@@ -176,6 +176,7 @@ private:
 	void PushConstants(const ModelMatrix& modelMatrix, const glm::vec4& color, VkPipelineLayout layout);
 	void BindMesh(const Mesh& mesh);
 	void DrawIndexed(uint32_t indexCount, uint32_t instanceCount);
+	void ReadbackColorEncodings();
 
 	void EnableCrashDumps();
 
@@ -217,6 +218,8 @@ private:
 	VkPresentModeKHR chooseBestPresentationMode(const std::vector<VkPresentModeKHR> presentationModes);
 	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfaceCapabilities);
 	VkFormat chooseSupportedFormat(const std::vector<VkFormat>& formats, VkImageTiling tiling, VkFormatFeatureFlags);
+
+	void DestroyBufferAndFreeMemory(VkBuffer buffer, VkDeviceMemory memory);
 };
 
 template<typename F>

@@ -44,6 +44,8 @@ public:
 	
 	uint32_t CreateMaterial(Material& material, uint8_t renderpassSlot = kRenderPassPlace_Opaques);
 
+	void CleanUp();
+
 private:
 
 	void CreateMaterial(const ShaderCreateInfo& shaderCreateInfo, const std::vector<TextureCreateInfo>& textureCreateInfos);

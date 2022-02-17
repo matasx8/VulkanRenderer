@@ -40,15 +40,6 @@ VkBuffer Mesh::GetIndexBuffer() const
     return indexBuffer;
 }
 
-void Mesh::destroyBuffers()
-{
-    
-   // vkDestroyBuffer(device, vertexBuffer, nullptr);
-   // vkFreeMemory(device, vertexBufferMemory, nullptr);
-   // vkDestroyBuffer(device, indexBuffer, nullptr);
-   // vkFreeMemory(device, indexBufferMemory, nullptr);
-}
-
 void Mesh::createVertexBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkQueue transferQueue, VkCommandPool transferCommandPool, std::vector<Vertex>* vertices)
 {
     //get size of buffer needed for verts

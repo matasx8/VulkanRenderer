@@ -47,9 +47,6 @@ public:
 
 	bool IsInstanced() const { return m_IsInstanced; }
 
-	void destroyMeshModel();
-// move to some model manager or somethig
-	// moved, now delete when confirmed working
 	static std::vector<std::string> LoadMaterials(const aiScene* scene);
 	static std::vector<Mesh> LoadNode(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue transferQueue, VkCommandPool transferCommandPool,
 		aiNode* node, const aiScene* scene, std::vector<int> matToTex);
@@ -57,6 +54,8 @@ public:
 		aiMesh* mesh, const aiScene* scene, std::vector<int> matToTex);
 
 private:
+
+	friend class ModelManager;
 	
 	// Duplicates won't have their own memory and will adress to the memory of the original
 	bool m_IsHidden;

@@ -4,6 +4,8 @@
 #include<glm/gtx/matrix_decompose.hpp>
 #include "Model.h"
 
+// TODO: refactor my 'scripting interface'
+
 namespace GameScript
 {
 	VulkanRenderer* g_Engine;
@@ -68,7 +70,7 @@ namespace GameScript
 
 		auto func = [&](ModelManager* const man, Model& model, int idx)
 		{
-			constexpr int numDuplicates = 2000;
+			constexpr int numDuplicates = 200;
 			Model copy = model;
 			for(int i = 0; i < numDuplicates; i++)
 				man->DuplicateWithMaterial(copy, false, i % 2 + kDefaultMaterialCount);

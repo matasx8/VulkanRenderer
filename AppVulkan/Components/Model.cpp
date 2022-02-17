@@ -130,14 +130,6 @@ void Model::SetMaterialForAllMeshes(uint32_t materialID)
 		mesh.SetMaterialID(materialID);
 }
 
-void Model::destroyMeshModel()
-{
-	if (!m_IsDuplicate)
-		for (auto& mesh : meshList)
-		{
-			mesh.destroyBuffers();
-		}
-}
 
 std::vector<std::string> Model::LoadMaterials(const aiScene* scene)
 {

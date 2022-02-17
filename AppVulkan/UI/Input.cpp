@@ -27,6 +27,11 @@ void Input::SetHandleInput(bool handleInput)
 	m_HandleMouse = handleInput;
 }
 
+void Input::RegisterClick(WaitForClickResults& clickInfo)
+{
+	m_RegisteredClicks.push(clickInfo);
+}
+
 glm::vec2 Input::GetMouseCoords() const
 {
 	return m_Window.GetMousePos();
@@ -42,4 +47,14 @@ bool Input::GetKey(int key, int action) const
 {
 	const auto& keys = m_Window.GetKeys();
 	return static_cast<int>(keys[key].keyAction) == action;
+}
+
+const std::queue<WaitForClickResults>& Input::GetRegisteredClicks() const
+{
+	return m_RegisteredClicks;
+}
+
+void Input::PopRegisteredClick()
+{
+	m_RegisteredClicks.pop();
 }

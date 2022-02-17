@@ -25,6 +25,8 @@ public:
 
 	Model& operator[](size_t idx);
 
+	void CleanUp();
+
 private:
 
 	// Loads models (Creates only IB and VB)

@@ -149,6 +149,11 @@ uint32_t MaterialManager::CreateMaterial(Material& material, uint8_t renderpassS
 	return material.GetId();
 }
 
+void MaterialManager::CleanUp()
+{
+	
+}
+
 size_t MaterialManager::UniformTypeToSize(uint8_t type) const
 {
 	switch (type)

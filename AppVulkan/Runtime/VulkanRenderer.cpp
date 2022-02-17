@@ -34,11 +34,6 @@ int VulkanRenderer::init(const RendererInitializationSettings& initSettings)
         createCommandPool();
         CreateDescriptorPool();
         TemporarySetup();
-       // createRenderPass();
-
-        //createFramebuffers();
-
-        ///createInitialScene();
         createSynchronization();
 
     }
@@ -65,60 +60,15 @@ void VulkanRenderer::setupDebugMessenger()
 
 void VulkanRenderer::draw()
 {
-    UpdateDeltaTime();
+    UpdateDeltaTime();    
 
-    //currentScene.cameraKeyControl(window.getKeys(), m_DeltaTime);
-    //currentScene.cameraMouseControl(window.getXChange(), window.getYchange());
-    
-
-    //wait for given fence to signal open from last draw before xontinuing
     vkWaitForFences(mainDevice.logicalDevice, 1, &drawFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
-    //manually reset close fences
     vkResetFences(mainDevice.logicalDevice, 1, &drawFences[currentFrame]);
-
-    if (m_FrameToWaitFor == currentFrame)
-    {
-        m_FrameToWaitFor = -1;
-        //m_ColorCodeReadbackReady = false;
-        const auto extent = m_SurfaceManager.GetSwapchainExtent();
-        //const auto viewportWidth = renderpass.GetSurfaceDescriptions()[0].second.width;
-        //const auto viewportHeight = renderpass.GetSurfaceDescriptions()[0].second.height;
-        constexpr int pixelSize = 4; // should query this somehow
-        const auto imageSize = extent.width * extent.height * pixelSize;
-
-        // TODO: dont have to copy the whole image
-        std::vector<uint8_t>* data = new std::vector<uint8_t>(imageSize);
-        void* ptr = data->data();
-        void* ptrr = nullptr;
-        auto res = vkMapMemory(mainDevice.logicalDevice, cpuBufferMemory, 0, imageSize, 0, &ptrr);
-        memcpy(data->data(), ptrr, imageSize);
-        vkUnmapMemory(mainDevice.logicalDevice, cpuBufferMemory);
-
-        for (int i = 0; i < data->size(); i++)
-            if ((*data)[i] > 0)
-            {
-                printf("%d ", i);
-                break;
-            }
-        printf("\n");
-
-        const auto coord = m_PreviousCoords;
-        auto indices = ScreenSpaceCoordsToPixelIndex(coord, extent);
-        std::array<uint8_t, 4> color = { (*data)[indices[0]], (*data)[indices[1]], (*data)[indices[2]], (*data)[indices[3]] };
-        auto handle = DecodeColorToID(color);
-
-        printf("%d %d %d %d\n", (*data)[indices[0]], (*data)[indices[1]], (*data)[indices[2]], (*data)[indices[3]]);
-        printf("indices: %d %d %d %d\n", indices[0], indices[1], indices[2], indices[3]);
-        printf("pos: %f : %f\n", coord.x, coord.y);
-        printf("handle: %d\n\n", handle);
-
-        m_ModelManager.SelectModels(handle);
-
-        delete data;
-    }
 
     // get the next available image to draw to and set something to signal when were finished with the image
     vkAcquireNextImageKHR(mainDevice.logicalDevice, m_SurfaceManager.GetSwapchain(), std::numeric_limits<uint64_t>::max(), imageAvailable[currentFrame], VK_NULL_HANDLE, &m_SwapchainIndex);
+
+    ReadbackColorEncodings();
 
     recordCommands(m_SwapchainIndex);
 
@@ -171,35 +121,26 @@ void VulkanRenderer::draw()
 
 void VulkanRenderer::cleanup()
 {
-    ////wait until no actions being run on device
-    //vkDeviceWaitIdle(mainDevice.logicalDevice);
+    //wait until no actions being run on device
+    vkDeviceWaitIdle(mainDevice.logicalDevice);
 
-    //for (size_t i = 0; i < MAX_FRAME_DRAWS; i++)
-    //{
-    //    vkDestroySemaphore(mainDevice.logicalDevice, renderFinished[i], nullptr);
-    //    vkDestroySemaphore(mainDevice.logicalDevice, imageAvailable[i], nullptr);
-    //    vkDestroyFence(mainDevice.logicalDevice, drawFences[i], nullptr);
-    //}
-    //vkDestroyCommandPool(mainDevice.logicalDevice, graphicsCommandPool, nullptr);
-    //for (auto& framebuffer : swapchainFramebuffers)
-    //{
-    //    vkDestroyFramebuffer(mainDevice.logicalDevice, framebuffer, nullptr);
-    //}
+    for (size_t i = 0; i < MAX_FRAME_DRAWS; i++)
+    {
+        vkDestroySemaphore(mainDevice.logicalDevice, renderFinished[i], nullptr);
+        vkDestroySemaphore(mainDevice.logicalDevice, imageAvailable[i], nullptr);
+        vkDestroyFence(mainDevice.logicalDevice, drawFences[i], nullptr);
+    }
+    vkDestroyCommandPool(mainDevice.logicalDevice, graphicsCommandPool, nullptr);
 
-    //m_DescriptorPool.DestroyDescriptorPool();
-    //
-    //for (auto& buffer : m_InstancingBuffers)
-    //{
-    //    buffer.Destroy();
-    //}
+    m_DescriptorPool.DestroyDescriptorPool();
+    m_ModelManager.CleanUp();
+    m_MaterialManager.CleanUp();
+    
+    for (auto& buffer : m_InstancingBuffers)
+    {
+        buffer.Destroy();
+    }
 
-    //currentScene.CleanUp(mainDevice.logicalDevice);
-    //depthBufferImage.destroyImage(mainDevice.logicalDevice);
-    //colorImage.destroyImage(mainDevice.logicalDevice);
-    //for (auto& pipe : Pipelines)//!HERE
-    //{
-    //    pipe.CleanUp(mainDevice.logicalDevice);
-    //}
 
     //m_RenderPassManager.CleanUp();
 
@@ -208,17 +149,15 @@ void VulkanRenderer::cleanup()
     //    vkDestroyImageView(mainDevice.logicalDevice, image.imageView, nullptr);
     //}
 
-    //vkDestroySwapchainKHR(mainDevice.logicalDevice, swapchain, nullptr);
+   // vkDestroySwapchainKHR(mainDevice.logicalDevice, swapchain, nullptr);
 
-    //if (enableValidationLayers) {
-    //    DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
-    //}
+    if (enableValidationLayers) {
+        DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+    }
 
-    //vkDestroySurfaceKHR(instance, surface, nullptr);
-    //vkDestroyDevice(mainDevice.logicalDevice, nullptr);
-    //vkDestroyInstance(instance, nullptr);
-
-    //delete m_ThreadPool;
+    vkDestroySurfaceKHR(instance, surface, nullptr);
+    vkDestroyDevice(mainDevice.logicalDevice, nullptr);
+    vkDestroyInstance(instance, nullptr);
 }
 
 VkResult VulkanRenderer::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
@@ -414,6 +353,12 @@ VkFormat VulkanRenderer::chooseSupportedFormat(const std::vector<VkFormat>& form
     }
 
     throw std::runtime_error("Failed to find a matching format!");
+}
+
+void VulkanRenderer::DestroyBufferAndFreeMemory(VkBuffer buffer, VkDeviceMemory memory)
+{
+    vkDestroyBuffer(mainDevice.logicalDevice, buffer, nullptr);
+    vkFreeMemory(mainDevice.logicalDevice, memory, nullptr);
 }
 
 void VulkanRenderer::createCommandPool()
@@ -803,6 +748,41 @@ void VulkanRenderer::DrawIndexed(uint32_t indexCount, uint32_t instanceCount)
     vkCmdDrawIndexed(commandBuffer[m_SwapchainIndex], indexCount, instanceCount, 0, 0, 0);
 }
 
+void VulkanRenderer::ReadbackColorEncodings()
+{
+    const auto& registeredClicks = m_InputController.GetRegisteredClicks();
+    while (!registeredClicks.empty())
+    {
+        const auto& click = registeredClicks.front();
+        if (click.m_CommandBufferToWaitFor == m_SwapchainIndex)
+        {
+            const auto extent = m_SurfaceManager.GetSwapchainExtent();
+            constexpr int pixelSize = 4; // should query this somehow
+            const auto imageSize = extent.width * extent.height * pixelSize;
+
+            // TODO: dont have to copy the whole image
+            std::vector<uint8_t>* data = new std::vector<uint8_t>(imageSize);
+            void* ptr = data->data();
+            void* ptrr = nullptr;
+
+            vkMapMemory(mainDevice.logicalDevice, cpuBufferMemory, 0, imageSize, 0, &ptrr);
+            memcpy(data->data(), ptrr, imageSize);
+            vkUnmapMemory(mainDevice.logicalDevice, cpuBufferMemory);
+
+            auto indices = ScreenSpaceCoordsToPixelIndex(click.m_ClickCoords, extent);
+            std::array<uint8_t, 4> color = { (*data)[indices[0]], (*data)[indices[1]], (*data)[indices[2]], (*data)[indices[3]] };
+            auto handle = DecodeColorToID(color);
+
+            m_ModelManager.SelectModels(handle);
+
+            delete data;
+            m_InputController.PopRegisteredClick();
+        }
+        else
+            break;
+    }
+}
+
 void VulkanRenderer::UpdateMappedMemory(VkDeviceMemory memory, size_t size, void* data)
 {
     void* dataMap = nullptr;
@@ -909,10 +889,7 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
     }
 
     if (m_InputController.GetMouseKey(GLFW_MOUSE_BUTTON_1, GLFW_PRESS))
-    {
-        //auto pos = m_InputController.GetMouseCoords();
         ColorCodePass();
-    }
 
     OpaqueColorPass();
     PresentBlit();
@@ -974,11 +951,9 @@ void VulkanRenderer::ColorCodePass()
         {
             const auto& mesh = model.GetMesh(j);
 
-            // TODO: when I introduce dynamic uniform buffers, use those for model matrix.
-
             m_MaterialManager.BindMaterial(m_SwapchainIndex, kMaterialColorCoded);
 
-            if(i == 0 && true)
+            if(i == 0)
                 vkCmdSetScissor(commandBuffer[m_SwapchainIndex], 0, 1, &rect);
 
             // pass color coded
@@ -1047,8 +1022,8 @@ void VulkanRenderer::ColorCodePass()
         1, &barr, //buffer memory barrient count + data
         0, nullptr);
 
-    m_FrameToWaitFor = currentFrame;
-    m_PreviousCoords = coord;
+    WaitForClickResults click = { coord, m_SwapchainIndex };
+    m_InputController.RegisterClick(click);
 }
 
 void VulkanRenderer::OpaqueColorPass()

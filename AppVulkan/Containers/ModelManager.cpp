@@ -127,3 +127,15 @@ Model& ModelManager::operator[](size_t idx)
 {
     return m_Models[idx];
 }
+
+void ModelManager::CleanUp()
+{
+    for (auto& model : m_Models)
+    {
+        for (int i = 0; i < model.GetMeshCount(); i++)
+        {
+            m_GfxEngine.DestroyBufferAndFreeMemory(model.meshList[i].vertexBuffer, model.meshList[i].vertexBufferMemory);
+            m_GfxEngine.DestroyBufferAndFreeMemory(model.meshList[i].indexBuffer, model.meshList[i].indexBufferMemory);
+        }
+    }
+}
