@@ -981,7 +981,7 @@ void VulkanRenderer::ColorCodePass()
     copy.imageExtent.height = 600;
     copy.imageExtent.depth = 1;
 
-    VkImageMemoryBarrier bar = {};
+    /*VkImageMemoryBarrier bar = {};
     bar.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     bar.image = resultSurf.GetImage().getImage();
     bar.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -990,17 +990,18 @@ void VulkanRenderer::ColorCodePass()
     bar.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     bar.subresourceRange.levelCount = 1;
     bar.subresourceRange.layerCount = 1;
-    bar.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    bar.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;*/
 
     VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-
+    // TODO: seems like I do need to make sure previous renderpass has finished before copying
+    // but the memory will be in correct layout so do i just need an empty pipeline barrier?
     vkCmdPipelineBarrier(commandBuffer[m_SwapchainIndex],
-        srcStage, dstStage, // pipeline stages (match to src and dst accessmasks
-        0, //dependency flags
-        0, nullptr, //memeory barrier count + data
-        0, nullptr, //buffer memory barrient count + data
-        1, &bar);
+        srcStage, dstStage,
+        0,
+        0, nullptr,
+        0, nullptr,
+        0, nullptr);
 
 
     vkCmdCopyImageToBuffer(commandBuffer[m_SwapchainIndex], renderResultImg, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, cpuBuffer, 1, &copy);
