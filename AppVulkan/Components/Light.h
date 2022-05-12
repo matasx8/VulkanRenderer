@@ -3,19 +3,19 @@
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
 #include "NonCopyable.h"
+#include "UniformProvider.h"
 //TODO: add colour
 //TODO: make directional
 //TODO: change bightness
 //TODO: add support for multiple lights
-class Light : NonCopyable
+class Light : NonCopyable, UniformProvider
 {
 public:
 	Light();
 	Light(glm::vec4);//should later be used for direction
 
-	// I'd say these two are deprecated
-	void getData(void* buffer);
-	static size_t getDataSize();
+	void ProvideUniformData(void* dst);
+	size_t ProvideUniformDataSize();
 
 	//debug functions
 	void debugInput(bool* keys, float deltaTime);

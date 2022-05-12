@@ -1,51 +1,46 @@
 #include "Mesh.h"
 
 Mesh::Mesh()
+    : m_MaterialId(0)
 {
 }
 
-Mesh::Mesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue transferQueue, VkCommandPool transferCommandPool, std::vector<Vertex>* vertices, std::vector<uint32_t>* indices, int newTexId)
+Mesh::Mesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue transferQueue, VkCommandPool transferCommandPool, std::vector<Vertex>* vertices, std::vector<uint32_t>* indices)
+    : m_MaterialId(0)
 {
     vertexCount = vertices->size();
     indexCount = indices->size();
-    physicalDevice = newPhysicalDevice;
-    device = newDevice;
-    createVertexBuffer(transferQueue, transferCommandPool, vertices);
-    createIndexBuffer(transferQueue, transferCommandPool, indices);
+    createVertexBuffer(newPhysicalDevice, newDevice, transferQueue, transferCommandPool, vertices);
+    createIndexBuffer(newPhysicalDevice, newDevice, transferQueue, transferCommandPool, indices);
+}
 
-    texId = newTexId;
+void Mesh::SetMaterialID(uint32_t id)
+{
+    m_MaterialId = id;
 }
 
 
-int Mesh::getVertexCount()
+int Mesh::GetVertexCount() const
 {
     return vertexCount;
 }
 
-VkBuffer Mesh::getVertexBuffer()
+VkBuffer Mesh::GetVertexBuffer() const
 {
     return vertexBuffer;
 }
 
-uint32_t Mesh::getIndexCount()
+uint32_t Mesh::GetIndexCount() const
 {
     return indexCount;
 }
 
-VkBuffer Mesh::getIndexBuffer()
+VkBuffer Mesh::GetIndexBuffer() const
 {
     return indexBuffer;
 }
 
-void Mesh::destroyBuffers()
-{
-    vkDestroyBuffer(device, vertexBuffer, nullptr);
-    vkFreeMemory(device, vertexBufferMemory, nullptr);
-    vkDestroyBuffer(device, indexBuffer, nullptr);
-    vkFreeMemory(device, indexBufferMemory, nullptr);
-}
-
-void Mesh::createVertexBuffer(VkQueue transferQueue, VkCommandPool transferCommandPool, std::vector<Vertex>* vertices)
+void Mesh::createVertexBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkQueue transferQueue, VkCommandPool transferCommandPool, std::vector<Vertex>* vertices)
 {
     //get size of buffer needed for verts
     VkDeviceSize bufferSize = sizeof(Vertex) * vertices->size();
@@ -78,7 +73,7 @@ void Mesh::createVertexBuffer(VkQueue transferQueue, VkCommandPool transferComma
     vkFreeMemory(device, stagingBufferMemory, nullptr); //why is this not working?
 }
 
-void Mesh::createIndexBuffer(VkQueue transferQueue, VkCommandPool transferCommandPool, std::vector<uint32_t>* indices)
+void Mesh::createIndexBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkQueue transferQueue, VkCommandPool transferCommandPool, std::vector<uint32_t>* indices)
 {
     //get size of buffer needed for indices
     VkDeviceSize bufferSize = sizeof(uint32_t) * indices->size();
@@ -104,4 +99,15 @@ void Mesh::createIndexBuffer(VkQueue transferQueue, VkCommandPool transferComman
 
     vkDestroyBuffer(device, stagingBuffer, nullptr);
     vkFreeMemory(device, stagingBufferMemory, nullptr);
+}
+
+void ViewProjectionMatrix::ProvideUniformData(void* dst)
+{
+    glm::mat4 ProjectionViewMatrix = projection * view;
+    memcpy(dst, &ProjectionViewMatrix, ProvideUniformDataSize());
+}
+
+size_t ViewProjectionMatrix::ProvideUniformDataSize()
+{
+    return sizeof(glm::mat4);
 }

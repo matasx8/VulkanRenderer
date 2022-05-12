@@ -1,8 +1,9 @@
 #include "Camera.h"
+#include <string.h>
 
 Camera::Camera()
-	: m_Position(glm::vec3(-12.0f, 33.0f, 25.0f)), m_Front(glm::vec3(1.0f, -0.2f, -0.2f)), m_WorldUp(glm::vec3(0.0f, 1.0f, 0.0f)),
-	m_Yaw(-60.0f), m_Pitch(0.0f), m_MoveSpeed(80.0f), m_TurnSpeed(0.5f), m_MsaaSamples(VK_SAMPLE_COUNT_1_BIT)
+	: m_Position(glm::vec3(10.0f, 15.0f, 20.0f)), m_Front(glm::vec3(0.0f, 0.0f, 0.0f)), m_WorldUp(glm::vec3(0.0f, 1.0f, 0.0f)),
+	m_Yaw(-90.0f), m_Pitch(-20.0f), m_MoveSpeed(80.0f), m_TurnSpeed(0.5f)
 {
 	update();
 }
@@ -11,13 +12,14 @@ Camera::Camera()
 Camera::Camera(glm::vec3 startPosition, glm::vec3 startUp, float startYaw, 
 	float startPitch, float startMoveSpeed, float startTurnSpeed)
 	: m_Position(startPosition), m_Front(glm::vec3(1.0f, -0.2f, -0.2f)), m_WorldUp(startUp),
-	m_Yaw(startYaw), m_Pitch(startPitch), m_MoveSpeed(startMoveSpeed), m_TurnSpeed(startTurnSpeed), m_MsaaSamples(VK_SAMPLE_COUNT_1_BIT)
+	m_Yaw(startYaw), m_Pitch(startPitch), m_MoveSpeed(startMoveSpeed), m_TurnSpeed(startTurnSpeed)
 {
 	update();
 }
 
 void Camera::keyControl(bool* keys, GLfloat deltaTime)
 {
+	return;
 	float velocity = m_MoveSpeed * deltaTime;
 	if (keys[GLFW_KEY_W])
 	{
@@ -42,7 +44,7 @@ void Camera::keyControl(bool* keys, GLfloat deltaTime)
 
 void Camera::mouseControl(GLfloat xChange, GLfloat yChange)
 {
-
+	return;
 	xChange *= m_TurnSpeed;
 	yChange *= m_TurnSpeed;
 
@@ -62,14 +64,19 @@ void Camera::mouseControl(GLfloat xChange, GLfloat yChange)
 	update();
 }
 
+void Camera::ProvideUniformData(void* dst)
+{
+	memcpy(dst, &m_Position, sizeof(m_Position));
+}
+
+size_t Camera::ProvideUniformDataSize()
+{
+	return sizeof(m_Position) + 4;
+}
+
 void Camera::LookAt(const glm::vec3 point)
 {
 	//m_Position = glm::lookAt(m_Position, point, m_Up);
-}
-
-void Camera::setMSAA(VkSampleCountFlagBits msaaSamples)
-{
-	this->m_MsaaSamples = msaaSamples > VK_SAMPLE_COUNT_8_BIT ? VK_SAMPLE_COUNT_8_BIT : msaaSamples;
 }
 
 glm::mat4 Camera::calculateViewMatrix()
@@ -79,7 +86,6 @@ glm::mat4 Camera::calculateViewMatrix()
 
 size_t Camera::GetRepresentCstrLen() const
 {
-	//TODO: find a way to calculate if float is for example 12 or 265465, now im just going to compensate
 	return 100;
 }
 

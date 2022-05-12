@@ -1,37 +1,65 @@
 #pragma once
-#include <string>
-#include "Texture.h"
+#include <vector>
+#include "Pipeline.h"
 #include "Shader.h"
-// Will define the material that a Model has.
-// Should probably for each mesh, but it will do fine for each Model
+#include "Texture.h"
+
+struct UniformData;
+struct UniformBuffer;
+struct ShaderCreateInfo;
+enum ShaderCreateInfoFlags : size_t;
+
 class Material
 {
 public:
-	Material();
-	Material(ShaderCreateInfo& shaderInfo);
+	Material(size_t id);
 
 	const char* getVertexShader() const;
 	const char* getFragmentShader() const;
-	const std::vector<UniformData>& getUniformData() const;
-	const std::vector<size_t> getDataSizes() const;
 	size_t getUboCount() const;
-	uint32_t getShaderFlags() const;
-	const void* getPushConstantDataBuffer() const;
-	const size_t getPushConstantSize() const;
 	uint32_t GetInstanceCount() const;
+	VkDescriptorSetLayout GetDescriptorSetLayout() const;
+	VkDescriptorSet GetDescriptorSet(int swapchainIndex) const;
+	VkDescriptorSetLayout GetTextureDescriptorSetLayout() const;
+	VkDescriptorSet GetTextureDescriptorSet() const;
+	const Pipeline& GetPipeline() const;
+	const Shader& GetShader() const;
+	const uint32_t GetId() const;
+	const std::vector<TextureCreateInfo>& GetTextureDescriptions() const;
 
-	const bool hasPushConstant() const;
-	const bool hasFlag(ShaderCreateInfoFlags flag) const;
+	void SetTextureDescriptions(const std::vector<TextureCreateInfo>& descs);
+	void SetDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout);
+	void SetDescriptorSets(std::vector<VkDescriptorSet>& descriptorSet);
+	void SetTextureDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout);
+	void SetTextureDescriptorSet(VkDescriptorSet descriptorSet);
+	void SetShader(const ShaderCreateInfo& createInfo);
+	void SetPipeline(Pipeline pipeline);
+
+	void ChangeTextures(std::vector<TextureCreateInfo>& newTextures);
+
 	bool IsInstanced() const;
 
 
 
 	bool operator==(const Material& mat) const;
 
-	// info variables
 private:
-	Shader m_Shader;
-	std::vector<Texture> textures;
+	friend class MaterialManager;
 
+	void SetNewMaterialID(uint32_t id);
+
+	uint32_t m_ID;
+	Shader m_Shader;
+	std::vector<TextureCreateInfo> m_TextureDescriptions;
+	// no need for vector, will have just one dset for uniforms and one for textures
+	VkDescriptorSetLayout m_DescriptorSetLayout;
+	std::vector<VkDescriptorSet> m_DescriptorSets;
+
+	VkDescriptorSetLayout m_TextureDescriptorSetLayout;
+	VkDescriptorSet m_TextureDescriptorSet;
+
+	Pipeline m_Pipeline;
+
+	// probably not needed anymore
 	uint32_t m_InstanceCount;
 };

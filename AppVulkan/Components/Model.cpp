@@ -1,4 +1,5 @@
 #include "Model.h"
+#include<glm/gtx/matrix_decompose.hpp>
 
 static size_t s_AllTimeModelCount = 0;
 
@@ -10,7 +11,25 @@ Model::Model()
 	m_Handle = s_AllTimeModelCount++;
 	m_InstanceCount = 1;
 	m_InstanceDataBuffer = nullptr;
+	m_ModelMatrix = glm::mat4(1.0f);
 }
+
+
+Model::Model(std::vector<Mesh>& newMeshList)
+	: m_IsHidden(false), m_IsDuplicate(false), m_IsInstanced(false), m_InstanceCount(0), m_InstanceDataBuffer(nullptr),
+	m_Handle(s_AllTimeModelCount++), meshList(), m_ModelMatrix(1.0f)
+{
+	m_ModelMatrix = glm::mat4(1.0f);
+}
+
+#ifdef _DEBUG
+Model::Model(std::vector<Mesh>& newMeshList, const char* name)
+	: m_IsHidden(false), m_IsDuplicate(false), m_IsInstanced(false), m_InstanceCount(0), m_InstanceDataBuffer(nullptr),
+	m_Handle(s_AllTimeModelCount++), meshList(), m_ModelMatrix(1.0f)
+{
+	m_ModelMatrix = glm::mat4(1.0f);
+}
+#endif
 
 Model::Model(std::vector<Mesh>& newMeshList, bool isInstanced)
 {
@@ -21,20 +40,17 @@ Model::Model(std::vector<Mesh>& newMeshList, bool isInstanced)
 	m_Handle = s_AllTimeModelCount++;
 	m_InstanceCount = 1;
 	m_InstanceDataBuffer = nullptr;
+	m_ModelMatrix = glm::mat4(1.0f);
 }
 
-size_t Model::getMeshCount()
+size_t Model::GetMeshCount() const
 {
 	return meshList.size();
 }
 
-Mesh* Model::getMesh(size_t index)
+const Mesh& Model::GetMesh(size_t index) const
 {
-	if (index >= meshList.size())
-	{
-		throw std::runtime_error("attempted to access invalid mesh index");
-	}
-	return &meshList[index];
+	return meshList[index];
 }
 
 size_t Model::GetModelHandle() const
@@ -42,9 +58,20 @@ size_t Model::GetModelHandle() const
 	return m_Handle;
 }
 
-ModelMatrix& Model::GetModelMatrix()
+const glm::mat4x4& Model::GetModelMatrix() const
 {
-	return m_ModelMatrix;
+
+	return m_ModelMatrix; 
+}
+
+glm::vec4 Model::GetColorCode() const
+{
+	glm::vec4 code(0.0f);
+	code.r = (m_Handle & 0xFF) / 255.0f;
+	code.g = ((m_Handle >> 8) & 0xFF) / 255.0f;
+	code.b = ((m_Handle >> 16) & 0xFF) / 255.0f;
+	code.a = 1.0f;
+	return code;
 }
 
 Model Model::Duplicate(bool instanced) const
@@ -82,19 +109,27 @@ void Model::CopyInInstanceData(void* dst) const
 }
 
 
+void Model::MoveLocal(const glm::vec3& vector)
+{
+	m_ModelMatrix = glm::translate(m_ModelMatrix, vector);
+}
+
+void Model::RotateLocal(float angle, const glm::vec3& axis)
+{
+	m_ModelMatrix = glm::rotate(m_ModelMatrix, angle, axis);
+}
+
 void Model::SetModelMatrix(const ModelMatrix& matrix)
 {
 	m_ModelMatrix = matrix;
 }
 
-void Model::destroyMeshModel()
+void Model::SetMaterialForAllMeshes(uint32_t materialID)
 {
-	if (!m_IsDuplicate)
-		for (auto& mesh : meshList)
-		{
-			mesh.destroyBuffers();
-		}
+	for (auto& mesh : meshList)
+		mesh.SetMaterialID(materialID);
 }
+
 
 std::vector<std::string> Model::LoadMaterials(const aiScene* scene)
 {
@@ -127,71 +162,4 @@ std::vector<std::string> Model::LoadMaterials(const aiScene* scene)
 	}
 
 	return textureList;
-}
-
-std::vector<Mesh> Model::LoadNode(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue transferQueue, VkCommandPool transferCommandPool, aiNode* node, const aiScene* scene, std::vector<int> matToTex)
-{
-	std::vector<Mesh> meshList;
-
-	// go through each mesh at this node and create it, then add it to our meshlist
-	for (size_t i = 0; i < node->mNumMeshes; i++)
-	{
-		meshList.push_back(LoadMesh(newPhysicalDevice, newDevice, transferQueue, transferCommandPool, scene->mMeshes[node->mMeshes[i]], scene, matToTex));
-	}
-
-	// go through each node attached to this node and load it, then append their meshes to this node's mesh list
-	for (size_t i = 0; i < node->mNumChildren; i++)
-	{
-		std::vector<Mesh> newList = LoadNode(newPhysicalDevice, newDevice, transferQueue, transferCommandPool, node->mChildren[i], scene, matToTex);
-		meshList.insert(meshList.end(), newList.begin(), newList.end());
-	}
-
-	return meshList;
-}
-
-Mesh Model::LoadMesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue transferQueue, VkCommandPool transferCommandPool, aiMesh* mesh, const aiScene* scene, std::vector<int> matToTex)
-{
-	std::vector<Vertex> vertices;
-	std::vector<uint32_t> indices;
-
-	//resize vertex list to hold all vertices for mesh
-	vertices.resize(mesh->mNumVertices);
-
-	for (size_t i = 0; i < mesh->mNumVertices; i++)
-	{
-		// set position
-		vertices[i].pos = { mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
-
-		// set tex coords (if they exist)
-		if (mesh->mTextureCoords[0])
-		{
-			vertices[i].tex = { mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y };
-		}
-		else
-		{
-			vertices[i].tex = {0.0f, 0.0f};
-		}
-
-		vertices[i].norm = { mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z };//do i need to invert?
-		//set color (just use white for now)
-		//vertices[i].col = { 1.0f, 1.0f, 1.0f };
-	}
-
-	// iterate over indices through faces and copy across
-	for (size_t i = 0; i < mesh->mNumFaces; i++)
-	{
-		// get a face
-		aiFace face = mesh->mFaces[i];
-
-		// go through face's indices and add to list
-		for (size_t j = 0; j < face.mNumIndices; j++)
-		{
-			indices.push_back(face.mIndices[j]);
-		}
-	}
-
-	//create new mesh with details and return it
-	Mesh newMesh = Mesh(newPhysicalDevice, newDevice, transferQueue, transferCommandPool, &vertices, &indices, matToTex[mesh->mMaterialIndex]);
-	
-	return newMesh;
 }

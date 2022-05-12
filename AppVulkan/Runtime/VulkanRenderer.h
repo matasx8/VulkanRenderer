@@ -1,4 +1,8 @@
 // TODO: #define VK_check_result
+// TODO: improve aftermath (dump in seperate folder that is untracked by repo)
+// TODO: improve compiling by moving as many headers to cpp files
+// TODO: implement or find a better job system impl
+// TODO: if we don't find validation layers, don't use them
 #pragma once
 #include <stdexcept>
 #include <vector>
@@ -18,6 +22,7 @@
 
 #include "NsightAftermathGpuCrashTracker.h"
 
+#include "RenderPass.h"
 #include "Utilities.h"
 #include "Mesh.h"
 #include "Model.h"
@@ -31,6 +36,14 @@
 #include "Image.h"
 #include "DescriptorPool.h"
 #include "InstanceDataBuffer.h"
+#include "Containers/ModelManager.h"
+#include "Containers/MaterialManager.h"
+#include "Containers/SurfaceManager.h"
+#include "OSUtilities.h"
+#include "Input.h"
+
+struct TextureCreateInfo;
+typedef unsigned char stbi_uc;
 
 //#define DEBUG_LOGS;
 #define DEBUG
@@ -46,6 +59,18 @@ public:
 	Scene& getActiveScene() { return currentScene; }
 	float GetDeltaTime() const { return m_DeltaTime; }
 	thread_pool* const GetThreadPool() { return m_ThreadPool;}
+	uint32_t GetSwapchainIndex() const { return m_SwapchainIndex; }
+	unsigned long long GetCurrentFrame() const { return m_CurrentFrameNumber; }
+	const Input& GetInputController() const { return m_InputController; }
+
+	void UpdateMappedMemory(VkDeviceMemory memory, size_t size, void* data);
+	uint32_t CreateMaterial(Material& material);
+	const Material& GetMaterial(uint32_t idx) const;
+
+	template<typename F>
+	void UpdateModels(F& transformationFunction);
+	template<typename P, typename F>
+	void ForEachModelConditional(P& predicate, F& func);
 
 	void setupDebugMessenger();
 	void draw();
@@ -56,14 +81,23 @@ public:
 
 private:
 
+	friend class ModelManager;
+	friend class MaterialManager;
+	friend class SurfaceManager;
+
 	int currentFrame = 0;
 	float m_DeltaTime;
 	float m_LastTime;
+	unsigned long long m_CurrentFrameNumber;
+	uint32_t m_SwapchainImageCount;
+
+	int m_FrameToWaitFor;
+	glm::vec2 m_PreviousCoords;
 
 	//-- SCENE ---
 	Scene currentScene;
 
-	const std::vector<const char*> validationLayers = {//TODO: add more? - yes
+	const std::vector<const char*> validationLayers = {
 "VK_LAYER_KHRONOS_validation"
 	};
 
@@ -76,24 +110,23 @@ private:
 	VkInstance instance;
 	Device mainDevice;
 	VkDebugUtilsMessengerEXT debugMessenger;
-	VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 	VkQueue graphicsQueue;
 	VkQueue presentationQueue;
 	VkSurfaceKHR surface;
-	VkSwapchainKHR swapchain;
-	std::vector<SwapChainImage> swapChainImages;
-	std::vector<VkFramebuffer> swapchainFramebuffers;
+	uint32_t m_SwapchainIndex;
 	std::vector<VkCommandBuffer> commandBuffer;
+	  
+	RenderPassManager m_RenderPassManager;
+	ModelManager m_ModelManager;
+	MaterialManager m_MaterialManager;
+	SurfaceManager m_SurfaceManager;
 
-	Image depthBufferImage;
-	Image colorImage;
+	Input m_InputController;
 
 	ShaderMan shaderMan;
 
 	//pipeline
 	std::vector<Pipeline> Pipelines;
-
-	VkRenderPass renderPass;
 
 	//pools
 	VkCommandPool graphicsCommandPool;
@@ -103,44 +136,63 @@ private:
 
 	GpuCrashTracker tracker;
 
+	VkBuffer cpuBuffer;
+	VkDeviceMemory cpuBufferMemory;
+
 	//synch
 	std::vector<VkSemaphore> imageAvailable;
 	std::vector<VkSemaphore> renderFinished;
 	std::vector<VkFence> drawFences;
-
-	VkFormat swapChainImageFormat;
-	VkExtent2D swapChainExtent;
-	VkFormat depthFormat;// not sure if this is alright
 
 	void createInstance();
 	void createLogicalDevice();
 	void createSurface();
 	// a queue of images that are waiting to be presented to the screen
 	void createSwapChain();
-	void createRenderPass();
-	void createDepthBufferImage();
-	void createColorResources();
-	void createFramebuffers();
+	
 	void createCommandPool();
 	void createCommandBuffers();
 	void createSynchronization();
 	void createLight();
-	void createInitialScene();
 	void CreateDescriptorPool();
 	void CreateThreadPool(uint32_t numThreads);
+	Image UploadImage(int width, int height, VkDeviceSize imageSize, stbi_uc* imageData);
+	VkDescriptorSet CreateTextureDescriptorSet(VkDescriptorSetLayout layout, const std::vector<Texture>& textures);
+	VkSampler CreateTextureSampler(const TextureCreateInfo& createInfo);
+	VkDescriptorSetLayout CreateDescriptorSetLayout(size_t bindingCount, VkDescriptorType descriptorType);
+	// TODO: have one function for descriptor sets too
+	std::vector<VkDescriptorSet> CreateDescriptorSets(const size_t* dataSizes, std::vector<UniformBuffer>& UniformBuffers, VkDescriptorSetLayout descriptorSetLayout);
+	std::vector<UniformBuffer> CreateUniformBuffers(const std::vector<size_t>& dataSizes, size_t UboCount);
+	Pipeline CreatePipeline(const Material& material, uint8_t renderpassSlot);
+	std::vector<Surface> CreateSwapchainSurfaces(const SwapchainInfo& swapchain);
+	Surface CreateSurface(const SurfaceDesc& desc);
+	VkFramebuffer CreateFramebuffer(const std::vector<VkImageView>& imageViews, const RenderPass& rp);
+
+
+	void BindPipeline(VkPipeline pipeline);
+	void BindDescriptorSets(const VkDescriptorSet* descriptorSets, uint32_t count, VkPipelineLayout layout);
+	// do better handling of push constants later
+	void PushConstants(const ModelMatrix& modelMatrix, VkPipelineLayout layout);
+	void PushConstants(const ModelMatrix& modelMatrix, const glm::vec4& color, VkPipelineLayout layout);
+	void BindMesh(const Mesh& mesh);
+	void DrawIndexed(uint32_t indexCount, uint32_t instanceCount);
+	void ReadbackColorEncodings();
+
 	void EnableCrashDumps();
+
+	void TemporarySetup();
 
 	void compileShaders();
 
 	void UpdateDeltaTime();
 
-	void AddModel(std::string fileName, Material material);
+	void LoadNode(std::vector<Mesh>& meshList, aiNode* node, const aiScene* scene);
 
-	void DrawInstanced(int instancedModelIndex, uint32_t currentImage);
-
-	// record funcs
 	void recordCommands(uint32_t currentImage);
-	void recordingDefaultPath(int currentPipelineIndex, Model& model, int currentImage);
+	void ColorCodePass();
+	void OpaqueColorPass();
+	void SelectedHighlightPass();
+	void PresentBlit();
 
 	//getters
 	void getPhysicalDevice();
@@ -166,5 +218,26 @@ private:
 	VkPresentModeKHR chooseBestPresentationMode(const std::vector<VkPresentModeKHR> presentationModes);
 	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfaceCapabilities);
 	VkFormat chooseSupportedFormat(const std::vector<VkFormat>& formats, VkImageTiling tiling, VkFormatFeatureFlags);
+
+	void DestroyBufferAndFreeMemory(VkBuffer buffer, VkDeviceMemory memory);
 };
 
+template<typename F>
+inline void VulkanRenderer::UpdateModels(F& transformationFunction)
+{
+	for (int i = 0; i < m_ModelManager.Size(); i++)
+	{
+		transformationFunction(m_ModelManager[i], i);
+	}
+}
+
+template<typename P, typename F>
+inline void VulkanRenderer::ForEachModelConditional(P& predicate, F& func)
+{
+	const auto size = m_ModelManager.Size();
+	for (int i = 0; i < size; i++)
+	{
+		if(predicate(i))
+			func(&m_ModelManager, m_ModelManager[i], i);
+	}
+}

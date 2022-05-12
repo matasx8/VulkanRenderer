@@ -2,115 +2,99 @@
 #include "GameScript.h"
 #include<windows.h>
 #include<glm/gtx/matrix_decompose.hpp>
+#include "Model.h"
 
-// Example of instanced and non-instanced drawing
+// TODO: refactor my 'scripting interface'
 
 namespace GameScript
 {
-	void UpdateModelsNew(float dt);
-	void Input();
-
 	VulkanRenderer* g_Engine;
-
-	float g_Angle = 0.0f;
-	//auto g_ExampleModel = "Models/Old House 2 3D Models.obj";
-	auto g_ExampleModel = "Models/duck2.obj";
-	//auto g_ExampleModel = "Models/Group4.obj";
-	constexpr int g_InstanceCount = 5000 - 1;
-	//std::array<glm::vec3, g_InstanceCount + 1>* g_SpeedVectors = new std::array<glm::vec3, g_InstanceCount + 1>();
 	int g_KeyStateTracker = 0;
-	ModelHandle g_InstancedModel;
+	constexpr int kRegularShader = 0;
+	constexpr int kCelShader = 1;
 
-	std::vector<ModelHandle> g_ModelHandles;
+	RenderPass rp;
 
 	void OnInitialize(RendererInitializationSettings& initSettings)
 	{
-		initSettings.numThreadsInPool = 1;
+		initSettings.numThreadsInPool = 0;
+	}
+
+	uint32_t CreateMaterials(const char* filename, int shadernum)
+	{
+		// get material by id
+		// copy material
+		// change something about it
+		constexpr int kDefaultMaterial = 0;
+		Material material = g_Engine->GetMaterial(kDefaultMaterial);
+
+		std::vector<TextureCreateInfo> tcis(1);
+		auto& tci = tcis[0];
+		tci.fileName = filename;
+
+		material.ChangeTextures(tcis);
+		Shader shader = material.GetShader();
+		switch (shadernum)
+		{
+		case 0:
+			shader.m_ShaderInfo.vertexShader = "Shaders/shader_vert.spv"; 
+			shader.m_ShaderInfo.fragmentShader = "Shaders/shader_frag.spv";
+			break;
+		case 1:
+			shader.m_ShaderInfo.vertexShader = "Shaders/shader2_vert.spv";
+			shader.m_ShaderInfo.fragmentShader = "Shaders/shader2_frag.spv";
+			break;
+		}
+
+		material.SetShader(shader.m_ShaderInfo);
+
+		// upload
+		// material manager resuses what it can
+		const auto materialID = g_Engine->CreateMaterial(material);
+		return materialID;
 	}
 
 	void GameScript::OnStart(VulkanRenderer* engine)
 	{
-		if (engine)
-			g_Engine = engine;
-		else
-			throw std::runtime_error("The Engine was passed as nullptr!");
+		g_Engine = engine;
+		constexpr int numDefaultResources = 4;
 
-		Scene& currentScene = g_Engine->getActiveScene();
-		//currentScene.getCamera().LookAt()
-		// instantiate 300 instanced models
+		CreateMaterials("UVs.jpg", kRegularShader);
+		CreateMaterials("default.png", kCelShader);
+		// duplicate with material
+		// but first just duplicate
+		auto predicate = [=](int idx)
 		{
-			ShaderCreateInfo shaderInfo = { "Shaders/shader_instanced_vert.spv", "Shaders/shader_instanced_frag.spv" };
-			shaderInfo.uniformCount = 3;
+			return idx < numDefaultResources;
+		};
 
-			std::vector<UniformData> UniformDatas(3);
-			UniformDatas[0].name = "ViewProjection uniform";
-			UniformDatas[0].sizes = { sizeof(ViewProjectionMatrix) };
-			UniformDatas[0].dataBuffers = { currentScene.getViewProjectionPtr() };
+		auto func = [&](ModelManager* const man, Model& model, int idx)
+		{
+			constexpr int numDuplicates = 2000;
+			Model copy = model;
+			for(int i = 0; i < numDuplicates; i++)
+				man->DuplicateWithMaterial(copy, false, i % 2 + kDefaultMaterialCount);
+		};
+		g_Engine->ForEachModelConditional(predicate, func);
 
-			Light& light = currentScene.getLight(0);
-			UniformDatas[1].name = "Light uniform";
-			UniformDatas[1].sizes = { sizeof(glm::vec4), sizeof(glm::vec4) };
-			UniformDatas[1].dataBuffers = { &light.m_Position, &light.m_Colour };
 
-			Camera& camera = currentScene.getCamera();
-			UniformDatas[2].name = "Camera";
-			UniformDatas[2].sizes = { sizeof(glm::vec4) };
-			UniformDatas[2].dataBuffers = { &camera.getCameraPosition() };
-
-			shaderInfo.uniformData = std::move(UniformDatas);
-			shaderInfo.pushConstantSize = 0;
-			shaderInfo.shaderFlags = 0;
-			// mark that this will be instanced 
-			shaderInfo.isInstanced = true;
-
-			Material material1 = Material(shaderInfo);
-
-			g_InstancedModel = currentScene.AddModel(g_ExampleModel, material1);
-			g_ModelHandles.emplace_back(g_InstancedModel);
-			// add a number of instances
-			currentScene.GetModel(g_InstancedModel).AddInstances(g_InstanceCount);
-		}
-
-		//{
-		//	ShaderCreateInfo shaderInfo = { "Shaders/shader_vert.spv", "Shaders/shader_frag.spv" };
-		//	shaderInfo.uniformCount = 3;
-
-		//	std::vector<UniformData> UniformDatas(3);
-		//	UniformDatas[0].name = "ViewProjection uniform";
-		//	UniformDatas[0].sizes = { sizeof(ViewProjectionMatrix) };
-		//	UniformDatas[0].dataBuffers = { currentScene.getViewProjectionPtr() };
-
-		//	Light& light = currentScene.getLight(0);
-		//	UniformDatas[1].name = "Light uniform";
-		//	UniformDatas[1].sizes = { sizeof(glm::vec4), sizeof(glm::vec4) };
-		//	UniformDatas[1].dataBuffers = { &light.m_Position, &light.m_Colour };
-
-		//	Camera& camera = currentScene.getCamera();
-		//	UniformDatas[2].name = "Camera";
-		//	UniformDatas[2].sizes = { sizeof(glm::vec4) };
-		//	UniformDatas[2].dataBuffers = { &camera.getCameraPosition() };
-
-		//	shaderInfo.uniformData = std::move(UniformDatas);
-		//	shaderInfo.pushConstantSize = 0;
-		//	shaderInfo.shaderFlags = kUseModelMatrixForPushConstant;
-		//	shaderInfo.isInstanced = false;
-
-		//	Material material1 = Material(shaderInfo);
-
-		//	auto handle = currentScene.AddModel(g_ExampleModel, material1);
-		//	g_ModelHandles.emplace_back(handle);
-
-		//	for (int i = 0; i < g_InstanceCount; i++)
-		//		// duplicate without marking instanced
-		//		g_ModelHandles.push_back(currentScene.DuplicateModel(handle, false));
-		//}
-
+		auto update = [=](Model& model, int idx)
+		{
+			const int nthOther = numDefaultResources;
+			const int offset = idx / nthOther; // fix the move func
+			const int zOffset = idx / 40;
+			model.MoveLocal(glm::vec3(2.0f * (offset % 10), 2.f * (idx % nthOther + 1), -2.f * zOffset));
+		};
+		g_Engine->UpdateModels(update);
 	}
 
 	void GameScript::OnUpdate()
 	{
-		Input();
-		UpdateModelsNew(g_Engine->GetDeltaTime());
+		auto update = [=](Model& model, int idx)
+		{
+			model.RotateLocal(1.0f * g_Engine->GetDeltaTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+		};
+		g_Engine->UpdateModels(update);
 	}
 
 	void GameScript::OnEndOfFrame()
@@ -118,94 +102,5 @@ namespace GameScript
 
 	}
 
-	void UpdateModelsNew(float dt)
-	{
-		Scene& scene = g_Engine->getActiveScene();
-		auto& models = scene.getModels();
-		auto threadPool = g_Engine->GetThreadPool();
-
-		/*if (!scene.GetModel(g_InstancedModel + 1).IsHidden())
-		{
-			timer tmr;
-			tmr.start();
-				auto transformation = [&models](int st, int end)
-			{
-				for (int i = st; i < end; i++)
-				{
-					auto& modelMatrix = models[i].GetModelMatrix();
-					float offset = static_cast<float>(i % 50 * 5);
-					float yOffset = static_cast<float>(i / 50 % 50 * 5);
-					float zOffset = static_cast<float>(i / 2500 * 5);
-					modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(50.0f + offset, 0.0f - yOffset, 0.0f + zOffset));
-					modelMatrix = glm::rotate(modelMatrix, glm::radians(-g_Angle), glm::vec3(0.0f, 1.0f, 0.0f));
-					modelMatrix = glm::rotate(modelMatrix, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-				}
-			};
-			threadPool->parallelize_loop(0, g_InstanceCount, transformation);
-			tmr.stop();
-			std::cout << "The non-instanced elapsed time was " << tmr.ms() << " ms.\n";
-		}*/
-		
-
-		Model& model = scene.GetModel(g_InstancedModel);
-		if (!model.IsHidden())
-		{
-			auto data = model.GetInstanceDataBuffer();
-			auto transformation = [data](int st, int end)
-			{
-				for (int i = st; i < end; i++)
-				{
-					auto& modelMatrix = data->GetElement(i).model;
-					float offset = static_cast<float>(i % 50 * 5);
-					offset += 50 * 5 + 10;
-					float yOffset = i / 50 % 50 * 5;
-					float zOffset = i / 2500 * 5;
-					modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(50.0f + offset, 0.0f - yOffset, 0.0f + zOffset));
-					modelMatrix = glm::rotate(modelMatrix, glm::radians(-g_Angle), glm::vec3(0.0f, 1.0f, 0.0f));
-					modelMatrix = glm::rotate(modelMatrix, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-				}
-			};
-			timer tmr;
-			tmr.start();
-			threadPool->parallelize_loop(0u, data->GetElementCount(), transformation);
-			tmr.stop();
-			std::cout << "The elapsed time was " << tmr.ms() << " ms.\n";
-		}
-		g_Angle += 10.0f * dt;
-	}
-
-	void Input()
-	{
-		Scene& scene = g_Engine->getActiveScene();
-		bool* keys = g_Engine->window.getKeys();
-
-		auto& models = scene.getModels();
-		int instanceCount = scene.getModels().size();
-
-		if (keys[GLFW_KEY_1] && g_KeyStateTracker ^ GLFW_KEY_1) // show all
-		{
-			scene.GetModel(0).SetIsHidden(true);
-			for (int i = 1; i < instanceCount; i++)
-			{
-				models[i].SetIsHidden(false);
-			}
-		}
-
-		if (keys[GLFW_KEY_2] && g_KeyStateTracker ^ GLFW_KEY_2) // non instanced
-		{
-			auto& Models = scene.getModels();
-			scene.GetModel(g_InstancedModel).SetIsHidden(true);
-		}
-		if (keys[GLFW_KEY_3] && g_KeyStateTracker ^ GLFW_KEY_3) // instanced
-		{
-			auto& Models = scene.getModels();
-			scene.GetModel(0).SetIsHidden(true);
-			for (int i = 0; i < instanceCount; i++)
-			{
-				if (models[i].IsInstanced())
-					continue;
-				Models[i].SetIsHidden(true);
-			}
-		}
-	}
+	
 }

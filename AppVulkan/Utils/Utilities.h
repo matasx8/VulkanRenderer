@@ -1,4 +1,5 @@
 #pragma once
+#include "UniformProvider.h"
 
 #include <fstream>
 #include <vector>
@@ -8,9 +9,7 @@
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
 
-const int MAX_FRAME_DRAWS = 2;
-const int MAX_OBJECTS = 20;
-
+const int MAX_FRAME_DRAWS = 3;
 
 const std::vector<const char*> deviceExtensions = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME,
@@ -69,11 +68,6 @@ struct QueueFamilyIndices
 	{
 		return graphicsFamily >= 0 && presentationFamily >= 0;
 	}
-};
-
-struct ViewProjectionMatrix {
-	glm::mat4 projection;
-	glm::mat4 view;
 };
 
 struct SwapChainDetails
@@ -226,6 +220,30 @@ static void copyBuffer(VkDevice device, VkQueue transferQueue, VkCommandPool tra
 	endAndSubmitCommandBuffer(device, transferCommandPool, transferQueue, transferCommandBuffer);
 }
 
+static bool IsColorSurface(VkFormat format)
+{
+	// This is probably very not right, but it'll work for me;
+	return format < VK_FORMAT_D16_UNORM;
+}
+
+static std::array<int, 4> ScreenSpaceCoordsToPixelIndex(glm::vec2 coords, VkExtent2D extent)
+{
+	constexpr int pixelSize = 4;
+	std::array<int, pixelSize> indices;
+	indices[0] = pixelSize * (extent.width * coords.y) + pixelSize * coords.x;
+	indices[1] = indices[0] + 1;
+	indices[2] = indices[1] + 1;
+	indices[3] = indices[2] + 1;
+	return indices;
+}
+
+static unsigned int DecodeColorToID(std::array<uint8_t, 4> color)
+{
+	if (color[3] == 0) // A8 is 0 when there is no object
+		return ~0u;
+	return color[0] | color[1] << 8 | color[2] << 16;
+}
+
 static void copyImageBuffer(VkDevice device, VkQueue transferQueue, VkCommandPool transferCommandPool,
 	VkBuffer srcBuffer, VkImage image, uint32_t width, uint32_t height)
 {
@@ -285,6 +303,14 @@ static void transitionImageLayout(VkDevice device, VkQueue queue, VkCommandPool 
 
 		srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+	{
+		memoryBarier.srcAccessMask = 0;
+		memoryBarier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; // must happen beofre..
+
+		srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 	}
 
 	vkCmdPipelineBarrier(commandBuffer,

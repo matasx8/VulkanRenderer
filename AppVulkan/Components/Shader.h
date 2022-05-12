@@ -5,8 +5,9 @@
 #include <assert.h>
 #include "NonCopyable.h"
 #include "glm/glm.hpp"
+#include "Texture.h"
 
-enum ShaderCreateInfoFlags
+enum ShaderCreateInfoFlags : size_t
 {
 	kDefault = 0,
 	kUseViewProjAsFirstUBO = 1,
@@ -19,7 +20,6 @@ struct UniformData
 	std::vector<size_t> sizes;
 	// make sure that dataBuffers passed here are from NonCopyables
 	std::vector<void*> dataBuffers;
-	// this won't work, right?
 	std::string name;
 
 	size_t getTotalDataSize() const
@@ -46,52 +46,28 @@ struct UniformData
 	}
 };
 
-struct PushConstantData
-{
-
-};
-
 struct ShaderCreateInfo
 {
-	// TODO: use gfx caps for push constants at least
-	const char* vertexShader;
-	const char* fragmentShader;
+	std::string vertexShader;
+	std::string fragmentShader;
 
-	size_t uniformCount;
-	std::vector<UniformData> uniformData;
+	std::vector<uint8_t> uniforms;
+	uint8_t textureCount;
 
-	// push constants
-	// if 0, then no push constant
-	// TODO: something like with uniformdata..
-	size_t pushConstantSize;
-	void* pushConstantDataBuffer;
-
-	// to save time, size of instance data will be a mat4 for now
 	bool isInstanced;
-
-	unsigned int shaderFlags;
-
-	const std::vector<size_t> getUniformDataTotalSizes() const
-	{
-		std::vector<size_t> dataSizes(uniformCount);
-		assert(uniformCount);
-		for (size_t i = 0; i < uniformCount; i++)
-		{
-			dataSizes[i] = uniformData[i].getTotalDataSize();
-		}
-		return dataSizes;
-	}
+	bool isDepthTestEnabled;
+	bool isViewportDynamic;
 };
 
+// hm it's a bit weird that shadercreateinfo and shader are seperate classes. There's no more need for that?
 class Shader
 {
 public:
 	Shader();
-	Shader(ShaderCreateInfo& shaderInfo);
+	Shader(const ShaderCreateInfo& shaderInfo);
 
 	bool operator==(const Shader& shader) const;
 	
-	// Don't need private?
 	ShaderCreateInfo m_ShaderInfo;
 };
 

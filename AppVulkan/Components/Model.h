@@ -12,17 +12,22 @@ class Model
 {
 public:
 	Model();
-	Model(std::vector<Mesh>& newMeshList, bool isInstanced = false);//find out if i can pass by ref
+	//Model(const Model& copyFrom);
+	Model(std::vector<Mesh>& newMeshList);
+#ifdef _DEBUG
+	Model(std::vector<Mesh>& newMeshList, const char* name);
+#endif
+	Model(std::vector<Mesh>& newMeshList, bool isInstanced = false);
 
-	size_t getMeshCount();
-	Mesh* getMesh(size_t index);
-	size_t getPipelineIndex() const { return pipelineIndex; }
+	size_t GetMeshCount() const;
+	const Mesh& GetMesh(size_t index) const;
 	size_t GetModelHandle() const;
-	glm::mat4x4& GetModelMatrix();
+	const glm::mat4x4& GetModelMatrix() const;
 	int GetInstanceCount() const { return m_InstanceCount; }
 	VkBuffer GetInstanceData() const { return m_InstanceDataBuffer->GetInstanceData(); }
 	InstanceDataBuffer* GetInstanceDataBuffer() { return m_InstanceDataBuffer; }
 	bool IsHidden() const { return m_IsHidden; }
+	glm::vec4 GetColorCode() const;
 
 	Model Duplicate(bool instanced = false) const;
 	void AddInstances(int numInstances);
@@ -31,16 +36,17 @@ public:
 	template<typename Tfunc, typename... Targs>
 	void ApplyFunc(Tfunc func, Targs&... args);
 
+	void MoveLocal(const glm::vec3& vector);
+	void RotateLocal(float angle, const glm::vec3& axis);
+
 	void SetModelMatrix(const ModelMatrix& matrix);
-	void setPipelineIndex(int index) { pipelineIndex = index; }
 	void SetIsHidden(bool isHidden) { m_IsHidden = isHidden; }
-	// Increment pipelineIndex by one. Used when a pipeline has been thrown out.
-	void updatePipelineIndex() { pipelineIndex++; }
+	// move this to model manager, when i move meshes out of model class
+	void SetMaterialForAllMeshes(uint32_t materialID);
+
 
 	bool IsInstanced() const { return m_IsInstanced; }
 
-	void destroyMeshModel();
-// move to some model manager or somethig
 	static std::vector<std::string> LoadMaterials(const aiScene* scene);
 	static std::vector<Mesh> LoadNode(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue transferQueue, VkCommandPool transferCommandPool,
 		aiNode* node, const aiScene* scene, std::vector<int> matToTex);
@@ -48,6 +54,8 @@ public:
 		aiMesh* mesh, const aiScene* scene, std::vector<int> matToTex);
 
 private:
+
+	friend class ModelManager;
 	
 	// Duplicates won't have their own memory and will adress to the memory of the original
 	bool m_IsHidden;
@@ -60,7 +68,9 @@ private:
 	ModelHandle m_Handle;
 	std::vector<Mesh> meshList;
 	ModelMatrix m_ModelMatrix;
-	size_t pipelineIndex;
+#ifdef _DEBUG
+	//std::string m_Name;
+#endif
 };
 
 template<typename Tfunc, typename... Targs>

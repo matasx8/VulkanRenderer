@@ -5,7 +5,8 @@
 class Image
 {
 public:
-
+	Image();
+	Image(VkImage img, VkImageView imgView, VkDeviceMemory imgMem);
 	void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags useFlags, VkSampleCountFlagBits numSamples, VkMemoryPropertyFlags propFlags, VkPhysicalDevice physicalDevice, VkDevice logicalDevice);
 	void createImageView(VkFormat format, VkImageAspectFlags aspectFlags, VkDevice logicalDevice);
 	static VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkDevice logicalDevice);
